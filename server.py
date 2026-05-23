@@ -672,12 +672,6 @@ def admin_dash(code):
   </div>
 
   <div class="card">
-    <h2>✦ AI文章作成</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">一言メモから、丁寧な連絡文を自動生成します</p>
-    <a href="/t/{code}/admin/ai" class="btn btn-outline" style="display:block;text-align:center">AI文章作成を使う →</a>
-  </div>
-
-  <div class="card">
     <h2>👥 メンバー管理</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">名簿の確認・追加・削除ができます</p>
     <a href="/t/{code}/admin/members" class="btn btn-outline" style="display:block;text-align:center">メンバー一覧を見る →</a>
@@ -687,6 +681,12 @@ def admin_dash(code):
     <h2>💰 集金管理</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">集金項目の作成・支払い状況の管理ができます</p>
     <a href="/t/{code}/admin/fees" class="btn btn-outline" style="display:block;text-align:center">集金管理を見る →</a>
+  </div>
+
+  <div class="card">
+    <h2>✦ AI文章作成</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">一言メモから、丁寧な連絡文を自動生成します</p>
+    <a href="/t/{code}/admin/ai" class="btn btn-outline" style="display:block;text-align:center">AI文章作成を使う →</a>
   </div>
 
   <div style="text-align:right;margin-top:8px">

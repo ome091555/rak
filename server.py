@@ -303,6 +303,29 @@ def member_join(code):
 
 # ── Schedule ──────────────────────────────────────────────────────
 
+def build_calendar(year, month, event_dates):
+    import calendar
+    cal = calendar.monthcalendar(year, month)
+    wd_labels = ['月','火','水','木','金','土','日']
+    header = ''.join(f'<div style="text-align:center;font-size:11px;font-weight:700;color:#888;padding:4px 0">{d}</div>' for d in wd_labels)
+    rows = ''
+    for week in cal:
+        for day in week:
+            if day == 0:
+                rows += '<div></div>'
+            else:
+                date_str = f'{year}-{month:02d}-{day:02d}'
+                has_event = date_str in event_dates
+                today_str = datetime.now(JST).strftime('%Y-%m-%d')
+                is_today = date_str == today_str
+                dot = '<div style="width:5px;height:5px;border-radius:50%;background:#2563eb;margin:2px auto 0"></div>' if has_event else ''
+                bg = 'background:#2563eb;color:#fff;' if is_today else ('background:#eff6ff;' if has_event else '')
+                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{"pointer" if has_event else "default"};{bg}" {"onclick=\"scrollToDate(\\'"+date_str+"\\')\""  if has_event else ""}><div style="font-size:13px;font-weight:{"700" if is_today or has_event else "400"}">{day}</div>{dot}</div>'
+    return f'''
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+  {header}{rows}
+</div>'''
+
 @app.route('/t/<code>/schedule')
 def schedule(code):
     team = get_team(code)
@@ -313,12 +336,22 @@ def schedule(code):
     if not member and not admin:
         return redirect(url_for('team_portal', code=code))
 
+    now = datetime.now(JST)
+    today = now.strftime('%Y-%m-%d')
+
     conn = get_db()
-    today = datetime.now(JST).strftime('%Y-%m-%d')
-    events = conn.execute(
+    # カレンダー用に今月+来月の全イベント取得
+    month_start = now.strftime('%Y-%m-01')
+    all_events = conn.execute(
         'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date,event_time',
-        (team['id'], today)
+        (team['id'], month_start)
     ).fetchall()
+    event_dates = set(ev['event_date'] for ev in all_events)
+
+    # リスト用は今日以降
+    events = [ev for ev in all_events if ev['event_date'] >= today]
+
+    calendar_html = build_calendar(now.year, now.month, event_dates)
 
     event_cards = ''
     for ev in events:
@@ -340,7 +373,7 @@ def schedule(code):
             </form>'''
 
         event_cards += f'''
-        <div class="card-sm">
+        <div class="card-sm" id="ev-{ev['event_date']}">
           <div class="row" style="flex-wrap:wrap;gap:6px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
@@ -366,8 +399,21 @@ def schedule(code):
     <div><span class="section-label">📅 スケジュール</span></div>
     {new_btn}
   </div>
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;font-size:15px">{now.year}年{now.month}月</div>
+      <div style="font-size:11px;color:#888">●イベントあり　今日は青</div>
+    </div>
+    {calendar_html}
+  </div>
   {event_cards if events else '<div class="empty card">📭<br>予定はまだありません</div>'}
-</div>'''
+</div>
+<script>
+function scrollToDate(date) {{
+  var el = document.getElementById('ev-' + date);
+  if (el) el.scrollIntoView({{behavior:'smooth', block:'center'}});
+}}
+</script>'''
     return page('スケジュール', body, code, active='schedule')
 
 @app.route('/t/<code>/rsvp/<event_id>', methods=['POST'])

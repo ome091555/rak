@@ -12,8 +12,8 @@ except ImportError:
 
 JST = timezone(timedelta(hours=9))
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'tap-secret-2026')
-DATABASE = os.environ.get('DATABASE', 'tap.db')
+app.secret_key = os.environ.get('SECRET_KEY', 'rak-secret-2026')
+DATABASE = os.environ.get('DATABASE', 'rak.db')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # ── DB ────────────────────────────────────────────────────────────
@@ -176,11 +176,11 @@ def page(title, body, code=None, active=None):
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-{FONT}<title>{title} | Tap</title>
+{FONT}<title>{title} | Rak</title>
 <style>{CSS}</style></head><body>
 <nav class="nav">
   <a class="nav-logo" href="{"/t/"+code if code else "/"}">
-    <div class="nav-icon">T</div>Tap
+    <div class="nav-icon">R</div>Rak
   </a>
   {f'<span class="nav-team">{team_name}</span>' if team_name else ''}
   <div class="nav-links">{nav_items}</div>
@@ -196,7 +196,7 @@ def home():
     body = '''
 <div class="container" style="max-width:480px;padding-top:60px">
   <div style="text-align:center;margin-bottom:32px">
-    <div style="font-size:40px;font-weight:900;color:#2563eb;margin-bottom:8px">Tap</div>
+    <div style="font-size:40px;font-weight:900;color:#2563eb;margin-bottom:8px">Rak</div>
     <div style="color:#555;font-size:15px">チーム運営の「めんどくさい」を、ぜんぶラクに。</div>
   </div>
   <div class="card">
@@ -836,5 +836,5 @@ JSONのみ返してください。説明不要です。'''
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3004))
-    print(f'Tap アプリ起動中: http://localhost:{port}')
+    print(f'Rak アプリ起動中: http://localhost:{port}')
     app.run(host='0.0.0.0', port=port, debug=False)

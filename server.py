@@ -1,8 +1,10 @@
+import csv
+import io
 import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone, timedelta
-from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify
+from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response
 
 try:
     import anthropic
@@ -64,6 +66,14 @@ def init_db():
             member_name TEXT NOT NULL,
             read_at TEXT NOT NULL,
             PRIMARY KEY(notice_id, member_name)
+        );
+        CREATE TABLE IF NOT EXISTS members (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            number TEXT DEFAULT '',
+            position TEXT DEFAULT '',
+            joined_at TEXT NOT NULL
         );
     ''')
     conn.commit()
@@ -641,6 +651,12 @@ def admin_dash(code):
     <a href="/t/{code}/admin/ai" class="btn btn-outline" style="display:block;text-align:center">AI文章作成を使う →</a>
   </div>
 
+  <div class="card">
+    <h2>👥 メンバー管理</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">名簿の確認・追加・削除ができます</p>
+    <a href="/t/{code}/admin/members" class="btn btn-outline" style="display:block;text-align:center">メンバー一覧を見る →</a>
+  </div>
+
   <div style="text-align:right;margin-top:8px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
   </div>
@@ -739,7 +755,10 @@ def admin_event_detail(code, event_id):
       {names(absent)}
     </div>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  <div style="margin-top:4px">
+    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠CSVをダウンロード</a>
+  </div>
+  <div style="text-align:center;margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
     return page(ev['title'], body, code, active='admin')
 
@@ -876,6 +895,131 @@ JSONのみ返してください。説明不要です。'''
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
     return page('AI文章作成', body, code, active='admin')
+
+
+# ── Admin: members ───────────────────────────────────────────────
+
+@app.route('/t/<code>/admin/members', methods=['GET', 'POST'])
+def admin_members(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    msg = ''
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        conn = get_db()
+        if action == 'add':
+            name = request.form.get('name', '').strip()
+            number = request.form.get('number', '').strip()
+            position = request.form.get('position', '').strip()
+            if name:
+                conn.execute('INSERT INTO members VALUES (?,?,?,?,?,?)',
+                             (new_id(), team['id'], name, number, position, now_str()))
+                conn.commit()
+                msg = f'「{name}」を追加しました'
+        elif action == 'delete':
+            mid = request.form.get('member_id')
+            conn.execute('DELETE FROM members WHERE id=? AND team_id=?', (mid, team['id']))
+            conn.commit()
+            msg = 'メンバーを削除しました'
+        conn.close()
+
+    conn = get_db()
+    members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY joined_at', (team['id'],)).fetchall()
+    conn.close()
+
+    rows = ''
+    for m in members:
+        rows += f'''
+        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-weight:700">{m['name']}</span>
+            {f'<span style="font-size:12px;color:#888;margin-left:8px">#{m["number"]}</span>' if m['number'] else ''}
+            {f'<span style="font-size:12px;color:#888;margin-left:6px">{m["position"]}</span>' if m['position'] else ''}
+          </div>
+          <form method="POST" onsubmit="return confirm('{m['name']}を削除しますか？')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="member_id" value="{m['id']}">
+            <button class="btn btn-sm btn-gray" type="submit">削除</button>
+          </form>
+        </div>'''
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  {f'<div class="msg-ok">{msg}</div>' if msg else ''}
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <h1 style="margin:0">👥 メンバー名簿</h1>
+      <span class="badge badge-blue" style="margin-left:auto">{len(members)}名</span>
+    </div>
+    {rows if members else '<div class="empty">まだメンバーがいません</div>'}
+  </div>
+  <div class="card">
+    <h2>メンバーを追加</h2>
+    <form method="POST">
+      <input type="hidden" name="action" value="add">
+      <label>名前 *</label>
+      <input type="text" name="name" placeholder="例：田中 花子" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>背番号</label>
+          <input type="text" name="number" placeholder="例：10">
+        </div>
+        <div>
+          <label>ポジション</label>
+          <input type="text" name="position" placeholder="例：FW">
+        </div>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit">追加する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+</div>'''
+    return page('メンバー管理', body, code, active='admin')
+
+
+# ── Admin: CSV export ─────────────────────────────────────────────
+
+@app.route('/t/<code>/admin/events/<event_id>/csv')
+def admin_event_csv(code, event_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    ev = conn.execute('SELECT * FROM events WHERE id=? AND team_id=?', (event_id, team['id'])).fetchone()
+    if not ev:
+        conn.close()
+        return redirect(url_for('schedule', code=code))
+
+    members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
+    rsvps = conn.execute('SELECT * FROM rsvps WHERE event_id=?', (event_id,)).fetchall()
+    conn.close()
+
+    rsvp_map = {r['member_name']: r['status'] for r in rsvps}
+    status_label = {'attending': '出席', 'absent': '欠席'}
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['名前', '背番号', 'ポジション', '出欠', '更新日時'])
+
+    if members:
+        for m in members:
+            status = rsvp_map.get(m['name'], '未回答')
+            writer.writerow([m['name'], m['number'], m['position'],
+                             status_label.get(status, status),
+                             next((r['updated_at'] for r in rsvps if r['member_name'] == m['name']), '')])
+    else:
+        for name, status in rsvp_map.items():
+            writer.writerow([name, '', '', status_label.get(status, status),
+                             next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
+
+    filename = f"出欠_{ev['title']}_{ev['event_date']}.csv"
+    return Response(
+        '﻿' + output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
 
 
 # ── Run ───────────────────────────────────────────────────────────

@@ -191,13 +191,20 @@ def page(title, body, code=None, active=None):
 
     nav_items = ''
     if code:
+        sch_cls = 'active' if active == 'schedule' else ''
+        ntc_cls = 'active' if active == 'notices' else ''
+        mem_cls = 'active' if active == 'members' else ''
+        fee_cls = 'active' if active == 'fees' else ''
+        ai_cls  = 'active' if active == 'ai' else ''
         nav_items = f'''
-        <a href="/t/{code}/schedule" class="{'active' if active=='schedule' else ''}">📅 スケジュール</a>
-        <a href="/t/{code}/notices" class="{'active' if active=='notices' else ''}">📢 お知らせ</a>
-        <a href="/t/{code}/fees" class="{'active' if active=='fees' else ''}">💰 集金</a>
+        <a href="/t/{code}/schedule" class="{sch_cls}">📅 予定</a>
+        <a href="/t/{code}/notices" class="{ntc_cls}">📢 連絡</a>
+        <a href="/t/{code}/members" class="{mem_cls}">👥 メンバー</a>
+        <a href="/t/{code}/fees" class="{fee_cls}">💰 集金</a>
         '''
         if admin:
             admin_cls = 'active' if active == 'admin' else ''
+            nav_items += f'<a href="/t/{code}/admin/ai" class="{ai_cls}">✦ AI</a>'
             nav_items += f'<a href="/t/{code}/admin/dash" class="{admin_cls}" style="color:#2563eb">⚙️ 管理</a>'
         elif member:
             nav_items += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
@@ -952,17 +959,22 @@ def admin_members(code):
     rows = ''
     for m in members:
         rows += f'''
-        <div class="card-sm row" style="justify-content:space-between;align-items:center">
-          <div>
-            <span style="font-weight:700">{m['name']}</span>
-            {f'<span style="font-size:12px;color:#888;margin-left:8px">#{m["number"]}</span>' if m['number'] else ''}
-            {f'<span style="font-size:12px;color:#888;margin-left:6px">{m["position"]}</span>' if m['position'] else ''}
+        <div class="card-sm">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <span style="font-weight:700">{m['name']}</span>
+              {f'<span style="font-size:12px;color:#888;margin-left:8px">#{m["number"]}</span>' if m['number'] else ''}
+              {f'<span style="font-size:12px;color:#888;margin-left:6px">{m["position"]}</span>' if m['position'] else ''}
+            </div>
+            <div style="display:flex;gap:6px">
+              <a href="/t/{code}/admin/members/{m['id']}/edit" class="btn btn-sm btn-outline">編集</a>
+              <form method="POST" onsubmit="return confirm('{m['name']}を削除しますか？')" style="margin:0">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="member_id" value="{m['id']}">
+                <button class="btn btn-sm btn-gray" type="submit">削除</button>
+              </form>
+            </div>
           </div>
-          <form method="POST" onsubmit="return confirm('{m['name']}を削除しますか？')">
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="member_id" value="{m['id']}">
-            <button class="btn btn-sm btn-gray" type="submit">削除</button>
-          </form>
         </div>'''
 
     body = f'''
@@ -997,6 +1009,105 @@ def admin_members(code):
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
     return page('メンバー管理', body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/members/<member_id>/edit', methods=['GET', 'POST'])
+def admin_edit_member(code, member_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    m = conn.execute('SELECT * FROM members WHERE id=? AND team_id=?', (member_id, team['id'])).fetchone()
+    if not m:
+        conn.close()
+        return redirect(url_for('admin_members', code=code))
+
+    msg = ''
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        number = request.form.get('number', '').strip()
+        position = request.form.get('position', '').strip()
+        if name:
+            conn.execute('UPDATE members SET name=?, number=?, position=? WHERE id=?',
+                         (name, number, position, member_id))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin_members', code=code))
+
+    conn.close()
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>メンバーを編集</h1>
+    <form method="POST">
+      <label>名前 *</label>
+      <input type="text" name="name" value="{m['name']}" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>背番号</label>
+          <input type="text" name="number" value="{m['number']}">
+        </div>
+        <div>
+          <label>ポジション</label>
+          <input type="text" name="position" value="{m['position']}">
+        </div>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit">保存する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/members" style="font-size:13px;color:#888">← メンバー一覧</a></div>
+</div>'''
+    return page('メンバー編集', body, code, active='admin')
+
+
+# ── Members (all users view) ──────────────────────────────────────
+
+@app.route('/t/<code>/members')
+def member_list(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
+    conn.close()
+
+    rows = ''
+    for m in members:
+        rows += f'''
+        <div class="card-sm row" style="align-items:center;gap:14px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#eff6ff;color:#2563eb;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            {m['number'] if m['number'] else '—'}
+          </div>
+          <div>
+            <div style="font-weight:700">{m['name']}</div>
+            {f'<div style="font-size:12px;color:#888">{m["position"]}</div>' if m['position'] else ''}
+          </div>
+        </div>'''
+
+    edit_btn = f'<a href="/t/{code}/admin/members" class="btn btn-sm btn-outline">編集</a>' if admin else ''
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <div>
+        <span class="section-label">👥 メンバー</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+        <span class="badge badge-blue">{len(members)}名</span>
+        {edit_btn}
+      </div>
+    </div>
+    {rows if members else '<div class="empty">まだメンバーがいません</div>'}
+  </div>
+</div>'''
+    return page('メンバー', body, code, active='members')
 
 
 # ── Fees (member view) ────────────────────────────────────────────

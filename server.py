@@ -239,7 +239,6 @@ def create_team():
     error = ''
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        sport = request.form.get('sport', '').strip()
         password = request.form.get('password', '').strip()
         if not name or not password:
             error = 'チーム名とパスワードを入力してください'
@@ -249,7 +248,7 @@ def create_team():
             conn = get_db()
             conn.execute(
                 'INSERT INTO teams VALUES (?,?,?,?,?,?)',
-                (team_id, name, sport, code, password, now_str())
+                (team_id, name, '', code, password, now_str())
             )
             conn.commit()
             conn.close()
@@ -263,10 +262,8 @@ def create_team():
     <p style="color:#666;font-size:13px;margin-bottom:16px">作成後、メンバーに共有するチームコードが発行されます</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
-      <label>チーム名 *</label>
-      <input type="text" name="name" placeholder="例：FCランウェイズ" required>
-      <label>競技・スポーツ</label>
-      <input type="text" name="sport" placeholder="例：サッカー、バスケ、水泳など">
+      <label>チーム名・グループ名 *</label>
+      <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
       <label>管理者パスワード *</label>
       <input type="password" name="password" placeholder="管理者だけが知るパスワード" required>
       <div style="font-size:12px;color:#888;margin-top:6px">※メンバーには共有しないでください</div>

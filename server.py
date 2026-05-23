@@ -75,6 +75,23 @@ def init_db():
             position TEXT DEFAULT '',
             joined_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS fees (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            amount INTEGER DEFAULT 0,
+            due_date TEXT DEFAULT '',
+            note TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS fee_payments (
+            id TEXT PRIMARY KEY,
+            fee_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            paid INTEGER DEFAULT 0,
+            paid_at TEXT DEFAULT '',
+            UNIQUE(fee_id, member_name)
+        );
     ''')
     conn.commit()
     conn.close()
@@ -177,9 +194,11 @@ def page(title, body, code=None, active=None):
         nav_items = f'''
         <a href="/t/{code}/schedule" class="{'active' if active=='schedule' else ''}">📅 スケジュール</a>
         <a href="/t/{code}/notices" class="{'active' if active=='notices' else ''}">📢 お知らせ</a>
+        <a href="/t/{code}/fees" class="{'active' if active=='fees' else ''}">💰 集金</a>
         '''
         if admin:
-            nav_items += f'<a href="/t/{code}/admin/dash" class="{'active' if active=='admin' else ''}" style="color:#2563eb">⚙️ 管理</a>'
+            admin_cls = 'active' if active == 'admin' else ''
+            nav_items += f'<a href="/t/{code}/admin/dash" class="{admin_cls}" style="color:#2563eb">⚙️ 管理</a>'
         elif member:
             nav_items += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
 
@@ -327,7 +346,10 @@ def build_calendar(year, month, event_dates):
                 is_today = date_str == today_str
                 dot = '<div style="width:5px;height:5px;border-radius:50%;background:#2563eb;margin:2px auto 0"></div>' if has_event else ''
                 bg = 'background:#2563eb;color:#fff;' if is_today else ('background:#eff6ff;' if has_event else '')
-                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{"pointer" if has_event else "default"};{bg}" {"onclick=\"scrollToDate(\\'"+date_str+"\\')\""  if has_event else ""}><div style="font-size:13px;font-weight:{"700" if is_today or has_event else "400"}">{day}</div>{dot}</div>'
+                cursor = 'pointer' if has_event else 'default'
+                fw = '700' if (is_today or has_event) else '400'
+                onclick = f'onclick="scrollToDate(\'{date_str}\')"' if has_event else ''
+                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw}">{day}</div>{dot}</div>'
     return f'''
 <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
   {header}{rows}
@@ -654,6 +676,12 @@ def admin_dash(code):
     <a href="/t/{code}/admin/members" class="btn btn-outline" style="display:block;text-align:center">メンバー一覧を見る →</a>
   </div>
 
+  <div class="card">
+    <h2>💰 集金管理</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">集金項目の作成・支払い状況の管理ができます</p>
+    <a href="/t/{code}/admin/fees" class="btn btn-outline" style="display:block;text-align:center">集金管理を見る →</a>
+  </div>
+
   <div style="text-align:right;margin-top:8px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
   </div>
@@ -882,12 +910,7 @@ JSONのみ返してください。説明不要です。'''
     </form>
   </div>
 
-  {f'''<div class="card" style="border-color:#2563eb">
-    <div class="section-label">生成結果</div>
-    <h2>{result_title}</h2>
-    <div style="white-space:pre-wrap;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;margin-top:8px">{result_body}</div>
-    {use_btn}
-  </div>''' if result_title else ''}
+  {('<div class="card" style="border-color:#2563eb"><div class="section-label">生成結果</div><h2>' + result_title + '</h2><div style="white-space:pre-wrap;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;margin-top:8px">' + result_body + '</div>' + use_btn + '</div>') if result_title else ''}
 
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
@@ -974,6 +997,219 @@ def admin_members(code):
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
     return page('メンバー管理', body, code, active='admin')
+
+
+# ── Fees (member view) ────────────────────────────────────────────
+
+@app.route('/t/<code>/fees')
+def member_fees(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
+
+    cards = ''
+    for f in fees:
+        if member:
+            paid_row = conn.execute('SELECT paid FROM fee_payments WHERE fee_id=? AND member_name=?',
+                                    (f['id'], member)).fetchone()
+            paid = paid_row['paid'] if paid_row else 0
+            badge = '<span class="badge badge-green">支払済</span>' if paid else '<span class="badge badge-red">未払い</span>'
+        else:
+            total = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchone()[0]
+            paid_count = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=? AND paid=1', (f['id'],)).fetchone()[0]
+            badge = f'<span class="badge badge-blue">支払済 {paid_count}/{total}</span>'
+
+        cards += f'''
+        <div class="card-sm">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700">{f['title']}</div>
+              <div style="font-size:13px;color:#555;margin-top:2px">
+                ¥{f['amount']:,}{'　期限：' + fmt_date(f['due_date']) if f['due_date'] else ''}
+              </div>
+              {f'<div style="font-size:12px;color:#888;margin-top:4px">{f["note"]}</div>' if f['note'] else ''}
+            </div>
+            {badge}
+          </div>
+        </div>'''
+    conn.close()
+
+    new_btn = f'<a href="/t/{code}/admin/fees/new" class="btn btn-blue btn-sm">＋ 集金項目を追加</a>' if admin else ''
+    body = f'''
+<div class="container">
+  <div class="row" style="margin-bottom:16px">
+    <div><span class="section-label">💰 集金</span></div>
+    {new_btn}
+  </div>
+  {cards if fees else '<div class="empty card">📭<br>集金項目はまだありません</div>'}
+</div>'''
+    return page('集金', body, code, active='fees')
+
+
+# ── Admin: fees ───────────────────────────────────────────────────
+
+@app.route('/t/<code>/admin/fees')
+def admin_fees(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
+
+    rows = ''
+    for f in fees:
+        paid_count = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=? AND paid=1', (f['id'],)).fetchone()[0]
+        total = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchone()[0]
+        rows += f'''
+        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">{f['title']}</div>
+            <div style="font-size:12px;color:#888">¥{f['amount']:,}{'　期限：' + fmt_date(f['due_date']) if f['due_date'] else ''}　支払済 {paid_count}/{total}名</div>
+          </div>
+          <a href="/t/{code}/admin/fees/{f['id']}" class="btn btn-sm btn-outline">管理</a>
+        </div>'''
+    conn.close()
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <h1 style="margin:0">💰 集金管理</h1>
+      <a href="/t/{code}/admin/fees/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 追加</a>
+    </div>
+    {rows if fees else '<div class="empty">集金項目がありません</div>'}
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+</div>'''
+    return page('集金管理', body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/fees/new', methods=['GET', 'POST'])
+def admin_new_fee(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    error = ''
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        amount = request.form.get('amount', '0').strip().replace(',', '')
+        due_date = request.form.get('due_date', '').strip()
+        note = request.form.get('note', '').strip()
+        if not title:
+            error = 'タイトルを入力してください'
+        else:
+            conn = get_db()
+            fee_id = new_id()
+            conn.execute('INSERT INTO fees VALUES (?,?,?,?,?,?,?)',
+                         (fee_id, team['id'], title, int(amount or 0), due_date, note, now_str()))
+            members = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
+            for m in members:
+                conn.execute('INSERT OR IGNORE INTO fee_payments VALUES (?,?,?,0,?)',
+                             (new_id(), fee_id, m['name'], ''))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin_fee_detail', code=code, fee_id=fee_id))
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>集金項目を追加</h1>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>タイトル *</label>
+      <input type="text" name="title" placeholder="例：月会費5月分、合宿費" required>
+      <label>金額（円）</label>
+      <input type="text" name="amount" placeholder="例：3000">
+      <label>支払い期限</label>
+      <input type="date" name="due_date">
+      <label>備考</label>
+      <textarea name="note" placeholder="振込先など" rows="3"></textarea>
+      <button class="btn btn-blue btn-block" type="submit">作成する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
+</div>'''
+    return page('集金項目を追加', body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/fees/<fee_id>', methods=['GET', 'POST'])
+def admin_fee_detail(code, fee_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    f = conn.execute('SELECT * FROM fees WHERE id=? AND team_id=?', (fee_id, team['id'])).fetchone()
+    if not f:
+        conn.close()
+        return redirect(url_for('admin_fees', code=code))
+
+    if request.method == 'POST':
+        member_name = request.form.get('member_name')
+        paid = int(request.form.get('paid', 0))
+        paid_at = now_str() if paid else ''
+        conn.execute('''
+            INSERT INTO fee_payments (id,fee_id,member_name,paid,paid_at)
+            VALUES (?,?,?,?,?)
+            ON CONFLICT(fee_id,member_name) DO UPDATE SET paid=excluded.paid, paid_at=excluded.paid_at
+        ''', (new_id(), fee_id, member_name, paid, paid_at))
+        conn.commit()
+
+    members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
+    payments = conn.execute('SELECT * FROM fee_payments WHERE fee_id=?', (fee_id,)).fetchall()
+    pay_map = {p['member_name']: p for p in payments}
+    conn.close()
+
+    rows = ''
+    for m in members:
+        p = pay_map.get(m['name'])
+        paid = p['paid'] if p else 0
+        paid_at = p['paid_at'] if p else ''
+        toggle_val = 0 if paid else 1
+        btn_class = 'btn-green' if paid else 'btn-gray'
+        btn_label = '✅ 支払済' if paid else '未払い'
+        rows += f'''
+        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-weight:700">{m['name']}</span>
+            {f'<span style="font-size:11px;color:#aaa;margin-left:8px">{paid_at}</span>' if paid_at else ''}
+          </div>
+          <form method="POST">
+            <input type="hidden" name="member_name" value="{m['name']}">
+            <input type="hidden" name="paid" value="{toggle_val}">
+            <button class="btn btn-sm {'btn-blue' if paid else 'btn-outline'}" type="submit">{btn_label}</button>
+          </form>
+        </div>'''
+
+    paid_count = sum(1 for m in members if pay_map.get(m['name']) and pay_map[m['name']]['paid'])
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <h1>{f['title']}</h1>
+    <div style="font-size:14px;color:#555;margin-top:4px">
+      ¥{f['amount']:,}{'　期限：' + fmt_date(f['due_date']) if f['due_date'] else ''}
+    </div>
+    {f'<div style="font-size:13px;color:#666;margin-top:8px">{f["note"]}</div>' if f['note'] else ''}
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <span class="badge badge-green">支払済 {paid_count}名</span>
+      <span class="badge badge-red">未払い {len(members)-paid_count}名</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">支払い状況</h2>
+    {rows if members else '<div class="empty">メンバーがいません。先にメンバー名簿を登録してください。</div>'}
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
+</div>'''
+    return page(f['title'], body, code, active='admin')
 
 
 # ── Admin: CSV export ─────────────────────────────────────────────

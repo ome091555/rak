@@ -92,6 +92,26 @@ def init_db():
             paid_at TEXT DEFAULT '',
             UNIQUE(fee_id, member_name)
         );
+        CREATE TABLE IF NOT EXISTS surveys (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS survey_options (
+            id TEXT PRIMARY KEY,
+            survey_id TEXT NOT NULL,
+            label TEXT NOT NULL,
+            sort_order INTEGER DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS survey_answers (
+            id TEXT PRIMARY KEY,
+            survey_id TEXT NOT NULL,
+            option_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            answered_at TEXT NOT NULL,
+            UNIQUE(survey_id, member_name)
+        );
     ''')
     conn.commit()
     conn.close()
@@ -195,12 +215,14 @@ def page(title, body, code=None, active=None):
         ntc_cls = 'active' if active == 'notices' else ''
         mem_cls = 'active' if active == 'members' else ''
         fee_cls = 'active' if active == 'fees' else ''
+        srv_cls = 'active' if active == 'survey' else ''
         ai_cls  = 'active' if active == 'ai' else ''
         nav_items = f'''
         <a href="/t/{code}/schedule" class="{sch_cls}">📅 予定</a>
         <a href="/t/{code}/notices" class="{ntc_cls}">📢 連絡</a>
         <a href="/t/{code}/members" class="{mem_cls}">👥 メンバー</a>
         <a href="/t/{code}/fees" class="{fee_cls}">💰 集金</a>
+        <a href="/t/{code}/survey" class="{srv_cls}">📊 アンケート</a>
         '''
         if admin:
             admin_cls = 'active' if active == 'admin' else ''
@@ -681,6 +703,12 @@ def admin_dash(code):
     <h2>💰 集金管理</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">集金項目の作成・支払い状況の管理ができます</p>
     <a href="/t/{code}/admin/fees" class="btn btn-outline" style="display:block;text-align:center">集金管理を見る →</a>
+  </div>
+
+  <div class="card">
+    <h2>📊 アンケート</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">質問を作成してメンバーの回答を集計できます</p>
+    <a href="/t/{code}/survey" class="btn btn-outline" style="display:block;text-align:center">アンケートを見る →</a>
   </div>
 
   <div class="card">
@@ -1364,6 +1392,181 @@ def admin_event_csv(code, event_id):
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
+
+
+# ── Survey ───────────────────────────────────────────────────────
+
+@app.route('/t/<code>/survey')
+def survey_list(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    surveys = conn.execute('SELECT * FROM surveys WHERE team_id=? ORDER BY created_at DESC', (team['id'],)).fetchall()
+
+    cards = ''
+    for sv in surveys:
+        options = conn.execute('SELECT * FROM survey_options WHERE survey_id=? ORDER BY sort_order', (sv['id'],)).fetchall()
+        total = conn.execute('SELECT COUNT(*) FROM survey_answers WHERE survey_id=?', (sv['id'],)).fetchone()[0]
+        answered = bool(conn.execute('SELECT 1 FROM survey_answers WHERE survey_id=? AND member_name=?', (sv['id'], member)).fetchone()) if member else True
+
+        cards += f'''
+        <a href="/t/{code}/survey/{sv['id']}" style="text-decoration:none;display:block">
+          <div class="card-sm">
+            <div class="row" style="justify-content:space-between">
+              <div style="font-weight:700;color:#1a1a1a">{'📌 ' if not answered else ''}{sv['title']}</div>
+              {'<span class="badge badge-red">未回答</span>' if not answered else f'<span class="badge badge-gray">回答済 {total}名</span>'}
+            </div>
+            <div style="font-size:12px;color:#aaa;margin-top:4px">{fmt_datetime(sv['created_at'])}　選択肢 {len(options)}件</div>
+          </div>
+        </a>'''
+    conn.close()
+
+    new_btn = f'<a href="/t/{code}/admin/survey/new" class="btn btn-blue btn-sm">＋ 作成</a>' if admin else ''
+    body = f'''
+<div class="container">
+  <div class="row" style="margin-bottom:16px">
+    <div><span class="section-label">📊 アンケート</span></div>
+    {new_btn}
+  </div>
+  {cards if surveys else '<div class="empty card">📭<br>アンケートはまだありません</div>'}
+</div>'''
+    return page('アンケート', body, code, active='survey')
+
+
+@app.route('/t/<code>/survey/<survey_id>', methods=['GET', 'POST'])
+def survey_detail(code, survey_id):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    sv = conn.execute('SELECT * FROM surveys WHERE id=? AND team_id=?', (survey_id, team['id'])).fetchone()
+    if not sv:
+        conn.close()
+        return redirect(url_for('survey_list', code=code))
+
+    options = conn.execute('SELECT * FROM survey_options WHERE survey_id=? ORDER BY sort_order', (survey_id,)).fetchall()
+
+    if request.method == 'POST' and member:
+        option_id = request.form.get('option_id')
+        if option_id:
+            conn.execute('''
+                INSERT INTO survey_answers (id,survey_id,option_id,member_name,answered_at)
+                VALUES (?,?,?,?,?)
+                ON CONFLICT(survey_id,member_name) DO UPDATE SET option_id=excluded.option_id, answered_at=excluded.answered_at
+            ''', (new_id(), survey_id, option_id, member, now_str()))
+            conn.commit()
+
+    my_answer = conn.execute('SELECT option_id FROM survey_answers WHERE survey_id=? AND member_name=?', (survey_id, member)).fetchone() if member else None
+    my_option_id = my_answer['option_id'] if my_answer else None
+
+    results = {}
+    for opt in options:
+        count = conn.execute('SELECT COUNT(*) FROM survey_answers WHERE survey_id=? AND option_id=?', (survey_id, opt['id'])).fetchone()[0]
+        results[opt['id']] = count
+    total = sum(results.values())
+
+    option_btns = ''
+    for opt in options:
+        selected = my_option_id == opt['id']
+        count = results[opt['id']]
+        pct = int(count / total * 100) if total > 0 else 0
+        if member:
+            option_btns += f'''
+            <form method="POST" style="margin-bottom:8px">
+              <input type="hidden" name="option_id" value="{opt['id']}">
+              <button type="submit" class="btn {'btn-blue' if selected else 'btn-outline'}" style="width:100%;text-align:left;padding:12px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span>{'✓ ' if selected else ''}{opt['label']}</span>
+                  <span style="font-size:13px;opacity:.8">{count}票 ({pct}%)</span>
+                </div>
+                <div style="margin-top:6px;height:4px;border-radius:4px;background:{'rgba(255,255,255,.3)' if selected else '#e0e8ff'}">
+                  <div style="height:4px;border-radius:4px;background:{'rgba(255,255,255,.8)' if selected else '#2563eb'};width:{pct}%"></div>
+                </div>
+              </button>
+            </form>'''
+        else:
+            option_btns += f'''
+            <div style="margin-bottom:8px;padding:12px 16px;border:1.5px solid #e0e8ff;border-radius:10px;background:#fff">
+              <div style="display:flex;justify-content:space-between">
+                <span>{opt['label']}</span>
+                <span style="font-size:13px;color:#888">{count}票 ({pct}%)</span>
+              </div>
+              <div style="margin-top:6px;height:4px;border-radius:4px;background:#e0e8ff">
+                <div style="height:4px;border-radius:4px;background:#2563eb;width:{pct}%"></div>
+              </div>
+            </div>'''
+
+    conn.close()
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <div style="font-size:12px;color:#888;margin-bottom:8px">{fmt_datetime(sv['created_at'])}　回答 {total}名</div>
+    <h1 style="margin-bottom:20px">{sv['title']}</h1>
+    {option_btns}
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/survey" style="font-size:13px;color:#888">← アンケート一覧</a></div>
+</div>'''
+    return page(sv['title'], body, code, active='survey')
+
+
+@app.route('/t/<code>/admin/survey/new', methods=['GET', 'POST'])
+def admin_new_survey(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    error = ''
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        options = [v.strip() for v in request.form.getlist('option') if v.strip()]
+        if not title:
+            error = '質問を入力してください'
+        elif len(options) < 2:
+            error = '選択肢を2つ以上入力してください'
+        else:
+            conn = get_db()
+            sid = new_id()
+            conn.execute('INSERT INTO surveys VALUES (?,?,?,?)', (sid, team['id'], title, now_str()))
+            for i, label in enumerate(options):
+                conn.execute('INSERT INTO survey_options VALUES (?,?,?,?)', (new_id(), sid, label, i))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('survey_list', code=code))
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>アンケートを作成</h1>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>質問 *</label>
+      <input type="text" name="title" placeholder="例：来週の練習に参加できますか？" required>
+      <label>選択肢（最大6つ）</label>
+      <input type="text" name="option" placeholder="例：参加できる" style="margin-bottom:8px">
+      <input type="text" name="option" placeholder="例：参加できない" style="margin-bottom:8px">
+      <input type="text" name="option" placeholder="例：未定" style="margin-bottom:8px">
+      <input type="text" name="option" placeholder="（任意）" style="margin-bottom:8px">
+      <input type="text" name="option" placeholder="（任意）" style="margin-bottom:8px">
+      <input type="text" name="option" placeholder="（任意）" style="margin-bottom:8px">
+      <button class="btn btn-blue btn-block" type="submit">作成する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/survey" style="font-size:13px;color:#888">← アンケート一覧</a></div>
+</div>'''
+    return page('アンケート作成', body, code, active='survey')
 
 
 # ── Run ───────────────────────────────────────────────────────────

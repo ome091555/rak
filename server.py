@@ -699,6 +699,16 @@ def admin_dash(code):
         'SELECT * FROM notices WHERE team_id=? ORDER BY created_at DESC LIMIT 3',
         (team['id'],)
     ).fetchall()
+
+    # 集金未払いリスト
+    fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date, created_at', (team['id'],)).fetchall()
+    unpaid_summary = []
+    for f in fees:
+        members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
+        for m in members:
+            p = conn.execute('SELECT paid FROM fee_payments WHERE fee_id=? AND member_name=?', (f['id'], m['name'])).fetchone()
+            if not p or not p['paid']:
+                unpaid_summary.append({'fee_title': f['title'], 'member': m['name'], 'amount': f['amount'], 'due_date': f['due_date'], 'fee_id': f['id']})
     conn.close()
 
     event_rows = ''.join(f'''
@@ -748,6 +758,22 @@ def admin_dash(code):
     </div>
     {notice_rows}
     <div style="margin-top:10px"><a href="/t/{code}/notices" style="font-size:13px">すべて見る →</a></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">💰 集金 未払いリスト</h2>
+      <span class="badge {'badge-red' if unpaid_summary else 'badge-green'}" style="margin-left:auto">{'未払い ' + str(len(unpaid_summary)) + '件' if unpaid_summary else '全員支払済'}</span>
+    </div>
+    {''.join(f"""<div class="card-sm row" style="justify-content:space-between;align-items:center;background:#fff9f9">
+      <div>
+        <div style="font-weight:700;font-size:13px">{u['member']}</div>
+        <div style="font-size:12px;color:#888">{u['fee_title']}　¥{u['amount']:,}{('　期限：' + fmt_date(u['due_date'])) if u['due_date'] else ''}</div>
+      </div>
+      <a href="/t/{code}/admin/fees/{u['fee_id']}" class="btn btn-sm btn-outline">管理</a>
+    </div>""" for u in unpaid_summary[:5]) if unpaid_summary else '<div class="empty">未払いなし 🎉</div>'}
+    {f'<div style="margin-top:8px;font-size:13px;color:#888">他 {len(unpaid_summary)-5}件…</div>' if len(unpaid_summary) > 5 else ''}
+    <div style="margin-top:10px"><a href="/t/{code}/admin/fees" style="font-size:13px">集金管理を見る →</a></div>
   </div>
 
   <div class="card">

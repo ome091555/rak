@@ -479,31 +479,34 @@ def schedule(code):
     now = datetime.now(JST)
     today = now.strftime('%Y-%m-%d')
 
+    try:
+        vy = int(request.args.get('y', now.year))
+        vm = int(request.args.get('m', now.month))
+        vm = max(1, min(12, vm))
+    except Exception:
+        vy, vm = now.year, now.month
+
+    month_start = f'{vy}-{vm:02d}-01'
+    ny, nm = (vy + 1, 1) if vm == 12 else (vy, vm + 1)
+    month_end = f'{ny}-{nm:02d}-01'
+    py, pm = (vy - 1, 12) if vm == 1 else (vy, vm - 1)
+
     conn = get_db()
-    # カレンダー用に今月+来月の全イベント取得
-    month_start = now.strftime('%Y-%m-01')
     all_events = conn.execute(
-        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date,event_time',
-        (team['id'], month_start)
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? AND event_date<? ORDER BY event_date,event_time',
+        (team['id'], month_start, month_end)
     ).fetchall()
 
-    # 集金期限日も取得
-    fees_with_due = conn.execute(
-        "SELECT * FROM fees WHERE team_id=? AND due_date>=? AND due_date!='' ORDER BY due_date",
-        (team['id'], month_start)
+    fees_in_month = conn.execute(
+        "SELECT * FROM fees WHERE team_id=? AND due_date>=? AND due_date<? AND due_date!='' ORDER BY due_date",
+        (team['id'], month_start, month_end)
     ).fetchall()
-    fee_dates = set(f['due_date'] for f in fees_with_due)
 
-    event_dates = set(ev['event_date'] for ev in all_events) | fee_dates
-
-    # リスト用は今日以降
-    events = [ev for ev in all_events if ev['event_date'] >= today]
-    fees_upcoming = [f for f in fees_with_due if f['due_date'] >= today]
-
-    calendar_html = build_calendar(now.year, now.month, event_dates)
+    event_dates = set(ev['event_date'] for ev in all_events) | set(f['due_date'] for f in fees_in_month)
+    calendar_html = build_calendar(vy, vm, event_dates)
 
     event_cards = ''
-    for ev in events:
+    for ev in all_events:
         rsvps = conn.execute('SELECT * FROM rsvps WHERE event_id=?', (ev['id'],)).fetchall()
         attending = sum(1 for r in rsvps if r['status'] == 'attending')
         absent = sum(1 for r in rsvps if r['status'] == 'absent')
@@ -512,24 +515,19 @@ def schedule(code):
             r = conn.execute('SELECT status FROM rsvps WHERE event_id=? AND member_name=?',
                              (ev['id'], member)).fetchone()
             my_rsvp = r['status'] if r else ''
-
         rsvp_btns = ''
         if member:
             rsvp_btns = f'''
             <form method="POST" action="/t/{code}/rsvp/{ev['id']}" style="display:flex;gap:8px;margin-top:12px">
-              <button name="status" value="attending" class="btn btn-sm {'btn-blue' if my_rsvp=='attending' else 'btn-outline'}" type="submit">✅ 出席</button>
-              <button name="status" value="absent" class="btn btn-sm {'btn-red' if my_rsvp=='absent' else 'btn-gray'}" type="submit" style="{'background:#fee2e2;color:#dc2626;border:2px solid #dc2626' if my_rsvp=='absent' else ''}">❌ 欠席</button>
+              <button name="status" value="attending" class="btn btn-sm {'btn-blue' if my_rsvp=='attending' else 'btn-outline'}" type="submit">出席</button>
+              <button name="status" value="absent" class="btn btn-sm btn-gray" type="submit" style="{'background:#fee2e2;color:#dc2626' if my_rsvp=='absent' else ''}">欠席</button>
             </form>'''
-
         event_cards += f'''
         <div class="card-sm" id="ev-{ev['event_date']}">
           <div class="row" style="flex-wrap:wrap;gap:6px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
-              <div style="font-size:13px;color:#555;margin-top:2px">
-                📅 {fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}
-                {('　📍 ' + ev['location']) if ev['location'] else ''}
-              </div>
+              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <span class="badge badge-green">出席 {attending}</span>
@@ -540,59 +538,46 @@ def schedule(code):
           {rsvp_btns}
         </div>'''
 
-    # 集金期限カードを生成して日付順にマージ
     fee_cards = ''
-    for f in fees_upcoming:
+    for f in fees_in_month:
         paid_row = conn.execute('SELECT paid FROM fee_payments WHERE fee_id=? AND member_name=?',
                                 (f['id'], member)).fetchone() if member else None
         paid = paid_row['paid'] if paid_row else None
         status_badge = ''
         if member:
-            status_badge = '<span class="badge badge-green" style="font-size:11px">支払済</span>' if paid else '<span class="badge badge-red" style="font-size:11px">未払い</span>'
-        fee_cards_item = f'''
-        <div class="card-sm" id="ev-{f['due_date']}" style="border-color:#fbbf24;background:#fffbeb">
+            status_badge = '<span class="badge badge-green">支払済</span>' if paid else '<span class="badge badge-red">未払い</span>'
+        fee_cards += f'''
+        <div class="card-sm" id="ev-{f['due_date']}" style="border-left:3px solid #f59e0b;background:#fffbeb">
           <div class="row" style="justify-content:space-between;align-items:center">
             <div>
-              <div style="font-weight:700;font-size:15px">💰 {f['title']} 期限</div>
-              <div style="font-size:13px;color:#555;margin-top:2px">📅 {fmt_date(f['due_date'])}　¥{f['amount']:,}</div>
+              <div style="font-weight:700">集金期限：{f['title']}</div>
+              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date(f['due_date'])}　¥{f['amount']:,}</div>
             </div>
             {status_badge}
           </div>
         </div>'''
-        fee_cards += fee_cards_item
 
     conn.close()
 
-    # イベントと集金期限を日付順にマージ
-    all_items_html = ''
-    event_idx = 0
-    fee_idx = 0
-    events_list = list(events)
-    fees_list = list(fees_upcoming)
-    while event_idx < len(events_list) or fee_idx < len(fees_list):
-        ev_date = events_list[event_idx]['event_date'] if event_idx < len(events_list) else '9999'
-        fe_date = fees_list[fee_idx]['due_date'] if fee_idx < len(fees_list) else '9999'
-        if ev_date <= fe_date:
-            ev = events_list[event_idx]
-            rsvps = []
-            attending = sum(1 for r in rsvps if r['status'] == 'attending')
-            absent = sum(1 for r in rsvps if r['status'] == 'absent')
-            event_idx += 1
-        else:
-            fee_idx += 1
+    is_this_month = (vy == now.year and vm == now.month)
+    today_btn = '' if is_this_month else f'<a href="/t/{code}/schedule" style="font-size:12px;color:#2563eb;padding:3px 10px;border:1.5px solid #2563eb;border-radius:8px;text-decoration:none">今月</a>'
+    new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 追加</a>' if admin else ''
+    combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
-    new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 予定を追加</a>' if admin else ''
-    combined = event_cards + fee_cards if (event_cards or fee_cards) else '<div class="empty card">📭<br>予定はまだありません</div>'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">📅 スケジュール</span></div>
+    <div><span class="section-label">スケジュール</span></div>
     {new_btn}
   </div>
-  <div class="card" style="margin-bottom:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-weight:700;font-size:15px">{now.year}年{now.month}月</div>
-      <div style="font-size:11px;color:#888">●イベントあり　今日は青</div>
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <a href="/t/{code}/schedule?y={py}&m={pm}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#f1f4f9;color:#333;font-size:18px;text-decoration:none;flex-shrink:0">‹</a>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:700;font-size:16px">{vy}年{vm}月</span>
+        {today_btn}
+      </div>
+      <a href="/t/{code}/schedule?y={ny}&m={nm}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#f1f4f9;color:#333;font-size:18px;text-decoration:none;flex-shrink:0">›</a>
     </div>
     {calendar_html}
   </div>

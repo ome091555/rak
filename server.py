@@ -112,6 +112,13 @@ def init_db():
             answered_at TEXT NOT NULL,
             UNIQUE(survey_id, member_name)
         );
+        CREATE TABLE IF NOT EXISTS ai_templates (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
     ''')
     conn.commit()
     conn.close()
@@ -897,14 +904,38 @@ def admin_new_notice(code):
             conn.close()
             return redirect(url_for('notices', code=code, sent='1'))
 
+    conn = get_db()
+    team2 = get_team(code)
+    templates = conn.execute('SELECT * FROM ai_templates WHERE team_id=? ORDER BY created_at DESC', (team2['id'],)).fetchall() if team2 else []
+    conn.close()
+
+    tmpl_opts = ''.join(f'<option value="{t["id"]}" data-title="{t["title"]}" data-body="{t["body"]}">{t["title"]}</option>' for t in templates)
+    tmpl_select = f'''
+    <div style="margin-bottom:12px">
+      <select id="tmpl-select" class="btn btn-sm btn-outline" style="width:auto;border:2px solid #dde6ff;padding:7px 12px" onchange="applyTemplate(this)">
+        <option value="">📌 テンプレートから選ぶ</option>
+        {tmpl_opts}
+      </select>
+    </div>
+    <script>
+    function applyTemplate(sel) {{
+      var opt = sel.options[sel.selectedIndex];
+      if(opt.value) {{
+        document.querySelector('[name=title]').value = opt.dataset.title;
+        document.querySelector('[name=body]').value = opt.dataset.body;
+      }}
+    }}
+    </script>''' if templates else ''
+
     body = f'''
 <div class="container" style="max-width:540px">
   <div class="card">
     <h1>お知らせを作成</h1>
     {f'<div class="msg-err">{error}</div>' if error else ''}
-    <div style="margin-bottom:16px">
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
       <a href="/t/{code}/admin/ai?redirect=notice" class="btn btn-sm btn-outline">✦ AIで下書きを作る</a>
     </div>
+    {tmpl_select}
     <form method="POST">
       <label>タイトル *</label>
       <input type="text" name="title" placeholder="例：明日の練習について" required value="{prefill_title}">
@@ -970,11 +1001,63 @@ JSONのみ返してください。説明不要です。'''
         else:
             error = 'anthropicライブラリがインストールされていません'
 
+    # テンプレート保存
+    saved_msg = ''
+    if request.method == 'POST' and request.form.get('action') == 'save_template':
+        t_title = request.form.get('t_title', '').strip()
+        t_body = request.form.get('t_body', '').strip()
+        if t_title and t_body:
+            team = get_team(code)
+            conn = get_db()
+            conn.execute('INSERT INTO ai_templates VALUES (?,?,?,?,?)',
+                         (new_id(), team['id'], t_title, t_body, now_str()))
+            conn.commit()
+            conn.close()
+            saved_msg = 'テンプレートに保存しました'
+            result_title = t_title
+            result_body = t_body
+
     use_btn = ''
+    save_form = ''
     if result_title and result_body:
         import urllib.parse
         params = urllib.parse.urlencode({'title': result_title, 'body': result_body})
-        use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue btn-block" style="margin-top:12px">このままお知らせとして送信 →</a>'
+        use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a>'
+        save_form = f'''
+        <form method="POST" style="margin-top:8px">
+          <input type="hidden" name="action" value="save_template">
+          <input type="hidden" name="t_title" value="{result_title}">
+          <input type="hidden" name="t_body" value="{result_body}">
+          <button class="btn btn-outline btn-sm" type="submit" style="width:100%">📌 テンプレートとして保存</button>
+        </form>'''
+
+    # 保存済みテンプレート一覧
+    team = get_team(code)
+    conn = get_db()
+    templates = conn.execute('SELECT * FROM ai_templates WHERE team_id=? ORDER BY created_at DESC', (team['id'],)).fetchall()
+    conn.close()
+
+    tmpl_rows = ''
+    for t in templates:
+        import urllib.parse
+        params = urllib.parse.urlencode({'title': t['title'], 'body': t['body']})
+        tmpl_rows += f'''
+        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px">{t['title']}</div>
+            <div style="font-size:12px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{t['body'][:40]}…</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-left:12px">
+            <a href="/t/{code}/admin/notices/new?{params}" class="btn btn-sm btn-outline">使う</a>
+            <a href="/t/{code}/admin/ai/template/{t['id']}/delete" class="btn btn-sm btn-gray">削除</a>
+          </div>
+        </div>'''
+
+    tmpl_section = f'''
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin-bottom:12px">📌 保存済みテンプレート</h2>
+      {tmpl_rows if templates else '<div class="empty" style="padding:20px">保存されたテンプレートはありません</div>'}
+    </div>''' if templates else ''
 
     body = f'''
 <div class="container" style="max-width:540px">
@@ -982,6 +1065,7 @@ JSONのみ返してください。説明不要です。'''
     <div class="section-label">✦ AI文章作成</div>
     <h1>AIで下書きを作る</h1>
     <p style="color:#666;font-size:13px;margin-bottom:16px">一言メモを入力するだけで、丁寧な連絡文を自動生成します</p>
+    {f'<div class="msg-ok">{saved_msg}</div>' if saved_msg else ''}
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
       <label>メモ・キーワード</label>
@@ -995,11 +1079,27 @@ JSONのみ返してください。説明不要です。'''
     </form>
   </div>
 
-  {('<div class="card" style="border-color:#2563eb"><div class="section-label">生成結果</div><h2>' + result_title + '</h2><div style="white-space:pre-wrap;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;margin-top:8px">' + result_body + '</div>' + use_btn + '</div>') if result_title else ''}
+  {('<div class="card" style="border-color:#2563eb"><div class="section-label">生成結果</div><h2>' + result_title + '</h2><div style="white-space:pre-wrap;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;margin-top:8px">' + result_body + '</div>' + use_btn + save_form + '</div>') if result_title else ''}
 
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  {tmpl_section}
+
+  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
 </div>'''
-    return page('AI文章作成', body, code, active='admin')
+    return page('AI文章作成', body, code, active='ai')
+
+
+@app.route('/t/<code>/admin/ai/template/<tmpl_id>/delete')
+def admin_delete_template(code, tmpl_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    conn.execute('DELETE FROM ai_templates WHERE id=? AND team_id=?', (tmpl_id, team['id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_ai', code=code))
 
 
 # ── Admin: members ───────────────────────────────────────────────

@@ -4,7 +4,7 @@ import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone, timedelta
-from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response
+from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file
 
 try:
     import anthropic
@@ -17,6 +17,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'rak-secret-2026')
 DATABASE = os.environ.get('DATABASE', 'rak.db')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
 
 # ── DB ────────────────────────────────────────────────────────────
 
@@ -147,6 +148,13 @@ def init_db():
             response_id TEXT NOT NULL,
             field_id TEXT NOT NULL,
             value TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS order_form_photos (
+            id TEXT PRIMARY KEY,
+            form_id TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            mime_type TEXT DEFAULT 'image/jpeg',
+            uploaded_at TEXT NOT NULL
         );
     ''')
     conn.commit()
@@ -1716,6 +1724,10 @@ def order_form_view(code, form_id):
         'SELECT * FROM order_form_fields WHERE form_id=? ORDER BY sort_order', (form_id,)
     ).fetchall()
 
+    photos = conn.execute(
+        'SELECT * FROM order_form_photos WHERE form_id=? ORDER BY uploaded_at', (form_id,)
+    ).fetchall()
+
     if not admin and request.method == 'POST' and member:
         resp = conn.execute(
             'SELECT id FROM order_responses WHERE form_id=? AND member_name=?', (form_id, member)
@@ -1782,6 +1794,27 @@ def order_form_view(code, form_id):
         deadline_html = f'<div style="font-size:13px;color:#f59e0b">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
         desc_html = f'<div style="font-size:13px;color:#666;margin-bottom:8px">{form["description"]}</div>' if form['description'] else ''
 
+        photo_thumbs = ''.join(
+            f'<div style="position:relative;display:inline-block">'
+            f'<img src="/uploads/{p["id"]}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;border:1.5px solid #e0e8ff">'
+            f'<a href="/t/{code}/admin/orders/{form_id}/photo/{p["id"]}/delete"'
+            f' style="position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;text-decoration:none"'
+            f' onclick="return confirm(\'削除しますか？\')">×</a>'
+            f'</div>'
+            for p in photos
+        )
+        photo_grid = f'<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px">{photo_thumbs}</div>' if photos else '<div class="empty" style="padding:12px">まだ写真がありません</div>'
+        photo_card = f'''
+  <div class="card">
+    <h2 style="margin-bottom:12px">📸 写真（メンバーにも表示されます）</h2>
+    {photo_grid}
+    <form method="POST" action="/t/{code}/admin/orders/{form_id}/photo" enctype="multipart/form-data">
+      <label>写真を追加（複数選択可・JPG/PNG/GIF/WebP）</label>
+      <input type="file" name="photos" accept="image/*" multiple style="padding:8px;background:#fafcff">
+      <button class="btn btn-outline btn-sm" type="submit" style="margin-top:8px">📤 アップロード</button>
+    </form>
+  </div>'''
+
         if responses:
             table_html = (
                 f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
@@ -1804,6 +1837,8 @@ def order_form_view(code, form_id):
       <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 CSVダウンロード</a>
     </div>
   </div>
+
+  {photo_card}
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
@@ -1881,6 +1916,10 @@ function toggleOpts() {{
     deadline_html = f'<div style="font-size:13px;color:#f59e0b;margin-bottom:12px">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
     desc_html = f'<div style="font-size:13px;color:#666;margin-bottom:12px">{form["description"]}</div>' if form['description'] else ''
     already_html = '<div class="msg-ok">✅ 回答済みです。修正して再送信できます。</div>' if my_resp else ''
+    photos_html = ''.join(
+        f'<img src="/uploads/{p["id"]}" style="width:100%;border-radius:10px;border:1.5px solid #e0e8ff;margin-bottom:10px;display:block">'
+        for p in photos
+    )
 
     no_fields_html = '<div class="empty" style="padding:20px">まだ項目が設定されていません</div>' if not fields else ''
 
@@ -1890,6 +1929,7 @@ function toggleOpts() {{
     <div style="font-weight:700;font-size:20px;margin-bottom:8px">{form["title"]}</div>
     {desc_html}
     {deadline_html}
+    {photos_html}
     {already_html}
     {no_fields_html}
     {'<form method="POST">' + field_inputs + f'<button class="btn btn-blue btn-block" type="submit">{submit_label}</button></form>' if fields else ''}
@@ -1940,6 +1980,70 @@ def admin_new_order_form(code):
   <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
 </div>'''
     return page('フォーム作成', body, code, active='orders')
+
+
+@app.route('/uploads/<photo_id>')
+def serve_photo(photo_id):
+    if not photo_id.replace('-', '').isalnum():
+        return 'Not found', 404
+    conn = get_db()
+    photo = conn.execute('SELECT * FROM order_form_photos WHERE id=?', (photo_id,)).fetchone()
+    conn.close()
+    if not photo:
+        return 'Not found', 404
+    path = os.path.join(UPLOAD_DIR, photo_id)
+    if not os.path.exists(path):
+        return 'Not found', 404
+    return send_file(path, mimetype=photo['mime_type'])
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/photo', methods=['POST'])
+def admin_upload_order_photo(code, form_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    form = conn.execute(
+        'SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])
+    ).fetchone()
+    if not form:
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+
+    allowed = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    for f in request.files.getlist('photos'):
+        if f and f.mimetype in allowed:
+            photo_id = new_id()
+            f.save(os.path.join(UPLOAD_DIR, photo_id))
+            conn.execute('INSERT INTO order_form_photos VALUES (?,?,?,?,?)',
+                         (photo_id, form_id, f.filename or '', f.mimetype, now_str()))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('order_form_view', code=code, form_id=form_id))
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/photo/<photo_id>/delete')
+def admin_delete_order_photo(code, form_id, photo_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    photo = conn.execute(
+        'SELECT * FROM order_form_photos WHERE id=? AND form_id=?', (photo_id, form_id)
+    ).fetchone()
+    if photo:
+        path = os.path.join(UPLOAD_DIR, photo_id)
+        if os.path.exists(path):
+            os.remove(path)
+        conn.execute('DELETE FROM order_form_photos WHERE id=?', (photo_id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('order_form_view', code=code, form_id=form_id))
 
 
 @app.route('/t/<code>/admin/orders/<form_id>/field', methods=['POST'])

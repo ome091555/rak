@@ -191,11 +191,11 @@ def fmt_datetime(s):
 
 # ── Base CSS & layout ─────────────────────────────────────────────
 
-FONT = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">'
+FONT = ''
 
 CSS = '''
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Noto Sans JP",sans-serif;background:#f0f4ff;color:#1a1a1a;font-size:15px;line-height:1.7;min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;background:#f0f4ff;color:#1a1a1a;font-size:15px;line-height:1.7;min-height:100vh}
 a{color:#2563eb;text-decoration:none}
 a:hover{text-decoration:underline}
 .nav{background:#fff;border-bottom:1px solid #e0e8ff;padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}

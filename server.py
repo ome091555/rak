@@ -404,10 +404,19 @@ def schedule(code):
         'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date,event_time',
         (team['id'], month_start)
     ).fetchall()
-    event_dates = set(ev['event_date'] for ev in all_events)
+
+    # 集金期限日も取得
+    fees_with_due = conn.execute(
+        "SELECT * FROM fees WHERE team_id=? AND due_date>=? AND due_date!='' ORDER BY due_date",
+        (team['id'], month_start)
+    ).fetchall()
+    fee_dates = set(f['due_date'] for f in fees_with_due)
+
+    event_dates = set(ev['event_date'] for ev in all_events) | fee_dates
 
     # リスト用は今日以降
     events = [ev for ev in all_events if ev['event_date'] >= today]
+    fees_upcoming = [f for f in fees_with_due if f['due_date'] >= today]
 
     calendar_html = build_calendar(now.year, now.month, event_dates)
 
@@ -448,9 +457,50 @@ def schedule(code):
           {f'<div style="font-size:13px;color:#666;margin-top:8px;background:#f8faff;padding:8px 12px;border-radius:8px">{ev["note"]}</div>' if ev['note'] else ''}
           {rsvp_btns}
         </div>'''
+
+    # 集金期限カードを生成して日付順にマージ
+    fee_cards = ''
+    for f in fees_upcoming:
+        paid_row = conn.execute('SELECT paid FROM fee_payments WHERE fee_id=? AND member_name=?',
+                                (f['id'], member)).fetchone() if member else None
+        paid = paid_row['paid'] if paid_row else None
+        status_badge = ''
+        if member:
+            status_badge = '<span class="badge badge-green" style="font-size:11px">支払済</span>' if paid else '<span class="badge badge-red" style="font-size:11px">未払い</span>'
+        fee_cards_item = f'''
+        <div class="card-sm" id="ev-{f['due_date']}" style="border-color:#fbbf24;background:#fffbeb">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;font-size:15px">💰 {f['title']} 期限</div>
+              <div style="font-size:13px;color:#555;margin-top:2px">📅 {fmt_date(f['due_date'])}　¥{f['amount']:,}</div>
+            </div>
+            {status_badge}
+          </div>
+        </div>'''
+        fee_cards += fee_cards_item
+
     conn.close()
 
+    # イベントと集金期限を日付順にマージ
+    all_items_html = ''
+    event_idx = 0
+    fee_idx = 0
+    events_list = list(events)
+    fees_list = list(fees_upcoming)
+    while event_idx < len(events_list) or fee_idx < len(fees_list):
+        ev_date = events_list[event_idx]['event_date'] if event_idx < len(events_list) else '9999'
+        fe_date = fees_list[fee_idx]['due_date'] if fee_idx < len(fees_list) else '9999'
+        if ev_date <= fe_date:
+            ev = events_list[event_idx]
+            rsvps = []
+            attending = sum(1 for r in rsvps if r['status'] == 'attending')
+            absent = sum(1 for r in rsvps if r['status'] == 'absent')
+            event_idx += 1
+        else:
+            fee_idx += 1
+
     new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 予定を追加</a>' if admin else ''
+    combined = event_cards + fee_cards if (event_cards or fee_cards) else '<div class="empty card">📭<br>予定はまだありません</div>'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
@@ -464,7 +514,7 @@ def schedule(code):
     </div>
     {calendar_html}
   </div>
-  {event_cards if events else '<div class="empty card">📭<br>予定はまだありません</div>'}
+  {combined}
 </div>
 <script>
 function scrollToDate(date) {{

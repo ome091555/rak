@@ -119,6 +119,35 @@ def init_db():
             body TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS order_forms (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            deadline TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS order_form_fields (
+            id TEXT PRIMARY KEY,
+            form_id TEXT NOT NULL,
+            label TEXT NOT NULL,
+            field_type TEXT DEFAULT 'text',
+            options TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS order_responses (
+            id TEXT PRIMARY KEY,
+            form_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            submitted_at TEXT NOT NULL,
+            UNIQUE(form_id, member_name)
+        );
+        CREATE TABLE IF NOT EXISTS order_response_values (
+            id TEXT PRIMARY KEY,
+            response_id TEXT NOT NULL,
+            field_id TEXT NOT NULL,
+            value TEXT DEFAULT ''
+        );
     ''')
     conn.commit()
     conn.close()
@@ -222,14 +251,14 @@ def page(title, body, code=None, active=None):
         ntc_cls = 'active' if active == 'notices' else ''
         mem_cls = 'active' if active == 'members' else ''
         fee_cls = 'active' if active == 'fees' else ''
-        srv_cls = 'active' if active == 'survey' else ''
+        ord_cls = 'active' if active == 'orders' else ''
         ai_cls  = 'active' if active == 'ai' else ''
         nav_items = f'''
         <a href="/t/{code}/schedule" class="{sch_cls}">📅 予定</a>
         <a href="/t/{code}/notices" class="{ntc_cls}">📢 連絡</a>
         <a href="/t/{code}/members" class="{mem_cls}">👥 メンバー</a>
         <a href="/t/{code}/fees" class="{fee_cls}">💰 集金</a>
-        <a href="/t/{code}/survey" class="{srv_cls}">📊 アンケート</a>
+        <a href="/t/{code}/orders" class="{ord_cls}">📋 注文</a>
         '''
         if admin:
             admin_cls = 'active' if active == 'admin' else ''
@@ -704,12 +733,11 @@ def admin_dash(code):
     fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date, created_at', (team['id'],)).fetchall()
     unpaid_summary = []
     for f in fees:
-        members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
-        for m in members:
+        members_for_fee = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
+        for m in members_for_fee:
             p = conn.execute('SELECT paid FROM fee_payments WHERE fee_id=? AND member_name=?', (f['id'], m['name'])).fetchone()
             if not p or not p['paid']:
                 unpaid_summary.append({'fee_title': f['title'], 'member': m['name'], 'amount': f['amount'], 'due_date': f['due_date'], 'fee_id': f['id']})
-    conn.close()
 
     members_all = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
     member_names = [m['name'] for m in members_all]
@@ -736,6 +764,8 @@ def admin_dash(code):
       <a href="/t/{code}/admin/events/{ev['id']}" class="btn btn-sm btn-outline" style="margin-left:8px;flex-shrink:0">詳細</a>
     </div>'''
     event_rows = event_rows or '<div class="empty">予定なし</div>'
+
+    conn.close()
 
     notice_rows = ''.join(f'''
     <div class="card-sm row" style="justify-content:space-between">
@@ -806,9 +836,9 @@ def admin_dash(code):
   </div>
 
   <div class="card">
-    <h2>📊 アンケート</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">質問を作成してメンバーの回答を集計できます</p>
-    <a href="/t/{code}/survey" class="btn btn-outline" style="display:block;text-align:center">アンケートを見る →</a>
+    <h2>📋 注文フォーム</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">弁当・ウェアなど、チーム独自の注文フォームを作成してメンバーの回答を集計できます</p>
+    <a href="/t/{code}/orders" class="btn btn-outline" style="display:block;text-align:center">注文フォームを見る →</a>
   </div>
 
   <div class="card">
@@ -1592,6 +1622,394 @@ def admin_event_csv(code, event_id):
                              next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
 
     filename = f"出欠_{ev['title']}_{ev['event_date']}.csv"
+    return Response(
+        '﻿' + output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+
+# ── Order Forms ──────────────────────────────────────────────────
+
+@app.route('/t/<code>/orders')
+def orders_list(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    forms = conn.execute(
+        'SELECT * FROM order_forms WHERE team_id=? ORDER BY created_at DESC',
+        (team['id'],)
+    ).fetchall()
+
+    cards = ''
+    for f in forms:
+        field_count = conn.execute('SELECT COUNT(*) FROM order_form_fields WHERE form_id=?', (f['id'],)).fetchone()[0]
+        response_count = conn.execute('SELECT COUNT(*) FROM order_responses WHERE form_id=?', (f['id'],)).fetchone()[0]
+        has_responded = bool(conn.execute(
+            'SELECT 1 FROM order_responses WHERE form_id=? AND member_name=?', (f['id'], member)
+        ).fetchone()) if member else False
+
+        if admin:
+            badge = f'<span class="badge badge-blue">{response_count}件の回答</span>'
+        elif has_responded:
+            badge = '<span class="badge badge-green">回答済</span>'
+        else:
+            badge = '<span class="badge badge-red">未回答</span>'
+
+        deadline_html = f'　期限：{fmt_date(f["deadline"])}' if f['deadline'] else ''
+        cards += f'''
+        <a href="/t/{code}/orders/{f['id']}" style="text-decoration:none;display:block">
+          <div class="card-sm">
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <div style="font-weight:700;color:#1a1a1a">{f['title']}</div>
+                <div style="font-size:12px;color:#aaa;margin-top:4px">{fmt_datetime(f['created_at'])}{deadline_html}　項目 {field_count}件</div>
+              </div>
+              {badge}
+            </div>
+          </div>
+        </a>'''
+    conn.close()
+
+    new_btn = f'<a href="/t/{code}/admin/orders/new" class="btn btn-blue btn-sm">＋ フォーム作成</a>' if admin else ''
+    body = f'''
+<div class="container">
+  <div class="row" style="margin-bottom:16px">
+    <div><span class="section-label">📋 注文フォーム</span></div>
+    {new_btn}
+  </div>
+  {cards if forms else '<div class="empty card">📭<br>注文フォームはまだありません</div>'}
+</div>'''
+    return page('注文フォーム', body, code, active='orders')
+
+
+@app.route('/t/<code>/orders/<form_id>', methods=['GET', 'POST'])
+def order_form_view(code, form_id):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    form = conn.execute(
+        'SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])
+    ).fetchone()
+    if not form:
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+
+    fields = conn.execute(
+        'SELECT * FROM order_form_fields WHERE form_id=? ORDER BY sort_order', (form_id,)
+    ).fetchall()
+
+    if not admin and request.method == 'POST' and member:
+        resp = conn.execute(
+            'SELECT id FROM order_responses WHERE form_id=? AND member_name=?', (form_id, member)
+        ).fetchone()
+        if resp:
+            resp_id = resp['id']
+            conn.execute('UPDATE order_responses SET submitted_at=? WHERE id=?', (now_str(), resp_id))
+            conn.execute('DELETE FROM order_response_values WHERE response_id=?', (resp_id,))
+        else:
+            resp_id = new_id()
+            conn.execute('INSERT INTO order_responses VALUES (?,?,?,?)',
+                         (resp_id, form_id, member, now_str()))
+        for field in fields:
+            value = request.form.get(f'field_{field["id"]}', '').strip()
+            conn.execute('INSERT INTO order_response_values VALUES (?,?,?,?)',
+                         (new_id(), resp_id, field['id'], value))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+
+    if admin:
+        responses = conn.execute(
+            'SELECT * FROM order_responses WHERE form_id=? ORDER BY submitted_at', (form_id,)
+        ).fetchall()
+
+        resp_rows = ''
+        for r in responses:
+            vals = conn.execute(
+                'SELECT * FROM order_response_values WHERE response_id=?', (r['id'],)
+            ).fetchall()
+            val_map = {v['field_id']: v['value'] for v in vals}
+            cells = ''.join(
+                f'<td style="padding:8px 12px;border-bottom:1px solid #e0e8ff">{val_map.get(f["id"], "")}</td>'
+                for f in fields
+            )
+            resp_rows += (
+                f'<tr><td style="padding:8px 12px;border-bottom:1px solid #e0e8ff;font-weight:700">{r["member_name"]}</td>'
+                f'{cells}'
+                f'<td style="padding:8px 12px;border-bottom:1px solid #e0e8ff;font-size:12px;color:#aaa">{fmt_datetime(r["submitted_at"])}</td></tr>'
+            )
+
+        headers = ''.join(
+            f'<th style="padding:8px 12px;text-align:left;font-size:13px;color:#2563eb">{f["label"]}</th>'
+            for f in fields
+        )
+
+        field_rows = ''
+        for f in fields:
+            f_opts = f'（{f["options"]}）' if f['options'] else ''
+            f_type_label = '選択' if f['field_type'] == 'select' else 'テキスト'
+            field_rows += f'''
+            <div class="card-sm row" style="justify-content:space-between;align-items:center">
+              <div>
+                <span style="font-weight:700">{f["label"]}</span>
+                <span style="font-size:12px;color:#888;margin-left:8px">{f_type_label}{f_opts}</span>
+              </div>
+              <a href="/t/{code}/admin/orders/{form_id}/field/{f['id']}/delete"
+                 class="btn btn-sm btn-gray"
+                 onclick="return confirm('削除しますか？')">削除</a>
+            </div>'''
+
+        conn.close()
+
+        deadline_html = f'<div style="font-size:13px;color:#f59e0b">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
+        desc_html = f'<div style="font-size:13px;color:#666;margin-bottom:8px">{form["description"]}</div>' if form['description'] else ''
+
+        if responses:
+            table_html = (
+                f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+                f'<thead><tr>'
+                f'<th style="padding:8px 12px;text-align:left;font-size:13px;color:#2563eb">名前</th>'
+                f'{headers}'
+                f'<th style="padding:8px 12px;text-align:left;font-size:13px;color:#2563eb">回答日時</th>'
+                f'</tr></thead><tbody>{resp_rows}</tbody></table></div>'
+            )
+        else:
+            table_html = '<div class="empty">まだ回答がありません</div>'
+
+        body = f'''
+<div class="container" style="max-width:680px">
+  <div class="card">
+    <div style="font-weight:700;font-size:20px;margin-bottom:4px">{form["title"]}</div>
+    {desc_html}
+    {deadline_html}
+    <div style="margin-top:12px">
+      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 CSVダウンロード</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">回答一覧 <span class="badge badge-blue" style="font-size:13px">{len(responses)}件</span></h2>
+    </div>
+    {table_html}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-bottom:12px">項目管理</h2>
+    {field_rows if fields else '<div class="empty" style="padding:16px">まだ項目がありません</div>'}
+    <form method="POST" action="/t/{code}/admin/orders/{form_id}/field" style="margin-top:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label>項目名 *</label>
+          <input type="text" name="label" placeholder="例：お弁当の種類" required>
+        </div>
+        <div>
+          <label>種類</label>
+          <select name="field_type" id="ftype" onchange="toggleOpts()">
+            <option value="text">テキスト入力</option>
+            <option value="select">選択肢から選ぶ</option>
+          </select>
+        </div>
+      </div>
+      <div id="opts-area" style="display:none;margin-top:10px">
+        <label>選択肢（カンマ区切り）</label>
+        <input type="text" name="options" placeholder="例：のり弁,唐揚げ弁当,幕の内">
+      </div>
+      <button class="btn btn-outline btn-block" type="submit" style="margin-top:12px">＋ 項目を追加</button>
+    </form>
+  </div>
+
+  <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
+</div>
+<script>
+function toggleOpts() {{
+  document.getElementById('opts-area').style.display =
+    document.getElementById('ftype').value === 'select' ? 'block' : 'none';
+}}
+</script>'''
+        return page(form['title'], body, code, active='orders')
+
+    # Member: fill form
+    my_resp = conn.execute(
+        'SELECT * FROM order_responses WHERE form_id=? AND member_name=?', (form_id, member)
+    ).fetchone()
+    my_values = {}
+    if my_resp:
+        vals = conn.execute(
+            'SELECT * FROM order_response_values WHERE response_id=?', (my_resp['id'],)
+        ).fetchall()
+        my_values = {v['field_id']: v['value'] for v in vals}
+
+    conn.close()
+
+    field_inputs = ''
+    for field in fields:
+        current_val = my_values.get(field['id'], '')
+        if field['field_type'] == 'select' and field['options']:
+            opts_list = [o.strip() for o in field['options'].split(',') if o.strip()]
+            options_html = '<option value="">選択してください</option>'
+            options_html += ''.join(
+                f'<option value="{o}" {"selected" if current_val == o else ""}>{o}</option>'
+                for o in opts_list
+            )
+            field_inputs += f'<label>{field["label"]}</label><select name="field_{field["id"]}">{options_html}</select>'
+        else:
+            field_inputs += (
+                f'<label>{field["label"]}</label>'
+                f'<input type="text" name="field_{field["id"]}" value="{current_val}" placeholder="入力してください">'
+            )
+
+    submit_label = '更新する' if my_resp else '送信する'
+    deadline_html = f'<div style="font-size:13px;color:#f59e0b;margin-bottom:12px">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
+    desc_html = f'<div style="font-size:13px;color:#666;margin-bottom:12px">{form["description"]}</div>' if form['description'] else ''
+    already_html = '<div class="msg-ok">✅ 回答済みです。修正して再送信できます。</div>' if my_resp else ''
+
+    no_fields_html = '<div class="empty" style="padding:20px">まだ項目が設定されていません</div>' if not fields else ''
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <div style="font-weight:700;font-size:20px;margin-bottom:8px">{form["title"]}</div>
+    {desc_html}
+    {deadline_html}
+    {already_html}
+    {no_fields_html}
+    {'<form method="POST">' + field_inputs + f'<button class="btn btn-blue btn-block" type="submit">{submit_label}</button></form>' if fields else ''}
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← 一覧に戻る</a></div>
+</div>'''
+    return page(form['title'], body, code, active='orders')
+
+
+@app.route('/t/<code>/admin/orders/new', methods=['GET', 'POST'])
+def admin_new_order_form(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    error = ''
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        deadline = request.form.get('deadline', '').strip()
+        if not title:
+            error = 'フォーム名を入力してください'
+        else:
+            conn = get_db()
+            form_id = new_id()
+            conn.execute('INSERT INTO order_forms VALUES (?,?,?,?,?,?)',
+                         (form_id, team['id'], title, description, deadline, now_str()))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('order_form_view', code=code, form_id=form_id))
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>注文フォームを作成</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">フォームを作成後、項目（質問）を追加できます</p>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>フォーム名 *</label>
+      <input type="text" name="title" placeholder="例：遠征弁当注文、ユニフォームサイズ確認" required>
+      <label>説明（任意）</label>
+      <textarea name="description" placeholder="例：5/25（日）遠征分のお弁当を注文してください" rows="3"></textarea>
+      <label>回答期限（任意）</label>
+      <input type="date" name="deadline">
+      <button class="btn btn-blue btn-block" type="submit">作成する →</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
+</div>'''
+    return page('フォーム作成', body, code, active='orders')
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/field', methods=['POST'])
+def admin_add_order_field(code, form_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    form = conn.execute(
+        'SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])
+    ).fetchone()
+    if not form:
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+    label = request.form.get('label', '').strip()
+    field_type = request.form.get('field_type', 'text')
+    options = request.form.get('options', '').strip()
+    if label:
+        sort_order = conn.execute(
+            'SELECT COUNT(*) FROM order_form_fields WHERE form_id=?', (form_id,)
+        ).fetchone()[0]
+        conn.execute('INSERT INTO order_form_fields VALUES (?,?,?,?,?,?)',
+                     (new_id(), form_id, label, field_type, options, sort_order))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('order_form_view', code=code, form_id=form_id))
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/field/<field_id>/delete')
+def admin_delete_order_field(code, form_id, field_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    conn = get_db()
+    conn.execute('DELETE FROM order_form_fields WHERE id=? AND form_id=?', (field_id, form_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('order_form_view', code=code, form_id=form_id))
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/csv')
+def admin_order_form_csv(code, form_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    form = conn.execute(
+        'SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])
+    ).fetchone()
+    if not form:
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+    fields = conn.execute(
+        'SELECT * FROM order_form_fields WHERE form_id=? ORDER BY sort_order', (form_id,)
+    ).fetchall()
+    responses = conn.execute(
+        'SELECT * FROM order_responses WHERE form_id=? ORDER BY submitted_at', (form_id,)
+    ).fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['名前', '回答日時'] + [f['label'] for f in fields])
+    for r in responses:
+        vals = conn.execute(
+            'SELECT * FROM order_response_values WHERE response_id=?', (r['id'],)
+        ).fetchall()
+        val_map = {v['field_id']: v['value'] for v in vals}
+        writer.writerow([r['member_name'], r['submitted_at']] + [val_map.get(f['id'], '') for f in fields])
+    conn.close()
+
+    filename = f"注文_{form['title']}_{now_str()[:10]}.csv"
     return Response(
         '﻿' + output.getvalue(),
         mimetype='text/csv',

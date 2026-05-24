@@ -212,48 +212,58 @@ FONT = ''
 
 CSS = '''
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;background:#f0f4ff;color:#1a1a1a;font-size:15px;line-height:1.7;min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;background:#f5f7fb;color:#1a1a1a;font-size:16px;line-height:1.7;min-height:100vh}
 a{color:#2563eb;text-decoration:none}
 a:hover{text-decoration:underline}
-.nav{background:#fff;border-bottom:1px solid #e0e8ff;padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.nav{background:#fff;border-bottom:1px solid #e8eaf0;padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
 .nav-logo{font-weight:900;font-size:18px;color:#2563eb;display:flex;align-items:center;gap:6px}
 .nav-icon{width:28px;height:28px;background:#2563eb;border-radius:7px;color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.nav-team{font-size:13px;color:#555;font-weight:500}
-.nav-links{display:flex;gap:16px;margin-left:auto;align-items:center}
-.nav-links a{font-size:13px;color:#555;padding:6px 10px;border-radius:8px}
-.nav-links a:hover{background:#eff6ff;color:#2563eb;text-decoration:none}
-.nav-links a.active{color:#2563eb;font-weight:700}
-.container{max-width:680px;margin:0 auto;padding:24px 16px}
-.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 8px rgba(37,99,235,.07);margin-bottom:16px;border:1.5px solid #e0e8ff}
-.card-sm{background:#fff;border-radius:12px;padding:16px 20px;border:1.5px solid #e0e8ff;margin-bottom:10px}
-h1{font-size:22px;font-weight:900;margin-bottom:4px}
-h2{font-size:18px;font-weight:700;margin-bottom:12px}
+.nav-team{font-size:13px;color:#555;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.nav-links-desktop{display:flex;gap:12px;margin-left:auto;align-items:center}
+.nav-links-desktop a{font-size:13px;color:#555;padding:6px 10px;border-radius:8px}
+.nav-links-desktop a:hover{background:#eff6ff;color:#2563eb;text-decoration:none}
+.nav-links-desktop a.active{color:#2563eb;font-weight:700}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8eaf0;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
+.bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:#888;text-decoration:none;gap:2px;min-height:52px}
+.bottom-nav a.active{color:#2563eb}
+.bottom-nav a.active .nav-b-icon{color:#2563eb}
+.nav-b-icon{font-size:19px;line-height:1.2}
+.container{max-width:680px;margin:0 auto;padding:20px 14px}
+.card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px;border:1px solid #eaecf2}
+.card-sm{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eaecf2;margin-bottom:8px}
+h1{font-size:21px;font-weight:900;margin-bottom:4px}
+h2{font-size:17px;font-weight:700;margin-bottom:12px}
 h3{font-size:15px;font-weight:700}
 label{display:block;font-size:12px;font-weight:700;color:#2563eb;margin-bottom:5px;margin-top:14px}
 label:first-of-type{margin-top:0}
-input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:2px solid #dde6ff;border-radius:10px;padding:10px 14px;font-size:15px;outline:none;font-family:inherit;background:#fafcff}
+input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1.5px solid #dde0ea;border-radius:10px;padding:11px 14px;font-size:16px;outline:none;font-family:inherit;background:#fafbff}
 input:focus,textarea:focus,select:focus{border-color:#2563eb;background:#fff}
 textarea{resize:vertical;min-height:80px}
-.btn{display:inline-block;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:.12s;text-decoration:none;text-align:center}
+.btn{display:inline-block;padding:12px 22px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:.12s;text-decoration:none;text-align:center}
 .btn-blue{background:#2563eb;color:#fff}
 .btn-blue:hover{background:#1d4ed8;text-decoration:none;color:#fff}
-.btn-outline{background:#fff;color:#2563eb;border:2px solid #2563eb}
+.btn-outline{background:#fff;color:#2563eb;border:1.5px solid #2563eb}
 .btn-outline:hover{background:#eff6ff;text-decoration:none}
-.btn-gray{background:#f1f5f9;color:#555;border:none}
-.btn-gray:hover{background:#e2e8f0;text-decoration:none;color:#555}
+.btn-gray{background:#f1f4f9;color:#555;border:none}
+.btn-gray:hover{background:#e4e8f0;text-decoration:none;color:#555}
 .btn-block{display:block;width:100%;margin-top:16px}
 .btn-sm{padding:7px 14px;font-size:13px;border-radius:8px}
 .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
 .badge-green{background:#dcfce7;color:#16a34a}
 .badge-red{background:#fee2e2;color:#dc2626}
-.badge-gray{background:#f1f5f9;color:#64748b}
+.badge-gray{background:#f1f4f9;color:#64748b}
 .badge-blue{background:#dbeafe;color:#1d4ed8}
 .msg-ok{background:#f0fdf4;color:#16a34a;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:500;border:1.5px solid #bbf7d0}
 .msg-err{background:#fef2f2;color:#dc2626;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:500}
 .section-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:#2563eb;background:#eff6ff;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:14px}
-.empty{text-align:center;padding:40px 20px;color:#888}
+.empty{text-align:center;padding:36px 20px;color:#999}
 .row{display:flex;align-items:center;gap:10px}
-.divider{border:none;border-top:1px solid #e0e8ff;margin:16px 0}
+.divider{border:none;border-top:1px solid #eaecf2;margin:16px 0}
+@media(max-width:639px){
+  .nav-links-desktop{display:none}
+  .bottom-nav{display:flex}
+  .container{padding-bottom:72px}
+}
 '''
 
 def page(title, body, code=None, active=None):
@@ -262,27 +272,31 @@ def page(title, body, code=None, active=None):
     admin = is_admin(code) if code else False
     member = get_member(code) if code else ''
 
-    nav_items = ''
+    desktop_nav = ''
+    bottom_nav = ''
     if code:
-        sch_cls = 'active' if active == 'schedule' else ''
-        ntc_cls = 'active' if active == 'notices' else ''
-        mem_cls = 'active' if active == 'members' else ''
-        fee_cls = 'active' if active == 'fees' else ''
-        ord_cls = 'active' if active == 'orders' else ''
-        ai_cls  = 'active' if active == 'ai' else ''
-        nav_items = f'''
-        <a href="/t/{code}/schedule" class="{sch_cls}">📅 予定</a>
-        <a href="/t/{code}/notices" class="{ntc_cls}">📢 連絡</a>
-        <a href="/t/{code}/members" class="{mem_cls}">👥 メンバー</a>
-        <a href="/t/{code}/fees" class="{fee_cls}">💰 集金</a>
-        <a href="/t/{code}/orders" class="{ord_cls}">📋 注文</a>
-        '''
+        tabs = [
+            ('schedule', '📅', '予定',   f'/t/{code}/schedule'),
+            ('notices',  '📢', '連絡',   f'/t/{code}/notices'),
+            ('members',  '👥', 'メンバー', f'/t/{code}/members'),
+            ('fees',     '💰', '集金',   f'/t/{code}/fees'),
+            ('orders',   '📋', '注文',   f'/t/{code}/orders'),
+        ]
         if admin:
-            admin_cls = 'active' if active == 'admin' else ''
-            nav_items += f'<a href="/t/{code}/admin/ai" class="{ai_cls}">✦ AI</a>'
-            nav_items += f'<a href="/t/{code}/admin/dash" class="{admin_cls}" style="color:#2563eb">⚙️ 管理</a>'
+            tabs.append(('admin', '⚙️', '管理', f'/t/{code}/admin/dash'))
+
+        for key, icon, label, url in tabs:
+            cls = 'active' if active == key else ''
+            desktop_nav += f'<a href="{url}" class="{cls}">{icon} {label}</a>'
+            bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{icon}</span><span>{label}</span></a>'
+
+        if admin:
+            ai_cls = 'active' if active == 'ai' else ''
+            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}">✦ AI</a>'
         elif member:
-            nav_items += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
+            desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
+
+        bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
@@ -294,9 +308,10 @@ def page(title, body, code=None, active=None):
     <div class="nav-icon">R</div>Rak
   </a>
   {f'<span class="nav-team">{team_name}</span>' if team_name else ''}
-  <div class="nav-links">{nav_items}</div>
+  <div class="nav-links-desktop">{desktop_nav}</div>
 </nav>
 {body}
+{bottom_nav}
 </body></html>''')
 
 

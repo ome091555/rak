@@ -711,14 +711,31 @@ def admin_dash(code):
                 unpaid_summary.append({'fee_title': f['title'], 'member': m['name'], 'amount': f['amount'], 'due_date': f['due_date'], 'fee_id': f['id']})
     conn.close()
 
-    event_rows = ''.join(f'''
-    <div class="card-sm row" style="justify-content:space-between">
-      <div>
+    members_all = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
+    member_names = [m['name'] for m in members_all]
+
+    def get_no_answer(ev_id):
+        answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
+        return [n for n in member_names if n not in answered]
+
+    event_rows = ''
+    for ev in events:
+        no_answer = get_no_answer(ev['id'])
+        no_answer_html = ''
+        if no_answer:
+            names_str = '、'.join(no_answer[:5])
+            more = f' 他{len(no_answer)-5}名' if len(no_answer) > 5 else ''
+            no_answer_html = f'<div style="font-size:11px;color:#dc2626;margin-top:4px">未回答：{names_str}{more}</div>'
+        event_rows += f'''
+    <div class="card-sm row" style="justify-content:space-between;align-items:flex-start">
+      <div style="flex:1">
         <div style="font-weight:700">{ev['title']}</div>
         <div style="font-size:12px;color:#888">{fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}</div>
+        {no_answer_html}
       </div>
-      <a href="/t/{code}/admin/events/{ev['id']}" class="btn btn-sm btn-outline">詳細</a>
-    </div>''' for ev in events) or '<div class="empty">予定なし</div>'
+      <a href="/t/{code}/admin/events/{ev['id']}" class="btn btn-sm btn-outline" style="margin-left:8px;flex-shrink:0">詳細</a>
+    </div>'''
+    event_rows = event_rows or '<div class="empty">予定なし</div>'
 
     notice_rows = ''.join(f'''
     <div class="card-sm row" style="justify-content:space-between">
@@ -866,13 +883,24 @@ def admin_event_detail(code, event_id):
         conn.close()
         return redirect(url_for('schedule', code=code))
     rsvps = conn.execute('SELECT * FROM rsvps WHERE event_id=? ORDER BY status,member_name', (event_id,)).fetchall()
+    members_all = conn.execute('SELECT name FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()
     conn.close()
 
     attending = [r for r in rsvps if r['status'] == 'attending']
     absent = [r for r in rsvps if r['status'] == 'absent']
+    answered_names = set(r['member_name'] for r in rsvps)
+    no_answer = [m['name'] for m in members_all if m['name'] not in answered_names]
 
     def names(lst):
         return ''.join(f'<div style="font-size:14px;padding:5px 0;border-bottom:1px solid #f0f0f0">{r["member_name"]}</div>' for r in lst) or '<div style="font-size:13px;color:#aaa">なし</div>'
+
+    no_answer_card = ''
+    if no_answer:
+        no_answer_card = f'''
+  <div class="card" style="border-color:#fca5a5">
+    <div style="margin-bottom:10px"><span class="badge badge-red">未回答 {len(no_answer)}名</span></div>
+    {''.join(f'<div style="font-size:14px;padding:5px 0;border-bottom:1px solid #f0f0f0">{n}</div>' for n in no_answer)}
+  </div>'''
 
     body = f'''
 <div class="container">
@@ -898,6 +926,7 @@ def admin_event_detail(code, event_id):
       {names(absent)}
     </div>
   </div>
+  {no_answer_card}
   <div style="margin-top:4px">
     <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠CSVをダウンロード</a>
   </div>

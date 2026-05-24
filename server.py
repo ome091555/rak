@@ -210,6 +210,16 @@ def fmt_datetime(s):
 
 FONT = ''
 
+ICONS = {
+    'schedule': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 2v4M13 2v4M3 8h14"/></svg>',
+    'notices':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9c0-2.8 2.2-5 5-5s5 2.2 5 5v3l1.5 2.5h-13L5 12V9z"/><path d="M8.5 17.5a1.5 1.5 0 003 0"/></svg>',
+    'members':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.7-1.5-5-3.5-6"/></svg>',
+    'fees':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v8M7.5 8c.5-1.5 5-1.5 5 1.5 0 2.5-5 1.5-5 4 0 2 4.5 1.5 5 0"/></svg>',
+    'orders':   '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M8 7h4M8 10.5h4M8 14h2.5"/></svg>',
+    'admin':    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg>',
+    'ai':       '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l1.8 5 5.2 2-5.2 2-1.8 5-1.8-5-5.2-2 5.2-2z"/></svg>',
+}
+
 CSS = '''
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;background:#f5f7fb;color:#1a1a1a;font-size:16px;line-height:1.7;min-height:100vh}
@@ -227,7 +237,10 @@ a:hover{text-decoration:underline}
 .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:#888;text-decoration:none;gap:2px;min-height:52px}
 .bottom-nav a.active{color:#2563eb}
 .bottom-nav a.active .nav-b-icon{color:#2563eb}
-.nav-b-icon{font-size:19px;line-height:1.2}
+.nav-b-icon{display:flex;align-items:center;justify-content:center}
+.nav-b-icon svg{width:22px;height:22px}
+.nav-d-icon{display:inline-flex;vertical-align:-3px;margin-right:4px}
+.nav-d-icon svg{width:15px;height:15px}
 .container{max-width:680px;margin:0 auto;padding:20px 14px}
 .card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px;border:1px solid #eaecf2}
 .card-sm{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eaecf2;margin-bottom:8px}
@@ -276,23 +289,24 @@ def page(title, body, code=None, active=None):
     bottom_nav = ''
     if code:
         tabs = [
-            ('schedule', '📅', '予定',   f'/t/{code}/schedule'),
-            ('notices',  '📢', '連絡',   f'/t/{code}/notices'),
-            ('members',  '👥', 'メンバー', f'/t/{code}/members'),
-            ('fees',     '💰', '集金',   f'/t/{code}/fees'),
-            ('orders',   '📋', '注文',   f'/t/{code}/orders'),
+            ('schedule', 'schedule', '予定',    f'/t/{code}/schedule'),
+            ('notices',  'notices',  '連絡',    f'/t/{code}/notices'),
+            ('members',  'members',  'メンバー', f'/t/{code}/members'),
+            ('fees',     'fees',     '集金',    f'/t/{code}/fees'),
+            ('orders',   'orders',   '注文',    f'/t/{code}/orders'),
         ]
         if admin:
-            tabs.append(('admin', '⚙️', '管理', f'/t/{code}/admin/dash'))
+            tabs.append(('admin', 'admin', '管理', f'/t/{code}/admin/dash'))
 
-        for key, icon, label, url in tabs:
+        for key, icon_key, label, url in tabs:
             cls = 'active' if active == key else ''
-            desktop_nav += f'<a href="{url}" class="{cls}">{icon} {label}</a>'
-            bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{icon}</span><span>{label}</span></a>'
+            ico = ICONS[icon_key]
+            desktop_nav += f'<a href="{url}" class="{cls}"><span class="nav-d-icon">{ico}</span>{label}</a>'
+            bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{ico}</span><span>{label}</span></a>'
 
         if admin:
             ai_cls = 'active' if active == 'ai' else ''
-            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}">✦ AI</a>'
+            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}"><span class="nav-d-icon">{ICONS["ai"]}</span>AI</a>'
         elif member:
             desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
 

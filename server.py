@@ -162,6 +162,15 @@ def new_id():
 def now_str():
     return datetime.now(JST).strftime('%Y-%m-%d %H:%M')
 
+def csv_response(csv_str, filename):
+    import urllib.parse
+    encoded_name = urllib.parse.quote(filename.encode('utf-8'))
+    return Response(
+        csv_str.encode('utf-8-sig'),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f"attachment; filename*=UTF-8''{encoded_name}"}
+    )
+
 def get_team(code):
     conn = get_db()
     t = conn.execute('SELECT * FROM teams WHERE team_code=?', (code.upper(),)).fetchone()
@@ -1622,11 +1631,7 @@ def admin_event_csv(code, event_id):
                              next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
 
     filename = f"出欠_{ev['title']}_{ev['event_date']}.csv"
-    return Response(
-        '﻿' + output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
-    )
+    return csv_response(output.getvalue(), filename)
 
 
 # ── Order Forms ──────────────────────────────────────────────────
@@ -2010,11 +2015,7 @@ def admin_order_form_csv(code, form_id):
     conn.close()
 
     filename = f"注文_{form['title']}_{now_str()[:10]}.csv"
-    return Response(
-        '﻿' + output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
-    )
+    return csv_response(output.getvalue(), filename)
 
 
 # ── Survey ───────────────────────────────────────────────────────

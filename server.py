@@ -156,6 +156,12 @@ def init_db():
             mime_type TEXT DEFAULT 'image/jpeg',
             uploaded_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS app_feedback (
+            id TEXT PRIMARY KEY,
+            name TEXT DEFAULT '',
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
     ''')
     conn.commit()
     conn.close()
@@ -233,6 +239,7 @@ ICONS = {
     'orders':   '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M8 7h4M8 10.5h4M8 14h2.5"/></svg>',
     'admin':    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg>',
     'ai':       '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l1.8 5 5.2 2-5.2 2-1.8 5-1.8-5-5.2-2 5.2-2z"/></svg>',
+    'ask':      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12a2 2 0 01-2 2H6l-3 3V5a2 2 0 012-2h10a2 2 0 012 2v7z"/></svg>',
 }
 
 CSS = '''
@@ -312,6 +319,8 @@ def page(title, body, code=None, active=None):
         ]
         if admin:
             tabs.append(('admin', 'admin', '管理', f'/t/{code}/admin/dash'))
+        else:
+            tabs.append(('ask', 'ask', 'チャット', f'/t/{code}/ask'))
 
         for key, icon_key, label, url in tabs:
             cls = 'active' if active == key else ''
@@ -368,6 +377,9 @@ def home():
     <h2>新しいチームを作る</h2>
     <p style="font-size:13px;color:#666;margin-bottom:16px">管理者として新しいチームを登録します</p>
     <a href="/create" class="btn btn-outline" style="display:block;text-align:center">チームを作成する →</a>
+  </div>
+  <div style="text-align:center;margin-top:24px">
+    <a href="/feedback" style="font-size:13px;color:#aaa">要望・フィードバックはこちら</a>
   </div>
 </div>'''
     return page('ホーム', body)
@@ -2325,6 +2337,183 @@ def admin_new_survey(code):
   <div style="text-align:center"><a href="/t/{code}/survey" style="font-size:13px;color:#888">← アンケート一覧</a></div>
 </div>'''
     return page('アンケート作成', body, code, active='survey')
+
+
+# ── App Feedback ─────────────────────────────────────────────────
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    sent = request.args.get('sent') == '1'
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        message = request.form.get('message', '').strip()
+        if message:
+            conn = get_db()
+            conn.execute('INSERT INTO app_feedback VALUES (?,?,?,?)',
+                         (new_id(), name, message, now_str()))
+            conn.commit()
+            conn.close()
+            return redirect('/feedback?sent=1')
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>要望・フィードバック</h1>
+    <p style="font-size:13px;color:#666;margin-bottom:20px">Rakへのご意見・ご要望・バグ報告をお送りください。<br>いただいた内容は開発の参考にします。</p>
+    {'<div class="msg-ok">送信しました！ありがとうございます。</div>' if sent else ''}
+    <form method="POST">
+      <label>お名前（任意）</label>
+      <input type="text" name="name" placeholder="例：田中">
+      <label>メッセージ *</label>
+      <textarea name="message" rows="5" placeholder="機能の要望・バグ報告・感想など何でもOKです" required></textarea>
+      <button class="btn btn-blue btn-block" type="submit">送信する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/" style="font-size:13px;color:#aaa">← トップに戻る</a></div>
+</div>'''
+    return page('要望・フィードバック', body)
+
+
+@app.route('/rak/feedback')
+def rak_feedback_admin():
+    pw = request.args.get('pw', '')
+    admin_pw = os.environ.get('RAK_ADMIN_PW', 'rakadmin2026')
+    if pw != admin_pw:
+        body = '''
+<div class="container" style="max-width:400px;padding-top:60px">
+  <div class="card">
+    <h1>管理者ログイン</h1>
+    <form method="GET">
+      <label>パスワード</label>
+      <input type="password" name="pw" autofocus>
+      <button class="btn btn-blue btn-block" type="submit">確認する</button>
+    </form>
+  </div>
+</div>'''
+        return page('Rak Admin', body)
+
+    conn = get_db()
+    items = conn.execute('SELECT * FROM app_feedback ORDER BY created_at DESC').fetchall()
+    conn.close()
+
+    rows = ''.join(f'''
+    <div class="card-sm">
+      <div style="font-size:12px;color:#aaa;margin-bottom:6px">{f["created_at"]}　{f["name"] or "匿名"}</div>
+      <div style="white-space:pre-wrap;font-size:15px">{f["message"]}</div>
+    </div>''' for f in items)
+
+    body = f'''
+<div class="container">
+  <h1 style="margin-bottom:20px">フィードバック <span class="badge badge-blue">{len(items)}件</span></h1>
+  {rows or '<div class="empty card">まだフィードバックはありません</div>'}
+</div>'''
+    return page('Rak フィードバック', body)
+
+
+# ── Team Chatbot ──────────────────────────────────────────────────
+
+@app.route('/t/<code>/ask', methods=['GET', 'POST'])
+def team_ask(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+
+    history = session.get(f'chat_{code}', [])
+    error = ''
+
+    if request.method == 'POST':
+        question = request.form.get('question', '').strip()
+        if not question:
+            error = '質問を入力してください'
+        elif not ANTHROPIC_API_KEY:
+            error = 'AI機能が設定されていません（管理者にお問い合わせください）'
+        elif HAS_ANTHROPIC:
+            conn = get_db()
+            now_dt = datetime.now(JST)
+            today = now_dt.strftime('%Y-%m-%d')
+            events = conn.execute(
+                'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 5',
+                (team['id'], today)
+            ).fetchall()
+            notices = conn.execute(
+                'SELECT * FROM notices WHERE team_id=? ORDER BY created_at DESC LIMIT 3',
+                (team['id'],)
+            ).fetchall()
+            conn.close()
+
+            events_text = '\n'.join(
+                f'・{fmt_date(ev["event_date"])}{" " + ev["event_time"] if ev["event_time"] else ""} {ev["title"]}{(" @" + ev["location"]) if ev["location"] else ""}'
+                for ev in events
+            ) or 'なし'
+            notices_text = '\n'.join(
+                f'・{n["title"]}（{fmt_datetime(n["created_at"])}）'
+                for n in notices
+            ) or 'なし'
+
+            system = f'''あなたは「{team["name"]}」のチームアシスタントAIです。
+メンバーの質問に、チームの情報をもとに簡潔・丁寧に答えてください。
+
+【直近の予定】
+{events_text}
+
+【最新のお知らせ】
+{notices_text}
+
+【回答ルール】
+- 日本語で、3文以内を目安に簡潔に答える
+- 上記の情報にない内容は「わかりません」と正直に答える
+- 推測で答えない'''
+
+            try:
+                client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+                msg = client.messages.create(
+                    model='claude-haiku-4-5-20251001',
+                    max_tokens=300,
+                    system=system,
+                    messages=[{'role': 'user', 'content': question}]
+                )
+                answer = msg.content[0].text
+                history = [{'q': question, 'a': answer}] + history[:2]
+                session[f'chat_{code}'] = history
+            except Exception as e:
+                error = f'エラーが発生しました: {str(e)}'
+        else:
+            error = 'AI機能が利用できません'
+
+    chat_html = ''
+    for item in history:
+        chat_html += f'''
+        <div style="margin-bottom:16px">
+          <div style="background:#f1f4f9;border-radius:10px 10px 2px 10px;padding:10px 14px;font-size:14px;margin-bottom:6px">{item["q"]}</div>
+          <div style="background:#2563eb;color:#fff;border-radius:2px 10px 10px 10px;padding:12px 14px;font-size:14px;line-height:1.7;white-space:pre-wrap">{item["a"]}</div>
+        </div>'''
+
+    examples = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">'
+    for ex in ['次の練習はいつ？', '最新のお知らせは？', '今月の予定を教えて']:
+        examples += f'<button type="button" class="btn btn-gray btn-sm" onclick="document.querySelector(\'[name=question]\').value=\'{ex}\'">{ex}</button>'
+    examples += '</div>'
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <div class="section-label">チャット</div>
+    <h1 style="margin-bottom:6px">AIに質問する</h1>
+    <p style="font-size:13px;color:#666;margin-bottom:16px">予定・お知らせについて、AIが答えます</p>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    {examples}
+    <form method="POST">
+      <input type="text" name="question" placeholder="例：次の練習はいつですか？" autofocus required>
+      <button class="btn btn-blue btn-block" type="submit">送信する →</button>
+    </form>
+  </div>
+  {('<div class="card"><div style="font-size:12px;font-weight:700;color:#888;margin-bottom:14px">やりとり履歴</div>' + chat_html + '</div>') if chat_html else ''}
+  <div style="font-size:12px;color:#bbb;text-align:center">AIの回答は参考情報です。正確な情報はお知らせをご確認ください。</div>
+</div>'''
+    return page('チャット', body, code, active='ask')
 
 
 # ── Run ───────────────────────────────────────────────────────────

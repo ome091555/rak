@@ -191,6 +191,32 @@ def csv_response(csv_str, filename):
         headers={'Content-Disposition': f"attachment; filename*=UTF-8''{encoded_name}"}
     )
 
+def excel_response(rows, filename):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    import urllib.parse
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    for i, row in enumerate(rows):
+        ws.append(list(row))
+        if i == 0:
+            for cell in ws[1]:
+                cell.font = Font(bold=True, color='FFFFFF')
+                cell.fill = PatternFill('solid', fgColor='2563EB')
+                cell.alignment = Alignment(horizontal='center')
+    for col in ws.columns:
+        max_len = max((len(str(c.value or '')) for c in col), default=8)
+        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    encoded_name = urllib.parse.quote(filename.encode('utf-8'))
+    return Response(
+        buf.read(),
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f"attachment; filename*=UTF-8''{encoded_name}"}
+    )
+
 def get_team(code):
     conn = get_db()
     t = conn.execute('SELECT * FROM teams WHERE team_code=?', (code.upper(),)).fetchone()
@@ -1093,7 +1119,7 @@ def admin_event_detail(code, event_id):
   </div>
   {no_answer_card}
   <div style="margin-top:4px">
-    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠CSVをダウンロード</a>
+    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠Excelをダウンロード</a>
   </div>
   <div style="text-align:center;margin-top:12px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュール</a></div>
 </div>'''
@@ -1889,23 +1915,20 @@ def admin_event_csv(code, event_id):
     rsvp_map = {r['member_name']: r['status'] for r in rsvps}
     status_label = {'attending': '出席', 'absent': '欠席'}
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['名前', '背番号', 'ポジション', '出欠', '更新日時'])
-
+    rows = [['名前', '背番号', 'ポジション', '出欠', '更新日時']]
     if members:
         for m in members:
             status = rsvp_map.get(m['name'], '未回答')
-            writer.writerow([m['name'], m['number'], m['position'],
-                             status_label.get(status, status),
-                             next((r['updated_at'] for r in rsvps if r['member_name'] == m['name']), '')])
+            rows.append([m['name'], m['number'], m['position'],
+                         status_label.get(status, status),
+                         next((r['updated_at'] for r in rsvps if r['member_name'] == m['name']), '')])
     else:
         for name, status in rsvp_map.items():
-            writer.writerow([name, '', '', status_label.get(status, status),
-                             next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
+            rows.append([name, '', '', status_label.get(status, status),
+                         next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
 
-    filename = f"出欠_{ev['title']}_{ev['event_date']}.csv"
-    return csv_response(output.getvalue(), filename)
+    filename = f"出欠_{ev['title']}_{ev['event_date']}.xlsx"
+    return excel_response(rows, filename)
 
 
 # ── Order Forms ──────────────────────────────────────────────────
@@ -2100,7 +2123,7 @@ def order_form_view(code, form_id):
     {desc_html}
     {deadline_html}
     <div style="margin-top:12px">
-      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 CSVダウンロード</a>
+      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excelダウンロード</a>
     </div>
   </div>
 
@@ -2367,19 +2390,17 @@ def admin_order_form_csv(code, form_id):
         'SELECT * FROM order_responses WHERE form_id=? ORDER BY submitted_at', (form_id,)
     ).fetchall()
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['名前', '回答日時'] + [f['label'] for f in fields])
+    rows = [['名前', '回答日時'] + [f['label'] for f in fields]]
     for r in responses:
         vals = conn.execute(
             'SELECT * FROM order_response_values WHERE response_id=?', (r['id'],)
         ).fetchall()
         val_map = {v['field_id']: v['value'] for v in vals}
-        writer.writerow([r['member_name'], r['submitted_at']] + [val_map.get(f['id'], '') for f in fields])
+        rows.append([r['member_name'], r['submitted_at']] + [val_map.get(f['id'], '') for f in fields])
     conn.close()
 
-    filename = f"注文_{form['title']}_{now_str()[:10]}.csv"
-    return csv_response(output.getvalue(), filename)
+    filename = f"注文_{form['title']}_{now_str()[:10]}.xlsx"
+    return excel_response(rows, filename)
 
 
 # ── Survey ───────────────────────────────────────────────────────

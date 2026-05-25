@@ -319,8 +319,6 @@ def page(title, body, code=None, active=None):
         ]
         if admin:
             tabs.append(('admin', 'admin', '管理', f'/t/{code}/admin/dash'))
-        else:
-            tabs.append(('ask', 'ask', 'チャット', f'/t/{code}/ask'))
 
         for key, icon_key, label, url in tabs:
             cls = 'active' if active == key else ''
@@ -377,9 +375,6 @@ def home():
     <h2>新しいチームを作る</h2>
     <p style="font-size:13px;color:#666;margin-bottom:16px">管理者として新しいチームを登録します</p>
     <a href="/create" class="btn btn-outline" style="display:block;text-align:center">チームを作成する →</a>
-  </div>
-  <div style="text-align:center;margin-top:24px">
-    <a href="/feedback" style="font-size:13px;color:#aaa">要望・フィードバックはこちら</a>
   </div>
 </div>'''
     return page('ホーム', body)
@@ -904,6 +899,12 @@ def admin_dash(code):
     <h2>✦ AI文章作成</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">一言メモから、丁寧な連絡文を自動生成します</p>
     <a href="/t/{code}/admin/ai" class="btn btn-outline" style="display:block;text-align:center">AI文章作成を使う →</a>
+  </div>
+
+  <div class="card">
+    <h2>📬 Rakへのお問い合わせ</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:14px">機能の要望・不具合報告・ご意見はこちらから</p>
+    <a href="/feedback" class="btn btn-outline" style="display:block;text-align:center">お問い合わせ・要望を送る →</a>
   </div>
 
   <div style="text-align:right;margin-top:8px">
@@ -2408,112 +2409,6 @@ def rak_feedback_admin():
   {rows or '<div class="empty card">まだフィードバックはありません</div>'}
 </div>'''
     return page('Rak フィードバック', body)
-
-
-# ── Team Chatbot ──────────────────────────────────────────────────
-
-@app.route('/t/<code>/ask', methods=['GET', 'POST'])
-def team_ask(code):
-    team = get_team(code)
-    if not team:
-        return redirect('/')
-    member = get_member(code)
-    admin = is_admin(code)
-    if not member and not admin:
-        return redirect(url_for('team_portal', code=code))
-
-    history = session.get(f'chat_{code}', [])
-    error = ''
-
-    if request.method == 'POST':
-        question = request.form.get('question', '').strip()
-        if not question:
-            error = '質問を入力してください'
-        elif not ANTHROPIC_API_KEY:
-            error = 'AI機能が設定されていません（管理者にお問い合わせください）'
-        elif HAS_ANTHROPIC:
-            conn = get_db()
-            now_dt = datetime.now(JST)
-            today = now_dt.strftime('%Y-%m-%d')
-            events = conn.execute(
-                'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 5',
-                (team['id'], today)
-            ).fetchall()
-            notices = conn.execute(
-                'SELECT * FROM notices WHERE team_id=? ORDER BY created_at DESC LIMIT 3',
-                (team['id'],)
-            ).fetchall()
-            conn.close()
-
-            events_text = '\n'.join(
-                f'・{fmt_date(ev["event_date"])}{" " + ev["event_time"] if ev["event_time"] else ""} {ev["title"]}{(" @" + ev["location"]) if ev["location"] else ""}'
-                for ev in events
-            ) or 'なし'
-            notices_text = '\n'.join(
-                f'・{n["title"]}（{fmt_datetime(n["created_at"])}）'
-                for n in notices
-            ) or 'なし'
-
-            system = f'''あなたは「{team["name"]}」のチームアシスタントAIです。
-メンバーの質問に、チームの情報をもとに簡潔・丁寧に答えてください。
-
-【直近の予定】
-{events_text}
-
-【最新のお知らせ】
-{notices_text}
-
-【回答ルール】
-- 日本語で、3文以内を目安に簡潔に答える
-- 上記の情報にない内容は「わかりません」と正直に答える
-- 推測で答えない'''
-
-            try:
-                client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-                msg = client.messages.create(
-                    model='claude-haiku-4-5-20251001',
-                    max_tokens=300,
-                    system=system,
-                    messages=[{'role': 'user', 'content': question}]
-                )
-                answer = msg.content[0].text
-                history = [{'q': question, 'a': answer}] + history[:2]
-                session[f'chat_{code}'] = history
-            except Exception as e:
-                error = f'エラーが発生しました: {str(e)}'
-        else:
-            error = 'AI機能が利用できません'
-
-    chat_html = ''
-    for item in history:
-        chat_html += f'''
-        <div style="margin-bottom:16px">
-          <div style="background:#f1f4f9;border-radius:10px 10px 2px 10px;padding:10px 14px;font-size:14px;margin-bottom:6px">{item["q"]}</div>
-          <div style="background:#2563eb;color:#fff;border-radius:2px 10px 10px 10px;padding:12px 14px;font-size:14px;line-height:1.7;white-space:pre-wrap">{item["a"]}</div>
-        </div>'''
-
-    examples = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">'
-    for ex in ['次の練習はいつ？', '最新のお知らせは？', '今月の予定を教えて']:
-        examples += f'<button type="button" class="btn btn-gray btn-sm" onclick="document.querySelector(\'[name=question]\').value=\'{ex}\'">{ex}</button>'
-    examples += '</div>'
-
-    body = f'''
-<div class="container" style="max-width:540px">
-  <div class="card">
-    <div class="section-label">チャット</div>
-    <h1 style="margin-bottom:6px">AIに質問する</h1>
-    <p style="font-size:13px;color:#666;margin-bottom:16px">予定・お知らせについて、AIが答えます</p>
-    {f'<div class="msg-err">{error}</div>' if error else ''}
-    {examples}
-    <form method="POST">
-      <input type="text" name="question" placeholder="例：次の練習はいつですか？" autofocus required>
-      <button class="btn btn-blue btn-block" type="submit">送信する →</button>
-    </form>
-  </div>
-  {('<div class="card"><div style="font-size:12px;font-weight:700;color:#888;margin-bottom:14px">やりとり履歴</div>' + chat_html + '</div>') if chat_html else ''}
-  <div style="font-size:12px;color:#bbb;text-align:center">AIの回答は参考情報です。正確な情報はお知らせをご確認ください。</div>
-</div>'''
-    return page('チャット', body, code, active='ask')
 
 
 # ── Run ───────────────────────────────────────────────────────────

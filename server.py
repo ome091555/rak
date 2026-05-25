@@ -1751,8 +1751,16 @@ def admin_fee_detail(code, fee_id):
     body = f'''
 <div class="container" style="max-width:540px">
   <div class="card">
-    <h1>{f['title']}</h1>
-    <div style="font-size:14px;color:#555;margin-top:4px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <h1 style="margin:0">{f['title']}</h1>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <a href="/t/{code}/admin/fees/{fee_id}/edit" class="btn btn-sm btn-outline">編集</a>
+        <form method="POST" action="/t/{code}/admin/fees/{fee_id}/delete" onsubmit="return confirm('削除しますか？集金データもすべて消えます。')" style="margin:0">
+          <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
+        </form>
+      </div>
+    </div>
+    <div style="font-size:14px;color:#555">
       ¥{f['amount']:,}{'　期限：' + fmt_date(f['due_date']) if f['due_date'] else ''}
     </div>
     {f'<div style="font-size:13px;color:#666;margin-top:8px">{f["note"]}</div>' if f['note'] else ''}
@@ -1768,6 +1776,68 @@ def admin_fee_detail(code, fee_id):
   <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
 </div>'''
     return page(f['title'], body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/fees/<fee_id>/edit', methods=['GET', 'POST'])
+def admin_edit_fee(code, fee_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    f = conn.execute('SELECT * FROM fees WHERE id=? AND team_id=?', (fee_id, team['id'])).fetchone()
+    if not f:
+        conn.close()
+        return redirect(url_for('admin_fees', code=code))
+
+    error = ''
+    if request.method == 'POST':
+        title    = request.form.get('title', '').strip()
+        amount   = request.form.get('amount', '0').strip().replace(',', '')
+        due_date = request.form.get('due_date', '').strip()
+        note     = request.form.get('note', '').strip()
+        if not title:
+            error = 'タイトルを入力してください'
+        else:
+            conn.execute('UPDATE fees SET title=?,amount=?,due_date=?,note=? WHERE id=?',
+                         (title, int(amount or 0), due_date, note, fee_id))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin_fee_detail', code=code, fee_id=fee_id))
+
+    conn.close()
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>集金項目を編集</h1>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>タイトル *</label>
+      <input type="text" name="title" value="{f['title']}" required>
+      <label>金額（円）</label>
+      <input type="text" name="amount" value="{f['amount']}">
+      <label>支払い期限</label>
+      <input type="date" name="due_date" value="{f['due_date'] or ''}">
+      <label>備考</label>
+      <textarea name="note" rows="3">{f['note'] or ''}</textarea>
+      <button class="btn btn-blue btn-block" type="submit">保存する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/fees/{fee_id}" style="font-size:13px;color:#888">← 戻る</a></div>
+</div>'''
+    return page('集金項目を編集', body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/fees/<fee_id>/delete', methods=['POST'])
+def admin_delete_fee(code, fee_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    conn.execute('DELETE FROM fees WHERE id=? AND team_id=?', (fee_id, team['id']))
+    conn.execute('DELETE FROM fee_payments WHERE fee_id=?', (fee_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_fees', code=code))
 
 
 # ── Admin: CSV export ─────────────────────────────────────────────

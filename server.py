@@ -2735,12 +2735,18 @@ def rak_feedback_admin():
     items = conn.execute('SELECT * FROM app_feedback ORDER BY created_at DESC').fetchall()
     conn.close()
 
+    def fb_val(row, key):
+        try:
+            return row[key] or ''
+        except Exception:
+            return ''
+
     rows = ''.join(f'''
     <div class="card-sm">
       <div style="font-size:12px;color:#aaa;margin-bottom:6px">{f["created_at"]}</div>
-      <div style="font-weight:700;margin-bottom:4px">{f.get("subject") or "（表題なし）"}</div>
+      <div style="font-weight:700;margin-bottom:4px">{fb_val(f,"subject") or "（表題なし）"}</div>
       <div style="font-size:13px;color:#555;margin-bottom:6px">
-        {f.get("team_name") or ""}　{f["name"] or "匿名"}　{f.get("email") or ""}
+        {fb_val(f,"team_name")}　{f["name"] or "匿名"}　{fb_val(f,"email")}
       </div>
       <div style="white-space:pre-wrap;font-size:15px">{f["message"]}</div>
     </div>''' for f in items)

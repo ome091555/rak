@@ -178,6 +178,9 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN plan TEXT DEFAULT "free"',
         'ALTER TABLE teams ADD COLUMN stripe_customer_id TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN stripe_subscription_id TEXT DEFAULT ""',
+        'ALTER TABLE app_feedback ADD COLUMN team_name TEXT DEFAULT ""',
+        'ALTER TABLE app_feedback ADD COLUMN email TEXT DEFAULT ""',
+        'ALTER TABLE app_feedback ADD COLUMN subject TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -2658,13 +2661,21 @@ def admin_new_survey(code):
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     sent = request.args.get('sent') == '1'
+    error = ''
     if request.method == 'POST':
+        team_name = request.form.get('team_name', '').strip()
         name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
-        if message:
+        if not team_name or not name or not email or not message:
+            error = 'チーム名・お名前・メールアドレス・メッセージは必須です'
+        else:
             conn = get_db()
-            conn.execute('INSERT INTO app_feedback VALUES (?,?,?,?)',
-                         (new_id(), name, message, now_str()))
+            conn.execute(
+                'INSERT INTO app_feedback (id,name,message,created_at,team_name,email,subject) VALUES (?,?,?,?,?,?,?)',
+                (new_id(), name, message, now_str(), team_name, email, subject)
+            )
             conn.commit()
             conn.close()
             return redirect('/feedback?sent=1')
@@ -2672,20 +2683,34 @@ def feedback():
     body = f'''
 <div class="container" style="max-width:480px">
   <div class="card">
-    <h1>要望・フィードバック</h1>
-    <p style="font-size:13px;color:#666;margin-bottom:20px">Rakへのご意見・ご要望・バグ報告をお送りください。<br>いただいた内容は開発の参考にします。</p>
-    {'<div class="msg-ok">送信しました！ありがとうございます。</div>' if sent else ''}
+    <h1 style="margin-bottom:4px">お問い合わせ</h1>
+    <p style="font-size:13px;color:#666;margin-bottom:20px">いただいた内容をご確認の上、返信させていただきます。</p>
+    {'<div class="msg-ok">送信しました！内容を確認の上、ご連絡いたします。</div>' if sent else ''}
+    {'<div class="msg-err">' + error + '</div>' if error else ''}
     <form method="POST">
-      <label>お名前（任意）</label>
-      <input type="text" name="name" placeholder="例：田中">
+      <label>チーム名 *</label>
+      <input type="text" name="team_name" placeholder="例：FC東京U-15" required>
+      <label>お名前 *</label>
+      <input type="text" name="name" placeholder="例：田中 太郎" required>
+      <label>メールアドレス *</label>
+      <input type="text" name="email" placeholder="例：tanaka@example.com" required>
+      <label>表題 *</label>
+      <select name="subject" required>
+        <option value="">選択してください</option>
+        <option value="機能の要望">機能の要望</option>
+        <option value="使い方について">使い方について</option>
+        <option value="料金・プランについて">料金・プランについて</option>
+        <option value="導入のご相談">導入のご相談</option>
+        <option value="その他">その他</option>
+      </select>
       <label>メッセージ *</label>
-      <textarea name="message" rows="5" placeholder="機能の要望・バグ報告・感想など何でもOKです" required></textarea>
+      <textarea name="message" rows="5" placeholder="ご要望・ご質問など、詳しくお聞かせください" required></textarea>
       <button class="btn btn-blue btn-block" type="submit">送信する</button>
     </form>
   </div>
   <div style="text-align:center"><a href="/" style="font-size:13px;color:#aaa">← トップに戻る</a></div>
 </div>'''
-    return page('要望・フィードバック', body)
+    return page('お問い合わせ', body)
 
 
 @app.route('/rak/feedback')
@@ -2712,7 +2737,11 @@ def rak_feedback_admin():
 
     rows = ''.join(f'''
     <div class="card-sm">
-      <div style="font-size:12px;color:#aaa;margin-bottom:6px">{f["created_at"]}　{f["name"] or "匿名"}</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:6px">{f["created_at"]}</div>
+      <div style="font-weight:700;margin-bottom:4px">{f.get("subject") or "（表題なし）"}</div>
+      <div style="font-size:13px;color:#555;margin-bottom:6px">
+        {f.get("team_name") or ""}　{f["name"] or "匿名"}　{f.get("email") or ""}
+      </div>
       <div style="white-space:pre-wrap;font-size:15px">{f["message"]}</div>
     </div>''' for f in items)
 

@@ -164,6 +164,12 @@ def init_db():
         );
     ''')
     conn.commit()
+    # migration: end_date column
+    try:
+        conn.execute('ALTER TABLE events ADD COLUMN end_date TEXT DEFAULT ""')
+        conn.commit()
+    except Exception:
+        pass
     conn.close()
 
 init_db()
@@ -204,6 +210,11 @@ def fmt_date(s):
         return f"{d.month}/{d.day}（{wd}）"
     except:
         return s
+
+def fmt_date_range(start, end):
+    if not end or end == start:
+        return fmt_date(start)
+    return f'{fmt_date(start)} 〜 {fmt_date(end)}'
 
 def fmt_datetime(s):
     try:
@@ -525,7 +536,13 @@ def schedule(code):
         (team['id'], month_start, month_end)
     ).fetchall()
 
-    event_dates = set(ev['event_date'] for ev in all_events) | set(f['due_date'] for f in fees_in_month)
+    event_dates = set(f['due_date'] for f in fees_in_month)
+    for ev in all_events:
+        cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
+        end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
+        while cur <= end_d:
+            event_dates.add(cur.strftime('%Y-%m-%d'))
+            cur += timedelta(days=1)
     calendar_html = build_calendar(vy, vm, event_dates)
 
     event_cards = ''
@@ -550,7 +567,7 @@ def schedule(code):
           <div class="row" style="flex-wrap:wrap;gap:6px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
-              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
+              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date_range(ev['event_date'], ev['end_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <span class="badge badge-green">出席 {attending}</span>
@@ -926,15 +943,18 @@ def admin_new_event(code):
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         date = request.form.get('event_date', '').strip()
+        end_date = request.form.get('end_date', '').strip()
         time = request.form.get('event_time', '').strip()
         location = request.form.get('location', '').strip()
         note = request.form.get('note', '').strip()
+        if end_date and end_date < date:
+            end_date = date
         if not title or not date:
             error = 'タイトルと日付を入力してください'
         else:
             conn = get_db()
-            conn.execute('INSERT INTO events VALUES (?,?,?,?,?,?,?,?)',
-                         (new_id(), team['id'], title, date, time, location, note, now_str()))
+            conn.execute('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?)',
+                         (new_id(), team['id'], title, date, time, location, note, now_str(), end_date))
             conn.commit()
             conn.close()
             return redirect(url_for('schedule', code=code))
@@ -947,8 +967,16 @@ def admin_new_event(code):
     <form method="POST">
       <label>タイトル *</label>
       <input type="text" name="title" placeholder="例：練習試合 vs FCさくら" required>
-      <label>日付 *</label>
-      <input type="date" name="event_date" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>開始日 *</label>
+          <input type="date" name="event_date" required>
+        </div>
+        <div>
+          <label>終了日（複数日の場合）</label>
+          <input type="date" name="end_date">
+        </div>
+      </div>
       <label>時間</label>
       <input type="time" name="event_time">
       <label>場所</label>
@@ -997,8 +1025,8 @@ def admin_event_detail(code, event_id):
   <div class="card">
     <h1>{ev['title']}</h1>
     <div style="font-size:14px;color:#555;margin-top:6px">
-      📅 {fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}
-      {('　📍 ' + ev['location']) if ev['location'] else ''}
+      {fmt_date_range(ev['event_date'], ev['end_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}
+      {('　' + ev['location']) if ev['location'] else ''}
     </div>
     {f'<div style="margin-top:12px;background:#f8faff;padding:12px;border-radius:10px;font-size:14px">{ev["note"]}</div>' if ev['note'] else ''}
   </div>

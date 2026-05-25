@@ -1023,8 +1023,16 @@ def admin_event_detail(code, event_id):
     body = f'''
 <div class="container">
   <div class="card">
-    <h1>{ev['title']}</h1>
-    <div style="font-size:14px;color:#555;margin-top:6px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <h1 style="margin:0">{ev['title']}</h1>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <a href="/t/{code}/admin/events/{event_id}/edit" class="btn btn-sm btn-outline">編集</a>
+        <form method="POST" action="/t/{code}/admin/events/{event_id}/delete" onsubmit="return confirm('この予定を削除しますか？')">
+          <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
+        </form>
+      </div>
+    </div>
+    <div style="font-size:14px;color:#555">
       {fmt_date_range(ev['event_date'], ev['end_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}
       {('　' + ev['location']) if ev['location'] else ''}
     </div>
@@ -1048,9 +1056,87 @@ def admin_event_detail(code, event_id):
   <div style="margin-top:4px">
     <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠CSVをダウンロード</a>
   </div>
-  <div style="text-align:center;margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  <div style="text-align:center;margin-top:12px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュール</a></div>
 </div>'''
     return page(ev['title'], body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/events/<event_id>/edit', methods=['GET', 'POST'])
+def admin_edit_event(code, event_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    ev = conn.execute('SELECT * FROM events WHERE id=? AND team_id=?', (event_id, team['id'])).fetchone()
+    if not ev:
+        conn.close()
+        return redirect(url_for('schedule', code=code))
+
+    error = ''
+    if request.method == 'POST':
+        title    = request.form.get('title', '').strip()
+        date     = request.form.get('event_date', '').strip()
+        end_date = request.form.get('end_date', '').strip()
+        time     = request.form.get('event_time', '').strip()
+        location = request.form.get('location', '').strip()
+        note     = request.form.get('note', '').strip()
+        if end_date and end_date < date:
+            end_date = date
+        if not title or not date:
+            error = 'タイトルと日付を入力してください'
+        else:
+            conn.execute(
+                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,location=?,note=? WHERE id=?',
+                (title, date, end_date, time, location, note, event_id)
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin_event_detail', code=code, event_id=event_id))
+
+    conn.close()
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>予定を編集</h1>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>タイトル *</label>
+      <input type="text" name="title" value="{ev['title']}" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>開始日 *</label>
+          <input type="date" name="event_date" value="{ev['event_date']}" required>
+        </div>
+        <div>
+          <label>終了日（複数日の場合）</label>
+          <input type="date" name="end_date" value="{ev['end_date'] or ''}">
+        </div>
+      </div>
+      <label>時間</label>
+      <input type="time" name="event_time" value="{ev['event_time'] or ''}">
+      <label>場所</label>
+      <input type="text" name="location" value="{ev['location'] or ''}">
+      <label>備考・詳細</label>
+      <textarea name="note">{ev['note'] or ''}</textarea>
+      <button class="btn btn-blue btn-block" type="submit">保存する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/events/{event_id}" style="font-size:13px;color:#888">← 戻る</a></div>
+</div>'''
+    return page('予定を編集', body, code, active='schedule')
+
+
+@app.route('/t/<code>/admin/events/<event_id>/delete', methods=['POST'])
+def admin_delete_event(code, event_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    conn.execute('DELETE FROM events WHERE id=? AND team_id=?', (event_id, team['id']))
+    conn.execute('DELETE FROM rsvps WHERE event_id=?', (event_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('schedule', code=code))
 
 
 # ── Admin: notices ────────────────────────────────────────────────

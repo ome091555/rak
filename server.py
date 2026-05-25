@@ -562,6 +562,15 @@ def schedule(code):
               <button name="status" value="attending" class="btn btn-sm {'btn-blue' if my_rsvp=='attending' else 'btn-outline'}" type="submit">出席</button>
               <button name="status" value="absent" class="btn btn-sm btn-gray" type="submit" style="{'background:#fee2e2;color:#dc2626' if my_rsvp=='absent' else ''}">欠席</button>
             </form>'''
+        admin_btns = ''
+        if admin:
+            admin_btns = f'''
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <a href="/t/{code}/admin/events/{ev['id']}/edit" class="btn btn-sm btn-outline">編集</a>
+              <form method="POST" action="/t/{code}/admin/events/{ev['id']}/delete" onsubmit="return confirm('削除しますか？')" style="margin:0">
+                <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
+              </form>
+            </div>'''
         event_cards += f'''
         <div class="card-sm" id="ev-{ev['event_date']}">
           <div class="row" style="flex-wrap:wrap;gap:6px">
@@ -576,6 +585,7 @@ def schedule(code):
           </div>
           {f'<div style="font-size:13px;color:#666;margin-top:8px;background:#f8faff;padding:8px 12px;border-radius:8px">{ev["note"]}</div>' if ev['note'] else ''}
           {rsvp_btns}
+          {admin_btns}
         </div>'''
 
     fee_cards = ''

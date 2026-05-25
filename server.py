@@ -18,6 +18,9 @@ app.secret_key = os.environ.get('SECRET_KEY', 'rak-secret-2026')
 DATABASE = os.environ.get('DATABASE', 'rak.db')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 
 # ── DB ────────────────────────────────────────────────────────────
 
@@ -170,6 +173,17 @@ def init_db():
         conn.commit()
     except Exception:
         pass
+    # migration: plan / stripe columns
+    for col_sql in [
+        'ALTER TABLE teams ADD COLUMN plan TEXT DEFAULT "free"',
+        'ALTER TABLE teams ADD COLUMN stripe_customer_id TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN stripe_subscription_id TEXT DEFAULT ""',
+    ]:
+        try:
+            conn.execute(col_sql)
+            conn.commit()
+        except Exception:
+            pass
     conn.close()
 
 init_db()
@@ -181,6 +195,37 @@ def new_id():
 
 def now_str():
     return datetime.now(JST).strftime('%Y-%m-%d %H:%M')
+
+def is_pro(team):
+    if not STRIPE_SECRET_KEY:
+        return True  # Stripe未設定時は全機能解放
+    return team and team['plan'] in ('pro', 'league')
+
+def pro_gate(code, team, active='admin'):
+    body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="font-size:40px;margin-bottom:16px">🔒</div>
+    <h1 style="font-size:22px;margin-bottom:8px">Proプランの機能です</h1>
+    <p style="color:#666;font-size:14px;margin-bottom:24px">この機能を使うにはRak Proへのアップグレードが必要です。</p>
+    <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left">
+      <div style="font-weight:700;margin-bottom:12px;color:#2563eb">Proプランでできること</div>
+      <div style="font-size:13px;color:#444;line-height:2">
+        ✅ 集金・支払い管理<br>
+        ✅ 注文フォーム<br>
+        ✅ アンケート<br>
+        ✅ AI文章生成<br>
+        ✅ Excel出力<br>
+        ✅ メンバー無制限
+      </div>
+    </div>
+    <div style="font-size:28px;font-weight:900;color:#2563eb;margin-bottom:4px">¥2,980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px">年払い ¥29,800（2ヶ月分お得）</div>
+    <a href="/t/{code}/upgrade" class="btn btn-blue btn-block" style="margin-top:0">Proにアップグレード</a>
+    <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボードに戻る</a></div>
+  </div>
+</div>'''
+    return page('Proプランへアップグレード', body, code, active=active)
 
 def csv_response(csv_str, filename):
     import urllib.parse
@@ -912,6 +957,11 @@ def admin_dash(code):
       <a href="/t/{code}/notices/{n['id']}" class="btn btn-sm btn-outline">確認</a>
     </div>''' for n in notices) or '<div class="empty">お知らせなし</div>'
 
+    if is_pro(team):
+        plan_card = '<div class="card" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;opacity:.7">すべての機能をご利用中</div></div>'
+    else:
+        plan_card = f'<div class="card" style="border:2px solid #2563eb;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥2,980/月</a></div>'
+
     body = f'''
 <div class="container">
   {'<div class="msg-ok">✅ チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
@@ -988,6 +1038,8 @@ def admin_dash(code):
     <p style="font-size:13px;color:#666;margin-bottom:14px">機能の要望・不具合報告・ご意見はこちらから</p>
     <a href="/feedback" class="btn btn-outline" style="display:block;text-align:center">お問い合わせ・要望を送る →</a>
   </div>
+
+  {plan_card}
 
   <div style="text-align:right;margin-top:8px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
@@ -1280,6 +1332,9 @@ def admin_new_notice(code):
 def admin_ai(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='admin')
 
     redirect_to = request.args.get('redirect', '')
     result_title = ''
@@ -1674,6 +1729,8 @@ def admin_fees(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='fees')
     conn = get_db()
     fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
 
@@ -1949,6 +2006,8 @@ def orders_list(code):
     admin = is_admin(code)
     if not member and not admin:
         return redirect(url_for('team_portal', code=code))
+    if not is_pro(team):
+        return pro_gate(code, team, active='orders')
 
     conn = get_db()
     forms = conn.execute(
@@ -2428,6 +2487,8 @@ def survey_list(code):
     admin = is_admin(code)
     if not member and not admin:
         return redirect(url_for('team_portal', code=code))
+    if not is_pro(team):
+        return pro_gate(code, team, active='orders')
 
     conn = get_db()
     surveys = conn.execute('SELECT * FROM surveys WHERE team_id=? ORDER BY created_at DESC', (team['id'],)).fetchall()
@@ -2661,6 +2722,132 @@ def rak_feedback_admin():
   {rows or '<div class="empty card">まだフィードバックはありません</div>'}
 </div>'''
     return page('Rak フィードバック', body)
+
+
+# ── Stripe / Upgrade ─────────────────────────────────────────────
+
+@app.route('/t/<code>/upgrade')
+def upgrade_page(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    already_pro = is_pro(team)
+    if already_pro and STRIPE_SECRET_KEY:
+        body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="font-size:40px;margin-bottom:16px">🎉</div>
+    <h1 style="font-size:22px;margin-bottom:8px">Proプラン利用中</h1>
+    <p style="color:#666;font-size:14px">すべての機能をご利用いただけます。</p>
+    <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a></div>
+  </div>
+</div>'''
+        return page('プラン', body, code, active='admin')
+
+    stripe_ready = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO)
+    checkout_btn = f'''
+    <form method="POST" action="/t/{code}/upgrade/checkout">
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">Proにアップグレード（¥2,980/月）</button>
+    </form>
+    <div style="font-size:12px;color:#aaa;margin-top:8px">いつでもキャンセル可能。クレジットカード払い。</div>
+    ''' if stripe_ready else '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
+
+    body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="font-size:14px;color:#2563eb;font-weight:700;margin-bottom:8px">RakPro</div>
+    <div style="font-size:36px;font-weight:900;color:#2563eb;margin-bottom:4px">¥2,980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
+    <div style="font-size:13px;color:#888;margin-bottom:28px">年払い ¥29,800（2ヶ月分お得）</div>
+    <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:28px;text-align:left">
+      <div style="font-size:13px;color:#444;line-height:2.2">
+        ✅ 集金・支払い管理<br>
+        ✅ 注文フォーム<br>
+        ✅ アンケート<br>
+        ✅ AI文章生成<br>
+        ✅ Excel出力<br>
+        ✅ メンバー無制限<br>
+        ✅ 優先サポート
+      </div>
+    </div>
+    {checkout_btn}
+    <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボードに戻る</a></div>
+  </div>
+</div>'''
+    return page('Proプランへアップグレード', body, code, active='admin')
+
+
+@app.route('/t/<code>/upgrade/checkout', methods=['POST'])
+def upgrade_checkout(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    if not STRIPE_SECRET_KEY or not STRIPE_PRICE_ID_PRO:
+        return redirect(url_for('upgrade_page', code=code))
+    import stripe
+    stripe.api_key = STRIPE_SECRET_KEY
+    team = get_team(code)
+    base = request.host_url.rstrip('/')
+    checkout = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{'price': STRIPE_PRICE_ID_PRO, 'quantity': 1}],
+        mode='subscription',
+        success_url=f'{base}/t/{code}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}',
+        cancel_url=f'{base}/t/{code}/upgrade',
+        metadata={'team_code': code},
+    )
+    return redirect(checkout.url)
+
+
+@app.route('/t/<code>/upgrade/success')
+def upgrade_success(code):
+    team = get_team(code)
+    body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="font-size:48px;margin-bottom:16px">🎉</div>
+    <h1 style="font-size:22px;margin-bottom:8px">アップグレード完了！</h1>
+    <p style="color:#666;font-size:14px;margin-bottom:24px">Rak Proへようこそ。すべての機能が使えるようになりました。</p>
+    <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a>
+  </div>
+</div>'''
+    return page('アップグレード完了', body, code, active='admin')
+
+
+@app.route('/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    if not STRIPE_SECRET_KEY:
+        return jsonify(ok=True)
+    import stripe
+    stripe.api_key = STRIPE_SECRET_KEY
+    payload = request.get_data()
+    sig = request.headers.get('Stripe-Signature', '')
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        return jsonify(error='invalid'), 400
+
+    if event['type'] == 'checkout.session.completed':
+        s = event['data']['object']
+        team_code = s.get('metadata', {}).get('team_code', '')
+        if team_code:
+            conn = get_db()
+            conn.execute(
+                'UPDATE teams SET plan="pro", stripe_customer_id=?, stripe_subscription_id=? WHERE team_code=?',
+                (s.get('customer', ''), s.get('subscription', ''), team_code.upper())
+            )
+            conn.commit()
+            conn.close()
+
+    elif event['type'] == 'customer.subscription.deleted':
+        sub = event['data']['object']
+        conn = get_db()
+        conn.execute(
+            'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
+            (sub['id'],)
+        )
+        conn.commit()
+        conn.close()
+
+    return jsonify(ok=True)
 
 
 # ── Run ───────────────────────────────────────────────────────────

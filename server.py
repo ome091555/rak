@@ -2130,8 +2130,8 @@ def order_form_view(code, form_id):
           </select>
         </div>
       </div>
-      <div id="opts-area" style="display:none;margin-top:10px">
-        <label>選択肢（カンマ区切り）</label>
+      <div id="opts-area" style="margin-top:10px">
+        <label>選択肢（「選択肢から選ぶ」を選んだ場合のみ。カンマ区切り）</label>
         <input type="text" name="options" placeholder="例：のり弁,唐揚げ弁当,幕の内">
       </div>
       <button class="btn btn-outline btn-block" type="submit" style="margin-top:12px">＋ 項目を追加</button>
@@ -2139,13 +2139,7 @@ def order_form_view(code, form_id):
   </div>
 
   <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
-</div>
-<script>
-function toggleOpts() {{
-  document.getElementById('opts-area').style.display =
-    document.getElementById('ftype').value === 'select' ? 'block' : 'none';
-}}
-</script>'''
+</div>'''
         return page(form['title'], body, code, active='orders')
 
     # Member: fill form

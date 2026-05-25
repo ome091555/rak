@@ -1119,7 +1119,8 @@ def admin_event_detail(code, event_id):
   </div>
   {no_answer_card}
   <div style="margin-top:4px">
-    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 出欠Excelをダウンロード</a>
+    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
+    <a href="/t/{code}/admin/events/{event_id}/csv?fmt=csv" class="btn btn-gray btn-sm">📄 CSV</a>
   </div>
   <div style="text-align:center;margin-top:12px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュール</a></div>
 </div>'''
@@ -1927,8 +1928,14 @@ def admin_event_csv(code, event_id):
             rows.append([name, '', '', status_label.get(status, status),
                          next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
 
-    filename = f"出欠_{ev['title']}_{ev['event_date']}.xlsx"
-    return excel_response(rows, filename)
+    fmt = request.args.get('fmt', 'excel')
+    if fmt == 'csv':
+        output = io.StringIO()
+        writer = csv.writer(output)
+        for row in rows:
+            writer.writerow(row)
+        return csv_response(output.getvalue(), f"出欠_{ev['title']}_{ev['event_date']}.csv")
+    return excel_response(rows, f"出欠_{ev['title']}_{ev['event_date']}.xlsx")
 
 
 # ── Order Forms ──────────────────────────────────────────────────
@@ -2123,7 +2130,8 @@ def order_form_view(code, form_id):
     {desc_html}
     {deadline_html}
     <div style="margin-top:12px">
-      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excelダウンロード</a>
+      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
+      <a href="/t/{code}/admin/orders/{form_id}/csv?fmt=csv" class="btn btn-gray btn-sm">📄 CSV</a>
     </div>
   </div>
 
@@ -2399,8 +2407,14 @@ def admin_order_form_csv(code, form_id):
         rows.append([r['member_name'], r['submitted_at']] + [val_map.get(f['id'], '') for f in fields])
     conn.close()
 
-    filename = f"注文_{form['title']}_{now_str()[:10]}.xlsx"
-    return excel_response(rows, filename)
+    fmt = request.args.get('fmt', 'excel')
+    if fmt == 'csv':
+        output = io.StringIO()
+        writer = csv.writer(output)
+        for row in rows:
+            writer.writerow(row)
+        return csv_response(output.getvalue(), f"注文_{form['title']}_{now_str()[:10]}.csv")
+    return excel_response(rows, f"注文_{form['title']}_{now_str()[:10]}.xlsx")
 
 
 # ── Survey ───────────────────────────────────────────────────────

@@ -267,7 +267,8 @@ a:hover{text-decoration:underline}
 .nav-links-desktop a:hover{background:#eff6ff;color:#2563eb;text-decoration:none}
 .nav-links-desktop a.active{color:#2563eb;font-weight:700}
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8eaf0;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
-.bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:#888;text-decoration:none;gap:2px;min-height:52px}
+.bottom-nav a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:#888;text-decoration:none;gap:2px;min-height:52px}
+.nav-badge{position:absolute;top:5px;left:calc(50% + 4px);background:#ef4444;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;line-height:14px;pointer-events:none}
 .bottom-nav a.active{color:#2563eb}
 .bottom-nav a.active .nav-b-icon{color:#2563eb}
 .nav-b-icon{display:flex;align-items:center;justify-content:center}
@@ -318,6 +319,32 @@ def page(title, body, code=None, active=None):
     admin = is_admin(code) if code else False
     member = get_member(code) if code else ''
 
+    # notification counts for member
+    notifs = {'schedule': 0, 'notices': 0, 'fees': 0, 'orders': 0}
+    if code and member and team:
+        _c = get_db()
+        today_s = datetime.now(JST).strftime('%Y-%m-%d')
+        notifs['notices'] = _c.execute(
+            'SELECT COUNT(*) FROM notices WHERE team_id=? AND id NOT IN (SELECT notice_id FROM reads WHERE member_name=?)',
+            (team['id'], member)
+        ).fetchone()[0]
+        notifs['fees'] = _c.execute(
+            '''SELECT COUNT(*) FROM fees f WHERE f.team_id=?
+               AND NOT EXISTS (SELECT 1 FROM fee_payments WHERE fee_id=f.id AND member_name=? AND paid=1)''',
+            (team['id'], member)
+        ).fetchone()[0]
+        notifs['orders'] = _c.execute(
+            '''SELECT COUNT(*) FROM order_forms WHERE team_id=?
+               AND id NOT IN (SELECT form_id FROM order_responses WHERE member_name=?)''',
+            (team['id'], member)
+        ).fetchone()[0]
+        notifs['schedule'] = _c.execute(
+            '''SELECT COUNT(*) FROM events WHERE team_id=? AND event_date>=?
+               AND id NOT IN (SELECT event_id FROM rsvps WHERE member_name=?)''',
+            (team['id'], today_s, member)
+        ).fetchone()[0]
+        _c.close()
+
     desktop_nav = ''
     bottom_nav = ''
     if code:
@@ -334,8 +361,10 @@ def page(title, body, code=None, active=None):
         for key, icon_key, label, url in tabs:
             cls = 'active' if active == key else ''
             ico = ICONS[icon_key]
+            cnt = notifs.get(key, 0)
+            badge = f'<span class="nav-badge">{cnt}</span>' if cnt > 0 else ''
             desktop_nav += f'<a href="{url}" class="{cls}"><span class="nav-d-icon">{ico}</span>{label}</a>'
-            bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{ico}</span><span>{label}</span></a>'
+            bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{ico}</span><span>{label}</span>{badge}</a>'
 
         if admin:
             ai_cls = 'active' if active == 'ai' else ''

@@ -210,6 +210,21 @@ def fmt_datetime(s):
 
 FONT = ''
 
+# Rak brand mark: top-right bar → diagonal → bottom bar (flowing/easy)
+NAV_MARK = (
+    '<svg viewBox="0 0 100 100" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    '<path d="M76,28 L44,28 L22,72 L66,72" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>'
+    '</svg>'
+)
+FAVICON_LINK = (
+    '<link rel="icon" href="data:image/svg+xml,'
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+    "<rect width='100' height='100' rx='22' fill='%232563eb'/>"
+    "<path d='M76,28 L44,28 L22,72 L66,72' stroke='white' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' fill='none'/>"
+    "</svg>"
+    '"><meta name="theme-color" content="#2563eb">'
+)
+
 ICONS = {
     'schedule': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 2v4M13 2v4M3 8h14"/></svg>',
     'notices':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9c0-2.8 2.2-5 5-5s5 2.2 5 5v3l1.5 2.5h-13L5 12V9z"/><path d="M8.5 17.5a1.5 1.5 0 003 0"/></svg>',
@@ -315,11 +330,12 @@ def page(title, body, code=None, active=None):
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+{FAVICON_LINK}
 {FONT}<title>{title} | Rak</title>
 <style>{CSS}</style></head><body>
 <nav class="nav">
   <a class="nav-logo" href="{"/t/"+code if code else "/"}">
-    <div class="nav-icon">R</div>Rak
+    <div class="nav-icon">{NAV_MARK}</div>Rak
   </a>
   {f'<span class="nav-team">{team_name}</span>' if team_name else ''}
   <div class="nav-links-desktop">{desktop_nav}</div>

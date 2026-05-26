@@ -2983,9 +2983,16 @@ def feedback():
 def mail_test():
     """メール送信テスト（デバッグ用・後で削除）"""
     import traceback
+    # グローバル変数ではなくos.environから直接読む
+    api_key = os.environ.get('RESEND_API_KEY', '')
     result = []
-    result.append(f'RESEND_API_KEY 設定: {bool(RESEND_API_KEY)}')
+    result.append(f'RESEND_API_KEY 設定: {bool(api_key)}')
+    result.append(f'キー先頭4文字: {api_key[:4] if api_key else "なし"}')
     result.append(f'送信先: {NOTIFY_EMAIL}')
+    result.append(f'全環境変数キー: {[k for k in os.environ.keys() if "RESEND" in k or "GMAIL" in k]}')
+    if not api_key:
+        result.append('❌ APIキーが読めていません')
+        return '<br>'.join(result)
     try:
         payload = json.dumps({
             'from': 'Rak <onboarding@resend.dev>',
@@ -2997,7 +3004,7 @@ def mail_test():
             'https://api.resend.com/emails',
             data=payload,
             headers={
-                'Authorization': f'Bearer {RESEND_API_KEY}',
+                'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json',
             },
             method='POST'

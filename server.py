@@ -1,12 +1,11 @@
 import csv
 import io
 import os
-import smtplib
 import sqlite3
 import uuid
+import urllib.request
+import json
 from datetime import datetime, timezone, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file
 
 try:
@@ -24,23 +23,22 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-GMAIL_USER = os.environ.get('GMAIL_USER', '')
-GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
 def send_inquiry_email(team_name, name, email, subject, message):
-    """お問い合わせをGmailに通知する"""
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        print(f'[GMAIL] 環境変数未設定: USER={bool(GMAIL_USER)} PASS={bool(GMAIL_APP_PASSWORD)}')
+    """お問い合わせをResend経由でGmailに通知する"""
+    if not RESEND_API_KEY:
+        print('[RESEND] RESEND_API_KEY が未設定')
         return
     try:
-        pw = GMAIL_APP_PASSWORD.replace(' ', '')  # スペース除去（Googleのコピー形式対応）
-        msg = MIMEMultipart()
-        msg['From'] = GMAIL_USER
-        msg['To'] = GMAIL_USER
-        msg['Subject'] = f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}'
-        body = f"""Rakにお問い合わせが届きました。
+        payload = json.dumps({
+            'from': 'Rak <onboarding@resend.dev>',
+            'to': [NOTIFY_EMAIL],
+            'subject': f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}',
+            'text': f'''Rakにお問い合わせが届きました。
 
 ■ チーム名：{team_name}
 ■ お名前：{name}
@@ -52,17 +50,21 @@ def send_inquiry_email(team_name, name, email, subject, message):
 ---
 返信先：{email}
 管理画面：https://web-production-95cff.up.railway.app/rak/feedback
-"""
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(GMAIL_USER, pw)
-            server.send_message(msg)
-        print(f'[GMAIL] 送信成功 → {GMAIL_USER}')
+'''
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.resend.com/emails',
+            data=payload,
+            headers={
+                'Authorization': f'Bearer {RESEND_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=10) as res:
+            print(f'[RESEND] 送信成功: {res.status}')
     except Exception as e:
-        print(f'[GMAIL ERROR] {type(e).__name__}: {e}')  # Railwayのログで確認可能
+        print(f'[RESEND ERROR] {type(e).__name__}: {e}')
 
 # ── DB ────────────────────────────────────────────────────────────
 
@@ -2982,24 +2984,29 @@ def mail_test():
     """メール送信テスト（デバッグ用・後で削除）"""
     import traceback
     result = []
-    result.append(f'GMAIL_USER: {repr(GMAIL_USER)}')
-    result.append(f'GMAIL_APP_PASSWORD 設定: {bool(GMAIL_APP_PASSWORD)}')
-    result.append(f'パスワード長: {len(GMAIL_APP_PASSWORD)} 文字（スペース除去後: {len(GMAIL_APP_PASSWORD.replace(" ",""))} 文字）')
+    result.append(f'RESEND_API_KEY 設定: {bool(RESEND_API_KEY)}')
+    result.append(f'送信先: {NOTIFY_EMAIL}')
     try:
-        pw = GMAIL_APP_PASSWORD.replace(' ', '')
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(GMAIL_USER, pw)
-            result.append('✅ ログイン成功')
-            msg = MIMEMultipart()
-            msg['From'] = GMAIL_USER
-            msg['To'] = GMAIL_USER
-            msg['Subject'] = '【Rakテスト】メール送信テスト'
-            msg.attach(MIMEText('テストメールです。正常に送信されました。', 'plain', 'utf-8'))
-            server.send_message(msg)
-            result.append('✅ 送信成功！Gmailを確認してください')
+        payload = json.dumps({
+            'from': 'Rak <onboarding@resend.dev>',
+            'to': [NOTIFY_EMAIL],
+            'subject': '【Rakテスト】メール送信テスト',
+            'text': 'テストメールです。正常に送信されました。'
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.resend.com/emails',
+            data=payload,
+            headers={
+                'Authorization': f'Bearer {RESEND_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=10) as res:
+            body = res.read().decode()
+            result.append(f'✅ 送信成功！ステータス: {res.status}')
+            result.append(f'レスポンス: {body}')
+            result.append(f'Gmailを確認してください → {NOTIFY_EMAIL}')
     except Exception as e:
         result.append(f'❌ エラー: {type(e).__name__}: {e}')
         result.append(traceback.format_exc())

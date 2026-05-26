@@ -1,9 +1,12 @@
 import csv
 import io
 import os
+import smtplib
 import sqlite3
 import uuid
 from datetime import datetime, timezone, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file
 
 try:
@@ -21,6 +24,40 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+GMAIL_USER = os.environ.get('GMAIL_USER', '')
+GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
+
+# ── メール送信 ────────────────────────────────────────────────────────────
+
+def send_inquiry_email(team_name, name, email, subject, message):
+    """お問い合わせをGmailに通知する"""
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        return  # 環境変数未設定時はスキップ
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_USER
+        msg['To'] = GMAIL_USER
+        msg['Subject'] = f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}'
+        body = f"""Rakにお問い合わせが届きました。
+
+■ チーム名：{team_name}
+■ お名前：{name}
+■ メールアドレス：{email}
+■ 表題：{subject or "（未選択）"}
+■ メッセージ：
+{message}
+
+---
+返信先：{email}
+管理画面：https://web-production-95cff.up.railway.app/rak/feedback
+"""
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+    except Exception:
+        pass  # メール送信失敗してもフォームの動作は止めない
 
 # ── DB ────────────────────────────────────────────────────────────
 
@@ -470,28 +507,273 @@ def page(title, body, code=None, active=None):
 
 @app.route('/')
 def home():
-    body = '''
-<div class="container" style="max-width:480px;padding-top:60px">
-  <div style="text-align:center;margin-bottom:32px">
-    <div style="font-size:40px;font-weight:900;color:#2563eb;margin-bottom:8px">Rak</div>
-    <div style="color:#555;font-size:15px">チーム運営の「めんどくさい」を、ぜんぶラクに。</div>
+    return render_template_string('''<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rak - チーム運営をもっとラクに</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;color:#1a1a1a;line-height:1.7;font-size:16px;background:#fff}
+a{text-decoration:none;color:inherit}
+
+/* ナビ */
+.lp-nav{background:#fff;border-bottom:1px solid #e8eaf0;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.lp-nav-logo{font-weight:900;font-size:22px;color:#2563eb;display:flex;align-items:center;gap:8px}
+.lp-nav-icon{width:30px;height:30px;background:#2563eb;border-radius:8px;color:#fff;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.lp-nav-links{display:flex;gap:12px;align-items:center}
+.lp-nav-links a{font-size:14px;color:#555;padding:7px 14px;border-radius:8px;font-weight:500}
+.lp-nav-links a:hover{background:#eff6ff;color:#2563eb}
+.lp-nav-cta{background:#2563eb;color:#fff!important;border-radius:8px;padding:8px 18px!important;font-weight:700!important}
+.lp-nav-cta:hover{background:#1d4ed8!important}
+
+/* ヒーロー */
+.hero{background:linear-gradient(135deg,#eff6ff 0%,#f8f4ff 100%);padding:80px 24px 72px;text-align:center}
+.hero-label{display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;margin-bottom:20px;letter-spacing:.08em}
+.hero h1{font-size:clamp(26px,5vw,44px);font-weight:900;line-height:1.3;margin-bottom:16px;color:#0f172a}
+.hero-sub{font-size:17px;color:#475569;max-width:520px;margin:0 auto 36px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:#2563eb;color:#fff;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:700;display:inline-block;transition:.12s}
+.btn-primary:hover{background:#1d4ed8;color:#fff}
+.btn-secondary{background:#fff;color:#2563eb;border:2px solid #2563eb;padding:13px 28px;border-radius:10px;font-size:16px;font-weight:700;display:inline-block;transition:.12s}
+.btn-secondary:hover{background:#eff6ff}
+.hero-note{font-size:13px;color:#94a3b8;margin-top:18px}
+
+/* 課題セクション */
+.problems{background:#fff;padding:72px 24px}
+.section-center{text-align:center;margin-bottom:48px}
+.section-tag{display:inline-block;background:#fee2e2;color:#dc2626;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:.06em}
+.section-title{font-size:clamp(22px,4vw,32px);font-weight:900;color:#0f172a;margin-bottom:12px}
+.section-sub{font-size:15px;color:#64748b;max-width:480px;margin:0 auto}
+.problems-grid{max-width:800px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.problem-card{background:#fef2f2;border-radius:14px;padding:22px;border:1.5px solid #fee2e2}
+.problem-icon{font-size:28px;margin-bottom:10px}
+.problem-card h3{font-size:15px;font-weight:700;color:#dc2626;margin-bottom:6px}
+.problem-card p{font-size:13px;color:#64748b;line-height:1.6}
+
+/* 解決セクション */
+.solution{background:#f8faff;padding:72px 24px;text-align:center}
+.solution-tag{display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;margin-bottom:14px}
+.solution-title{font-size:clamp(22px,4vw,32px);font-weight:900;color:#0f172a;margin-bottom:48px}
+
+/* 機能セクション */
+.features{background:#fff;padding:72px 24px}
+.features-grid{max-width:840px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.feature-card{border-radius:14px;padding:24px;border:1.5px solid #e8eaf0;background:#fff;transition:.12s}
+.feature-card:hover{border-color:#2563eb;box-shadow:0 4px 20px rgba(37,99,235,.08)}
+.feature-icon{font-size:32px;margin-bottom:12px}
+.feature-card h3{font-size:16px;font-weight:700;margin-bottom:8px;color:#0f172a}
+.feature-card p{font-size:13px;color:#64748b;line-height:1.6}
+.feature-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:10px}
+.badge-pro{background:#f3e8ff;color:#7c3aed}
+.badge-free{background:#dcfce7;color:#16a34a}
+
+/* 料金セクション */
+.pricing{background:#f8faff;padding:72px 24px}
+.pricing-grid{max-width:680px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.plan-card{background:#fff;border-radius:16px;padding:28px;border:1.5px solid #e8eaf0}
+.plan-card.featured{border-color:#2563eb;box-shadow:0 4px 24px rgba(37,99,235,.12)}
+.plan-name{font-size:14px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+.plan-price{font-size:36px;font-weight:900;color:#0f172a;margin-bottom:4px}
+.plan-price span{font-size:16px;font-weight:500;color:#64748b}
+.plan-desc{font-size:13px;color:#64748b;margin-bottom:20px}
+.plan-features{list-style:none;margin-bottom:24px}
+.plan-features li{font-size:14px;padding:6px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px;color:#374151}
+.plan-features li:last-child{border:none}
+.plan-features li::before{content:"✓";color:#16a34a;font-weight:700;flex-shrink:0}
+.plan-cta{display:block;text-align:center;padding:13px;border-radius:10px;font-weight:700;font-size:15px;background:#2563eb;color:#fff;transition:.12s}
+.plan-cta:hover{background:#1d4ed8;color:#fff}
+.plan-cta.outline{background:#fff;color:#2563eb;border:2px solid #2563eb}
+.plan-cta.outline:hover{background:#eff6ff}
+.plan-tag{display:inline-block;background:#7c3aed;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-bottom:14px}
+
+/* 最終CTA */
+.final-cta{background:linear-gradient(135deg,#2563eb,#7c3aed);padding:80px 24px;text-align:center;color:#fff}
+.final-cta h2{font-size:clamp(24px,4vw,36px);font-weight:900;margin-bottom:14px}
+.final-cta p{font-size:16px;opacity:.85;margin-bottom:36px}
+.btn-white{background:#fff;color:#2563eb;padding:14px 36px;border-radius:10px;font-size:16px;font-weight:700;display:inline-block;transition:.12s}
+.btn-white:hover{background:#f0f4ff;color:#2563eb}
+
+/* フッター */
+footer{background:#0f172a;color:#94a3b8;padding:32px 24px;text-align:center;font-size:13px}
+footer a{color:#94a3b8}
+footer a:hover{color:#fff}
+
+/* チームコード入力エリア */
+.join-bar{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.08);padding:20px 24px;max-width:480px;margin:36px auto 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.join-bar input{flex:1;border:1.5px solid #dde0ea;border-radius:10px;padding:11px 14px;font-size:17px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;outline:none;font-family:inherit;min-width:140px}
+.join-bar input:focus{border-color:#2563eb}
+.join-bar button{background:#2563eb;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.join-bar button:hover{background:#1d4ed8}
+
+@media(max-width:600px){
+  .lp-nav-links .hide-sp{display:none}
+  .hero{padding:56px 20px 52px}
+}
+</style>
+</head><body>
+
+<!-- ナビ -->
+<nav class="lp-nav">
+  <a class="lp-nav-logo" href="/">
+    <div class="lp-nav-icon">R</div>Rak
+  </a>
+  <div class="lp-nav-links">
+    <a href="/feedback" class="hide-sp">お問い合わせ</a>
+    <a href="/create" class="lp-nav-cta">無料で始める →</a>
   </div>
-  <div class="card">
-    <h2>チームコードで入る</h2>
-    <form method="POST" action="/join">
-      <label>チームコード</label>
-      <input type="text" name="code" placeholder="例：ABC123" style="text-transform:uppercase;letter-spacing:.1em;font-size:18px;font-weight:700">
-      <button class="btn btn-blue btn-block" type="submit">入る →</button>
-    </form>
+</nav>
+
+<!-- ヒーロー -->
+<section class="hero">
+  <div class="hero-label">スポーツチーム・部活・サークル向け</div>
+  <h1>チーム運営の<br>「めんどくさい」を、<br>ぜんぶラクに。</h1>
+  <p class="hero-sub">予定管理・連絡・集金・注文フォーム。バラバラだった仕事をRak一つにまとめる。</p>
+  <div class="hero-btns">
+    <a href="/create" class="btn-primary">無料でチームを作る →</a>
+    <a href="#features" class="btn-secondary">機能を見る</a>
   </div>
-  <div style="text-align:center;color:#888;font-size:13px;margin:16px 0">または</div>
-  <div class="card">
-    <h2>新しいチームを作る</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:16px">管理者として新しいチームを登録します</p>
-    <a href="/create" class="btn btn-outline" style="display:block;text-align:center">チームを作成する →</a>
+  <p class="hero-note">登録不要・無料からスタート</p>
+  <!-- チームコード入力 -->
+  <form method="POST" action="/join" class="join-bar">
+    <input type="text" name="code" placeholder="チームコード（例：ABC123）">
+    <button type="submit">入る →</button>
+  </form>
+</section>
+
+<!-- 課題 -->
+<section class="problems">
+  <div class="section-center">
+    <div class="section-tag">こんな悩みありませんか？</div>
+    <h2 class="section-title">チーム管理、こうなってませんか</h2>
+    <p class="section-sub">多くのチームが同じ問題を抱えています</p>
   </div>
-</div>'''
-    return page('ホーム', body)
+  <div class="problems-grid">
+    <div class="problem-card">
+      <div class="problem-icon">📱</div>
+      <h3>LINEが流れて埋もれる</h3>
+      <p>大事な連絡が雑談に埋もれて、既読が確認できない。</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">📊</div>
+      <h3>Excelが毎回崩れる</h3>
+      <p>出欠・名簿をExcelで管理するが、スマホで開くたびに崩れる。</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">💸</div>
+      <h3>集金が面倒くさい</h3>
+      <p>誰が払ったか払っていないか、毎回LINEで確認するのが億劫。</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">⏰</div>
+      <h3>お知らせ作りが時間かかる</h3>
+      <p>試合のお知らせ文を毎回ゼロから書いている。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 解決 -->
+<section class="solution">
+  <div class="solution-tag">Rakが解決します</div>
+  <h2 class="solution-title">チーム運営に必要なことが<br>ぜんぶ入っています</h2>
+</section>
+
+<!-- 機能 -->
+<section class="features" id="features">
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3>スケジュール管理</h3>
+      <p>練習・試合の予定を登録。メンバーが出欠をワンタップで報告できる。</p>
+      <span class="feature-badge badge-free">無料</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📢</div>
+      <h3>チーム連絡</h3>
+      <p>お知らせを投稿して既読管理。大事な連絡が埋もれない。</p>
+      <span class="feature-badge badge-free">無料</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👥</div>
+      <h3>メンバー管理</h3>
+      <p>背番号・ポジション・メンバーリストをデジタルで管理。</p>
+      <span class="feature-badge badge-free">無料</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>集金・費用管理</h3>
+      <p>誰が払った・払っていないをひと目で確認。催促の手間をゼロに。</p>
+      <span class="feature-badge badge-pro">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>注文フォーム</h3>
+      <p>ウェア・弁当・備品の注文をフォームで収集。Excelにエクスポートも。</p>
+      <span class="feature-badge badge-pro">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>AI文章生成</h3>
+      <p>メモを入力するだけで、試合お知らせ・通知文をAIが自動作成。</p>
+      <span class="feature-badge badge-pro">Pro</span>
+    </div>
+  </div>
+</section>
+
+<!-- 料金 -->
+<section class="pricing" id="pricing">
+  <div class="section-center">
+    <div class="section-tag" style="background:#f3e8ff;color:#7c3aed">料金プラン</div>
+    <h2 class="section-title">シンプルな料金体系</h2>
+    <p class="section-sub">まずは無料で始めて、必要になったらアップグレード</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">¥0<span> / 月</span></div>
+      <p class="plan-desc">まずは無料でお試しください</p>
+      <ul class="plan-features">
+        <li>スケジュール管理</li>
+        <li>チーム連絡・既読管理</li>
+        <li>メンバー管理</li>
+        <li>チームコード招待</li>
+      </ul>
+      <a href="/create" class="plan-cta outline">無料で始める</a>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-tag">おすすめ</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">¥980<span> / 月</span></div>
+      <p class="plan-desc">本格的なチーム運営に</p>
+      <ul class="plan-features">
+        <li>Free の全機能</li>
+        <li>集金・費用管理</li>
+        <li>注文フォーム</li>
+        <li>AI文章生成</li>
+        <li>Excelエクスポート</li>
+      </ul>
+      <a href="/create" class="plan-cta">Proで始める →</a>
+    </div>
+  </div>
+</section>
+
+<!-- 最終CTA -->
+<section class="final-cta">
+  <h2>今すぐ、チームをラクにしよう</h2>
+  <p>登録不要・無料からスタート。<br>チームコードを発行して、今日から使えます。</p>
+  <a href="/create" class="btn-white">無料でチームを作る →</a>
+</section>
+
+<!-- フッター -->
+<footer>
+  <p style="margin-bottom:8px">
+    <a href="/feedback">お問い合わせ</a>　|
+    <a href="/create">チームを作る</a>
+  </p>
+  <p>© 2026 Rak</p>
+</footer>
+
+</body></html>''')
 
 @app.route('/join', methods=['POST'])
 def join():
@@ -2678,6 +2960,7 @@ def feedback():
             )
             conn.commit()
             conn.close()
+            send_inquiry_email(team_name, name, email, subject, message)
             return redirect('/feedback?sent=1')
 
     body = f'''

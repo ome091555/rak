@@ -2990,6 +2990,9 @@ def mail_test():
     result.append(f'キー先頭4文字: {api_key[:4] if api_key else "なし"}')
     result.append(f'送信先: {NOTIFY_EMAIL}')
     result.append(f'全環境変数キー: {[k for k in os.environ.keys() if "RESEND" in k or "GMAIL" in k]}')
+    result.append(f'環境変数の総数: {len(os.environ)}')
+    result.append(f'RAILWAYキーあり: {"RAILWAY_ENVIRONMENT" in os.environ}')
+    result.append(f'全キー一覧（先頭30）: {list(os.environ.keys())[:30]}')
     if not api_key:
         result.append('❌ APIキーが読めていません')
         return '<br>'.join(result)

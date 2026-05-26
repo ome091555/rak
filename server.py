@@ -2977,6 +2977,35 @@ def feedback():
     return page('お問い合わせ', body)
 
 
+@app.route('/rak/mailtest')
+def mail_test():
+    """メール送信テスト（デバッグ用・後で削除）"""
+    import traceback
+    result = []
+    result.append(f'GMAIL_USER: {repr(GMAIL_USER)}')
+    result.append(f'GMAIL_APP_PASSWORD 設定: {bool(GMAIL_APP_PASSWORD)}')
+    result.append(f'パスワード長: {len(GMAIL_APP_PASSWORD)} 文字（スペース除去後: {len(GMAIL_APP_PASSWORD.replace(" ",""))} 文字）')
+    try:
+        pw = GMAIL_APP_PASSWORD.replace(' ', '')
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(GMAIL_USER, pw)
+            result.append('✅ ログイン成功')
+            msg = MIMEMultipart()
+            msg['From'] = GMAIL_USER
+            msg['To'] = GMAIL_USER
+            msg['Subject'] = '【Rakテスト】メール送信テスト'
+            msg.attach(MIMEText('テストメールです。正常に送信されました。', 'plain', 'utf-8'))
+            server.send_message(msg)
+            result.append('✅ 送信成功！Gmailを確認してください')
+    except Exception as e:
+        result.append(f'❌ エラー: {type(e).__name__}: {e}')
+        result.append(traceback.format_exc())
+    return '<br>'.join(result).replace('\n', '<br>')
+
+
 @app.route('/rak/feedback')
 def rak_feedback_admin():
     pw = request.args.get('pw', '')

@@ -32,8 +32,10 @@ GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
 def send_inquiry_email(team_name, name, email, subject, message):
     """お問い合わせをGmailに通知する"""
     if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        return  # 環境変数未設定時はスキップ
+        print(f'[GMAIL] 環境変数未設定: USER={bool(GMAIL_USER)} PASS={bool(GMAIL_APP_PASSWORD)}')
+        return
     try:
+        pw = GMAIL_APP_PASSWORD.replace(' ', '')  # スペース除去（Googleのコピー形式対応）
         msg = MIMEMultipart()
         msg['From'] = GMAIL_USER
         msg['To'] = GMAIL_USER
@@ -53,11 +55,14 @@ def send_inquiry_email(team_name, name, email, subject, message):
 """
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.ehlo()
             server.starttls()
-            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.ehlo()
+            server.login(GMAIL_USER, pw)
             server.send_message(msg)
-    except Exception:
-        pass  # メール送信失敗してもフォームの動作は止めない
+        print(f'[GMAIL] 送信成功 → {GMAIL_USER}')
+    except Exception as e:
+        print(f'[GMAIL ERROR] {type(e).__name__}: {e}')  # Railwayのログで確認可能
 
 # ── DB ────────────────────────────────────────────────────────────
 

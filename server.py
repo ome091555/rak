@@ -401,51 +401,56 @@ _SVG_EMPTY_CHART = (
     '<rect x="40" y="18" width="9" height="32" rx="2" fill="#d97706"/>'
     '</svg>'
 )
-# セクションヘッダー用アイコン 18×18
+# セクションヘッダー用アイコン 22×22 (アンバー塗り + 白アイコン = どこでも視認しやすい)
 _ICO_PEOPLE = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<circle cx="7" cy="6" r="3" stroke="#d97706" stroke-width="1.8"/>'
-    '<path d="M1 17C1 13 3.5 11 7 11" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" fill="none"/>'
-    '<circle cx="13" cy="5" r="3" stroke="#d97706" stroke-width="1.8"/>'
-    '<path d="M9 16C9 12.5 11 10.5 13 10.5 15 10.5 17 12.5 17 16"'
-    ' stroke="#d97706" stroke-width="1.8" stroke-linecap="round" fill="none"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<circle cx="8.5" cy="8" r="2.5" stroke="white" stroke-width="1.5"/>'
+    '<path d="M3.5 18C3.5 15 5.5 13 8.5 13" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '<circle cx="14.5" cy="7.5" r="2.5" stroke="white" stroke-width="1.5"/>'
+    '<path d="M11 17.5C11 15 12.5 13 14.5 13C16.5 13 18.5 15 18.5 17.5"'
+    ' stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
     '</svg>'
 )
 _ICO_CALENDAR = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<rect x="2" y="4" width="14" height="12" rx="2" stroke="#d97706" stroke-width="1.8"/>'
-    '<line x1="2" y1="8" x2="16" y2="8" stroke="#d97706" stroke-width="1.5"/>'
-    '<line x1="6" y1="2" x2="6" y2="6" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>'
-    '<line x1="12" y1="2" x2="12" y2="6" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<rect x="4.5" y="7" width="13" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/>'
+    '<line x1="4.5" y1="11" x2="17.5" y2="11" stroke="white" stroke-width="1.2"/>'
+    '<line x1="8" y1="5" x2="8" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '<line x1="14" y1="5" x2="14" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
     '</svg>'
 )
 _ICO_CLIPBOARD = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<rect x="3" y="3" width="12" height="14" rx="2" stroke="#d97706" stroke-width="1.8"/>'
-    '<path d="M6 2H12V5H6Z" stroke="#d97706" stroke-width="1.5" fill="none"/>'
-    '<line x1="5" y1="9" x2="13" y2="9" stroke="#d97706" stroke-width="1.5"/>'
-    '<line x1="5" y1="12" x2="10" y2="12" stroke="#d97706" stroke-width="1.5"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<rect x="6" y="6" width="10" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>'
+    '<line x1="8" y1="10" x2="14" y2="10" stroke="white" stroke-width="1.3"/>'
+    '<line x1="8" y1="13" x2="14" y2="13" stroke="white" stroke-width="1.3"/>'
     '</svg>'
 )
 _ICO_CHART_SM = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<rect x="2" y="10" width="4" height="6" rx="1" fill="#d97706" opacity="0.5"/>'
-    '<rect x="7" y="6" width="4" height="10" rx="1" fill="#d97706" opacity="0.7"/>'
-    '<rect x="12" y="2" width="4" height="14" rx="1" fill="#d97706"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<rect x="5" y="14.5" width="3" height="3.5" rx="1" fill="white" opacity="0.65"/>'
+    '<rect x="9.5" y="11" width="3" height="7" rx="1" fill="white" opacity="0.82"/>'
+    '<rect x="14" y="7" width="3" height="11" rx="1" fill="white"/>'
     '</svg>'
 )
 _ICO_BELL_SM = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<path d="M9 2C6.5 2 4.5 4 4.5 6.5V10L3 12H15L13.5 10V6.5C13.5 4 11.5 2 9 2Z"'
-    ' stroke="#d97706" stroke-width="1.8" stroke-linejoin="round" fill="none"/>'
-    '<path d="M7 12Q7 14.5 9 14.5Q11 14.5 11 12" stroke="#d97706" stroke-width="1.8" fill="none"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<path d="M11 5C8.5 5 7 7 7 9V13L5 15H17L15 13V9C15 7 13.5 5 11 5Z"'
+    ' stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
+    '<path d="M9 15Q9 17 11 17Q13 17 13 15" stroke="white" stroke-width="1.5" fill="none"/>'
     '</svg>'
 )
 _ICO_MONEY_SM = (
-    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
-    '<circle cx="9" cy="9" r="7" stroke="#d97706" stroke-width="1.8"/>'
-    '<path d="M9 4v10M6.5 6c.5-1.5 5-1.5 5 1.5 0 2.5-5 1.5-5 3.5 0 2 4.5 1.5 5 0"'
-    ' stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<circle cx="11" cy="11" r="5.5" stroke="white" stroke-width="1.5"/>'
+    '<path d="M11 6v10M8.5 8.5c.5-1.5 5.5-1.5 5.5 1.5 0 2.5-5.5 1.5-5.5 3.5 0 2 5 1.5 5.5 0"'
+    ' stroke="white" stroke-width="1.2" stroke-linecap="round" fill="none"/>'
     '</svg>'
 )
 # ユーザー表示 (ナビ)

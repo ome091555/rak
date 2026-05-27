@@ -252,18 +252,18 @@ def pro_gate(code, team, active='admin'):
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
-    <div style="font-size:40px;margin-bottom:16px">🔒</div>
+    <div style="margin-bottom:16px">{_ICO_LOCK}</div>
     <h1 style="font-size:22px;margin-bottom:8px">Proプランの機能です</h1>
     <p style="color:#666;font-size:14px;margin-bottom:24px">この機能を使うにはRak Proへのアップグレードが必要です。</p>
     <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left">
       <div style="font-weight:700;margin-bottom:12px;color:#d97706">Proプランでできること</div>
-      <div style="font-size:13px;color:#444;line-height:2">
-        ✅ 集金・支払い管理<br>
-        ✅ 注文フォーム<br>
-        ✅ アンケート<br>
-        ✅ AI文章生成<br>
-        ✅ Excel出力<br>
-        ✅ メンバー無制限
+      <div style="font-size:13px;color:#444;line-height:2.2">
+        {_CHK} 集金・支払い管理<br>
+        {_CHK} 注文フォーム<br>
+        {_CHK} アンケート<br>
+        {_CHK} AI文章生成<br>
+        {_CHK} Excel出力<br>
+        {_CHK} メンバー無制限
       </div>
     </div>
     <div style="font-size:28px;font-weight:900;color:#d97706;margin-bottom:4px">¥2,980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
@@ -361,6 +361,142 @@ FAVICON_LINK = (
     "%3Cpath d='M 54 64 L 72 94 L 112 28' stroke='white' stroke-width='11' stroke-linejoin='miter' fill='none'/%3E"
     "%3C/svg%3E"
     '"><meta name="theme-color" content="#d97706">'
+)
+
+# ── オリジナル SVG アイコン (Apple絵文字に依存しない) ────────────────────────
+# 空状態イラスト 64×64 (アンバー円 + アイコン)
+_SVG_EMPTY_BELL = (
+    '<svg width="64" height="64" viewBox="0 0 64 64" fill="none">'
+    '<circle cx="32" cy="32" r="30" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>'
+    '<path d="M32 13C26 13 21 18 21 24L21 34L16 39H48L43 34V24C43 18 38 13 32 13Z"'
+    ' stroke="#d97706" stroke-width="2.5" stroke-linejoin="round" fill="none"/>'
+    '<path d="M26 39Q26 44.5 32 44.5Q38 44.5 38 39" stroke="#d97706" stroke-width="2.5" fill="none"/>'
+    '</svg>'
+)
+_SVG_EMPTY_COIN = (
+    '<svg width="64" height="64" viewBox="0 0 64 64" fill="none">'
+    '<circle cx="32" cy="32" r="30" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>'
+    '<circle cx="32" cy="32" r="15" stroke="#d97706" stroke-width="2.5" fill="none"/>'
+    '<path d="M26 23L32 30L38 23" stroke="#d97706" stroke-width="2.5" fill="none"'
+    ' stroke-linejoin="round" stroke-linecap="round"/>'
+    '<line x1="26" y1="28" x2="38" y2="28" stroke="#d97706" stroke-width="2"/>'
+    '<line x1="26" y1="33" x2="38" y2="33" stroke="#d97706" stroke-width="2"/>'
+    '<line x1="32" y1="30" x2="32" y2="41" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/>'
+    '</svg>'
+)
+_SVG_EMPTY_FORM = (
+    '<svg width="64" height="64" viewBox="0 0 64 64" fill="none">'
+    '<circle cx="32" cy="32" r="30" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>'
+    '<rect x="18" y="14" width="28" height="36" rx="3" stroke="#d97706" stroke-width="2.5" fill="none"/>'
+    '<line x1="23" y1="24" x2="41" y2="24" stroke="#d97706" stroke-width="2"/>'
+    '<line x1="23" y1="31" x2="41" y2="31" stroke="#d97706" stroke-width="2"/>'
+    '<line x1="23" y1="38" x2="33" y2="38" stroke="#d97706" stroke-width="2"/>'
+    '</svg>'
+)
+_SVG_EMPTY_CHART = (
+    '<svg width="64" height="64" viewBox="0 0 64 64" fill="none">'
+    '<circle cx="32" cy="32" r="30" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>'
+    '<rect x="15" y="38" width="9" height="12" rx="2" fill="#d97706" opacity="0.4"/>'
+    '<rect x="27.5" y="28" width="9" height="22" rx="2" fill="#d97706" opacity="0.7"/>'
+    '<rect x="40" y="18" width="9" height="32" rx="2" fill="#d97706"/>'
+    '</svg>'
+)
+# セクションヘッダー用アイコン 18×18
+_ICO_PEOPLE = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<circle cx="7" cy="6" r="3" stroke="#d97706" stroke-width="1.8"/>'
+    '<path d="M1 17C1 13 3.5 11 7 11" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" fill="none"/>'
+    '<circle cx="13" cy="5" r="3" stroke="#d97706" stroke-width="1.8"/>'
+    '<path d="M9 16C9 12.5 11 10.5 13 10.5 15 10.5 17 12.5 17 16"'
+    ' stroke="#d97706" stroke-width="1.8" stroke-linecap="round" fill="none"/>'
+    '</svg>'
+)
+_ICO_CALENDAR = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<rect x="2" y="4" width="14" height="12" rx="2" stroke="#d97706" stroke-width="1.8"/>'
+    '<line x1="2" y1="8" x2="16" y2="8" stroke="#d97706" stroke-width="1.5"/>'
+    '<line x1="6" y1="2" x2="6" y2="6" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>'
+    '<line x1="12" y1="2" x2="12" y2="6" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>'
+    '</svg>'
+)
+_ICO_CLIPBOARD = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<rect x="3" y="3" width="12" height="14" rx="2" stroke="#d97706" stroke-width="1.8"/>'
+    '<path d="M6 2H12V5H6Z" stroke="#d97706" stroke-width="1.5" fill="none"/>'
+    '<line x1="5" y1="9" x2="13" y2="9" stroke="#d97706" stroke-width="1.5"/>'
+    '<line x1="5" y1="12" x2="10" y2="12" stroke="#d97706" stroke-width="1.5"/>'
+    '</svg>'
+)
+_ICO_CHART_SM = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<rect x="2" y="10" width="4" height="6" rx="1" fill="#d97706" opacity="0.5"/>'
+    '<rect x="7" y="6" width="4" height="10" rx="1" fill="#d97706" opacity="0.7"/>'
+    '<rect x="12" y="2" width="4" height="14" rx="1" fill="#d97706"/>'
+    '</svg>'
+)
+_ICO_BELL_SM = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<path d="M9 2C6.5 2 4.5 4 4.5 6.5V10L3 12H15L13.5 10V6.5C13.5 4 11.5 2 9 2Z"'
+    ' stroke="#d97706" stroke-width="1.8" stroke-linejoin="round" fill="none"/>'
+    '<path d="M7 12Q7 14.5 9 14.5Q11 14.5 11 12" stroke="#d97706" stroke-width="1.8" fill="none"/>'
+    '</svg>'
+)
+_ICO_MONEY_SM = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<circle cx="9" cy="9" r="7" stroke="#d97706" stroke-width="1.8"/>'
+    '<path d="M9 4v10M6.5 6c.5-1.5 5-1.5 5 1.5 0 2.5-5 1.5-5 3.5 0 2 4.5 1.5 5 0"'
+    ' stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '</svg>'
+)
+# ユーザー表示 (ナビ)
+_ICO_USER_SM = (
+    '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:middle">'
+    '<circle cx="7" cy="5" r="3" stroke="#d97706" stroke-width="1.5"/>'
+    '<path d="M1 14C1 10.7 3.7 8 7 8C10.3 8 13 10.7 13 14"'
+    ' stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '</svg>'
+)
+# アンバーチェックマーク (機能リスト・ステータス)
+_CHK = (
+    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"'
+    ' style="vertical-align:middle;margin-right:4px">'
+    '<circle cx="8" cy="8" r="7" fill="#d97706"/>'
+    '<path d="M4.5 8L6.8 10.5L11.5 5.5" stroke="white" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+    '</svg>'
+)
+# ウェルカム画面: Rak ブランドマーク (48px)
+_ICO_WELCOME = (
+    '<svg viewBox="0 0 130 120" width="48" height="44" fill="none">'
+    '<rect width="130" height="120" rx="28" fill="#d97706"/>'
+    '<path d="M 32 94 L 32 26 L 60 26 C 74 26 80 36 80 46 C 80 56 74 64 60 64 L 32 64"'
+    ' stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>'
+    '<path d="M 54 64 L 72 94 L 112 28" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>'
+    '</svg>'
+)
+# ロック (Proゲート)
+_ICO_LOCK = (
+    '<svg width="52" height="52" viewBox="0 0 52 52" fill="none">'
+    '<rect x="10" y="24" width="32" height="22" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>'
+    '<path d="M18 24V17C18 12 22 8 26 8C30 8 34 12 34 17V24"'
+    ' stroke="#d97706" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
+    '<circle cx="26" cy="35" r="3.5" fill="#d97706"/>'
+    '<line x1="26" y1="38.5" x2="26" y2="42" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/>'
+    '</svg>'
+)
+# お祝い (成功・アップグレード完了) 56px
+_ICO_CELEBRATE = (
+    '<svg width="56" height="56" viewBox="0 0 56 56" fill="none">'
+    '<circle cx="28" cy="28" r="26" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>'
+    '<path d="M28 10L31.5 21H43L33.5 27.5L37 38.5L28 32L19 38.5L22.5 27.5L13 21H24.5L28 10Z"'
+    ' fill="#d97706"/>'
+    '</svg>'
+)
+# 小さいお祝い (インライン)
+_ICO_CELEBRATE_SM = (
+    '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align:middle">'
+    '<path d="M9 2L11 8H17L12 11.5L14 17.5L9 14L4 17.5L6 11.5L1 8H7L9 2Z" fill="#d97706"/>'
+    '</svg>'
 )
 
 ICONS = {
@@ -571,7 +707,7 @@ def page(title, body, code=None, active=None):
             ai_cls = 'active' if active == 'ai' else ''
             desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}"><span class="nav-d-icon">{ICONS["ai"]}</span>AI</a>'
         elif member:
-            desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">👤 {member}</span>'
+            desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">{_ICO_USER_SM} {member}</span>'
 
         bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
@@ -921,7 +1057,7 @@ def team_portal(code):
         body = f'''
 <div class="container" style="max-width:480px;padding-top:60px">
   <div class="card" style="text-align:center">
-    <div style="font-size:32px;margin-bottom:8px">👋</div>
+    <div style="margin-bottom:12px">{_ICO_WELCOME}</div>
     <h1 style="margin-bottom:6px">{team["name"]}</h1>
     <p style="color:#666;font-size:13px;margin-bottom:20px">あなたの名前を入力してください</p>
     <form method="POST" action="/t/{code}/join">
@@ -1171,10 +1307,10 @@ def notices(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">📢 お知らせ</span></div>
+    <div><span class="section-label">{_ICO_BELL_SM} お知らせ</span></div>
     {new_btn}
   </div>
-  {cards if ns else '<div class="empty card">📭<br>お知らせはまだありません</div>'}
+  {cards if ns else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_BELL + '</div>お知らせはまだありません</div>'}
 </div>'''
     return page('お知らせ', body, code, active='notices')
 
@@ -1334,7 +1470,7 @@ def admin_dash(code):
 
     body = f'''
 <div class="container">
-  {'<div class="msg-ok">✅ チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
+  {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
 
   <div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none">
     <div style="font-size:13px;opacity:.8;margin-bottom:4px">チームコード</div>
@@ -1347,7 +1483,7 @@ def admin_dash(code):
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">📅 直近の予定</h2>
+      <h2 style="margin:0">{_ICO_CALENDAR} 直近の予定</h2>
       <a href="/t/{code}/admin/events/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 追加</a>
     </div>
     {event_rows}
@@ -1356,7 +1492,7 @@ def admin_dash(code):
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">📢 最近のお知らせ</h2>
+      <h2 style="margin:0">{_ICO_BELL_SM} 最近のお知らせ</h2>
       <a href="/t/{code}/admin/notices/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 作成</a>
     </div>
     {notice_rows}
@@ -1365,7 +1501,7 @@ def admin_dash(code):
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">💰 集金 未払いリスト</h2>
+      <h2 style="margin:0">{_ICO_MONEY_SM} 集金 未払いリスト</h2>
       <span class="badge {'badge-red' if unpaid_summary else 'badge-green'}" style="margin-left:auto">{'未払い ' + str(len(unpaid_summary)) + '件' if unpaid_summary else '全員支払済'}</span>
     </div>
     {''.join(f"""<div class="card-sm row" style="justify-content:space-between;align-items:center;background:#fff9f9">
@@ -1374,25 +1510,25 @@ def admin_dash(code):
         <div style="font-size:12px;color:#888">{u['fee_title']}　¥{u['amount']:,}{('　期限：' + fmt_date(u['due_date'])) if u['due_date'] else ''}</div>
       </div>
       <a href="/t/{code}/admin/fees/{u['fee_id']}" class="btn btn-sm btn-outline">管理</a>
-    </div>""" for u in unpaid_summary[:5]) if unpaid_summary else '<div class="empty">未払いなし 🎉</div>'}
+    </div>""" for u in unpaid_summary[:5]) if unpaid_summary else '<div class="empty">未払いなし ' + _ICO_CELEBRATE_SM + '</div>'}
     {f'<div style="margin-top:8px;font-size:13px;color:#888">他 {len(unpaid_summary)-5}件…</div>' if len(unpaid_summary) > 5 else ''}
     <div style="margin-top:10px"><a href="/t/{code}/admin/fees" style="font-size:13px">集金管理を見る →</a></div>
   </div>
 
   <div class="card">
-    <h2>👥 メンバー管理</h2>
+    <h2>{_ICO_PEOPLE} メンバー管理</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">名簿の確認・追加・削除ができます</p>
     <a href="/t/{code}/admin/members" class="btn btn-outline" style="display:block;text-align:center">メンバー一覧を見る →</a>
   </div>
 
   <div class="card">
-    <h2>💰 集金管理</h2>
+    <h2>{_ICO_MONEY_SM} 集金管理</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">集金項目の作成・支払い状況の管理ができます</p>
     <a href="/t/{code}/admin/fees" class="btn btn-outline" style="display:block;text-align:center">集金管理を見る →</a>
   </div>
 
   <div class="card">
-    <h2>📋 注文フォーム</h2>
+    <h2>{_ICO_CLIPBOARD} 注文フォーム</h2>
     <p style="font-size:13px;color:#666;margin-bottom:14px">弁当・ウェアなど、チーム独自の注文フォームを作成してメンバーの回答を集計できます</p>
     <a href="/t/{code}/orders" class="btn btn-outline" style="display:block;text-align:center">注文フォームを見る →</a>
   </div>
@@ -1910,7 +2046,7 @@ def admin_members(code):
   {f'<div class="msg-ok">{msg}</div>' if msg else ''}
   <div class="card">
     <div class="row" style="margin-bottom:16px">
-      <h1 style="margin:0">👥 メンバー名簿</h1>
+      <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
       <span class="badge badge-blue" style="margin-left:auto">{len(members)}名</span>
     </div>
     {rows if members else '<div class="empty">まだメンバーがいません</div>'}
@@ -2025,7 +2161,7 @@ def member_list(code):
   <div class="card">
     <div class="row" style="margin-bottom:16px">
       <div>
-        <span class="section-label">👥 メンバー</span>
+        <span class="section-label">{_ICO_PEOPLE} メンバー</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
         <span class="badge badge-blue">{len(members)}名</span>
@@ -2084,10 +2220,10 @@ def member_fees(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">💰 集金</span></div>
+    <div><span class="section-label">{_ICO_MONEY_SM} 集金</span></div>
     {new_btn}
   </div>
-  {cards if fees else '<div class="empty card">📭<br>集金項目はまだありません</div>'}
+  {cards if fees else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_COIN + '</div>集金項目はまだありません</div>'}
 </div>'''
     return page('集金', body, code, active='fees')
 
@@ -2122,7 +2258,7 @@ def admin_fees(code):
 <div class="container" style="max-width:540px">
   <div class="card">
     <div class="row" style="margin-bottom:16px">
-      <h1 style="margin:0">💰 集金管理</h1>
+      <h1 style="margin:0">{_ICO_MONEY_SM} 集金管理</h1>
       <a href="/t/{code}/admin/fees/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 追加</a>
     </div>
     {rows if fees else '<div class="empty">集金項目がありません</div>'}
@@ -2215,7 +2351,7 @@ def admin_fee_detail(code, fee_id):
         paid_at = p['paid_at'] if p else ''
         toggle_val = 0 if paid else 1
         btn_class = 'btn-green' if paid else 'btn-gray'
-        btn_label = '✅ 支払済' if paid else '未払い'
+        btn_label = _CHK + ' 支払済' if paid else '未払い'
         rows += f'''
         <div class="card-sm row" style="justify-content:space-between;align-items:center">
           <div>
@@ -2419,10 +2555,10 @@ def orders_list(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">📋 注文フォーム</span></div>
+    <div><span class="section-label">{_ICO_CLIPBOARD} 注文フォーム</span></div>
     {new_btn}
   </div>
-  {cards if forms else '<div class="empty card">📭<br>注文フォームはまだありません</div>'}
+  {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文フォームはまだありません</div>'}
 </div>'''
     return page('注文フォーム', body, code, active='orders')
 
@@ -2635,7 +2771,7 @@ def order_form_view(code, form_id):
     submit_label = '更新する' if my_resp else '送信する'
     deadline_html = f'<div style="font-size:13px;color:#f59e0b;margin-bottom:12px">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
     desc_html = f'<div style="font-size:13px;color:#666;margin-bottom:12px">{form["description"]}</div>' if form['description'] else ''
-    already_html = '<div class="msg-ok">✅ 回答済みです。修正して再送信できます。</div>' if my_resp else ''
+    already_html = '<div class="msg-ok">' + _CHK + ' 回答済みです。修正して再送信できます。</div>' if my_resp else ''
     photos_html = ''.join(
         f'<img src="/uploads/{p["id"]}" style="width:100%;border-radius:10px;border:1.5px solid #e0e8ff;margin-bottom:10px;display:block">'
         for p in photos
@@ -2885,10 +3021,10 @@ def survey_list(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">📊 アンケート</span></div>
+    <div><span class="section-label">{_ICO_CHART_SM} アンケート</span></div>
     {new_btn}
   </div>
-  {cards if surveys else '<div class="empty card">📭<br>アンケートはまだありません</div>'}
+  {cards if surveys else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_CHART + '</div>アンケートはまだありません</div>'}
 </div>'''
     return page('アンケート', body, code, active='survey')
 
@@ -3183,7 +3319,7 @@ def upgrade_page(code):
         body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
-    <div style="font-size:40px;margin-bottom:16px">🎉</div>
+    <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
     <h1 style="font-size:22px;margin-bottom:8px">Proプラン利用中</h1>
     <p style="color:#666;font-size:14px">すべての機能をご利用いただけます。</p>
     <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a></div>
@@ -3206,14 +3342,14 @@ def upgrade_page(code):
     <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:4px">¥2,980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
     <div style="font-size:13px;color:#888;margin-bottom:28px">年払い ¥29,800（2ヶ月分お得）</div>
     <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:28px;text-align:left">
-      <div style="font-size:13px;color:#444;line-height:2.2">
-        ✅ 集金・支払い管理<br>
-        ✅ 注文フォーム<br>
-        ✅ アンケート<br>
-        ✅ AI文章生成<br>
-        ✅ Excel出力<br>
-        ✅ メンバー無制限<br>
-        ✅ 優先サポート
+      <div style="font-size:13px;color:#444;line-height:2.4">
+        {_CHK} 集金・支払い管理<br>
+        {_CHK} 注文フォーム<br>
+        {_CHK} アンケート<br>
+        {_CHK} AI文章生成<br>
+        {_CHK} Excel出力<br>
+        {_CHK} メンバー無制限<br>
+        {_CHK} 優先サポート
       </div>
     </div>
     {checkout_btn}
@@ -3250,7 +3386,7 @@ def upgrade_success(code):
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
-    <div style="font-size:48px;margin-bottom:16px">🎉</div>
+    <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
     <h1 style="font-size:22px;margin-bottom:8px">アップグレード完了！</h1>
     <p style="color:#666;font-size:14px;margin-bottom:24px">Rak Proへようこそ。すべての機能が使えるようになりました。</p>
     <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a>

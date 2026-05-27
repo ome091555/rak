@@ -402,7 +402,7 @@ button{font-family:inherit}
 /* Nav */
 .nav{background:#fff;border-bottom:1px solid var(--rak-line-soft);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
 .nav-logo{font-weight:900;font-size:18px;color:var(--rak-black);display:flex;align-items:center;gap:8px;letter-spacing:-0.02em}
-.nav-icon{width:28px;height:28px;background:var(--rak-black);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.nav-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .nav-team{font-size:13px;color:var(--rak-graphite);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
 .nav-links-desktop{display:flex;gap:4px;margin-left:auto;align-items:center}
 .nav-links-desktop a{font-size:13px;color:var(--rak-graphite);padding:6px 10px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:4px}

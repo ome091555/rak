@@ -881,7 +881,7 @@ def create_team():
             code = new_id().upper()[:6]
             conn = get_db()
             conn.execute(
-                'INSERT INTO teams VALUES (?,?,?,?,?,?)',
+                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at) VALUES (?,?,?,?,?,?)',
                 (team_id, name, '', code, password, now_str())
             )
             conn.commit()

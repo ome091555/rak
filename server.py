@@ -1584,111 +1584,83 @@ def admin_dash(code):
     .atile[open] summary{{background:#f9fafb;border-bottom:1px solid #e5e7eb;color:#111827;flex-direction:row;justify-content:flex-start;gap:8px;padding:12px 14px;font-size:13px}}
     .atile[open] .atile-icon{{color:#d97706}}
     .atile-icon{{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#9ca3af}}
-    .atile-body{{padding:12px;font-size:13px}}
-    .atile-body .btn{{font-size:12px;padding:8px;display:block;text-align:center;margin-top:8px;width:100%;box-sizing:border-box}}
+    .atile-body{{padding:10px 14px;display:flex;gap:8px;align-items:center;font-size:13px}}
+    .atile-body .btn{{flex:1;font-size:13px;padding:9px 10px;text-align:center}}
   </style>
 
   <div class="admin-grid">
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_CALENDAR}</span>予定
-      </summary>
+      <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定</summary>
       <div class="atile-body">
-        {event_rows}
         <a href="/t/{code}/admin/events/new" class="btn btn-blue">＋ 追加</a>
-        <a href="/t/{code}/schedule" style="font-size:12px;display:block;text-align:center;margin-top:6px;color:#d97706">すべて見る →</a>
+        <a href="/t/{code}/schedule" class="btn btn-outline">すべて見る</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_BELL_SM}</span>お知らせ
-      </summary>
+      <summary><span class="atile-icon">{_ICO_BELL_SM}</span>お知らせ</summary>
       <div class="atile-body">
-        {notice_rows}
         <a href="/t/{code}/admin/notices/new" class="btn btn-blue">＋ 作成</a>
-        <a href="/t/{code}/notices" style="font-size:12px;display:block;text-align:center;margin-top:6px;color:#d97706">すべて見る →</a>
+        <a href="/t/{code}/notices" class="btn btn-outline">すべて見る</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}
-      </summary>
+      <summary><span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#888;margin-bottom:8px">未払い {len(unpaid_summary)}件</div>
-        {''.join(f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #f5f5f5">{u["member"]} / {u["fee_title"]}</div>' for u in unpaid_summary[:4]) if unpaid_summary else '<div style="font-size:12px;color:#16a34a">未払いなし ' + _ICO_CELEBRATE_SM + '</div>'}
-        <a href="/t/{code}/admin/fees" class="btn btn-outline">集金管理</a>
+        <span style="font-size:12px;color:#888;white-space:nowrap">未払い {len(unpaid_summary)}件</span>
+        <a href="/t/{code}/admin/fees" class="btn btn-outline">管理</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_PEOPLE}</span>メンバー
-      </summary>
+      <summary><span class="atile-icon">{_ICO_PEOPLE}</span>メンバー</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#888;margin-bottom:10px">{len(member_names)}名登録中</div>
-        <a href="/t/{code}/admin/members" class="btn btn-outline">メンバー一覧</a>
+        <span style="font-size:12px;color:#888;white-space:nowrap">{len(member_names)}名</span>
+        <a href="/t/{code}/admin/members" class="btn btn-outline">一覧・追加</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム
-      </summary>
+      <summary><span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#666;margin-bottom:10px">弁当・ウェアなど</div>
         <a href="/t/{code}/orders" class="btn btn-outline">フォーム一覧</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_CHART_SM}</span>AI文章
-      </summary>
+      <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#666;margin-bottom:10px">一言から丁寧な連絡文を生成</div>
-        <a href="/t/{code}/admin/ai" class="btn btn-outline">AI文章作成</a>
+        <a href="/t/{code}/admin/ai" class="btn btn-outline">文章を作成</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_MEMO}</span>メモ
-      </summary>
+      <summary><span class="atile-icon">{_ICO_MEMO}</span>メモ</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#666;margin-bottom:10px">複数メモ・ファイル添付対応</div>
         <a href="/t/{code}/admin/memos" class="btn btn-outline">メモを開く</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_MAIL}</span>問い合わせ
-      </summary>
+      <summary><span class="atile-icon">{_ICO_MAIL}</span>問い合わせ</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#666;margin-bottom:10px">機能の要望・不具合報告</div>
-        <a href="/feedback" class="btn btn-outline">送る →</a>
+        <a href="/feedback" class="btn btn-outline">送る</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_HELP}</span>使い方
-      </summary>
+      <summary><span class="atile-icon">{_ICO_HELP}</span>使い方</summary>
       <div class="atile-body">
-        <div style="font-size:12px;color:#666;margin-bottom:10px">管理者・メンバーの使い方ガイド</div>
         <a href="/t/{code}/help" class="btn btn-outline">ガイドを見る</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary>
-        <span class="atile-icon">{_ICO_CROWN}</span>プラン
-      </summary>
+      <summary><span class="atile-icon">{_ICO_CROWN}</span>プラン</summary>
       <div class="atile-body">
-        {'<div style="font-size:13px;font-weight:700;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;color:#888">すべての機能をご利用中</div>' if is_pro(team) else f'<div style="font-size:13px;margin-bottom:10px">現在: Freeプラン</div><a href="/t/{code}/upgrade" class="btn btn-blue">Proにアップグレード</a>'}
+        {'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>'}
       </div>
     </details>
 

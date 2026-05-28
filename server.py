@@ -1987,7 +1987,7 @@ def team_help(code):
     </div>
   </div>
 
-  <div style="margin-top:4px"><a href="/t/{code}{'admin/dash' if admin else ''}" style="font-size:13px;color:#888">← 戻る</a></div>
+  <div style="margin-top:4px"><a href="/t/{code}/{'admin/dash' if admin else 'schedule'}" style="font-size:13px;color:#888">← 戻る</a></div>
 </div>'''
     return page('使い方ガイド', body, code, active='admin' if admin else None)
 

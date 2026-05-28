@@ -17,6 +17,7 @@ except ImportError:
 JST = timezone(timedelta(hours=9))
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'rak-secret-2026')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 DATABASE = os.environ.get('DATABASE', 'rak.db')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
@@ -1096,6 +1097,7 @@ def create_team():
             )
             conn.commit()
             conn.close()
+            session.permanent = True
             session[f'admin_{code}'] = True
             return redirect(url_for('admin_dash', code=code, created='1'))
 
@@ -1134,20 +1136,58 @@ def team_portal(code):
     <div style="margin-bottom:12px">{_ICO_WELCOME}</div>
     <h1 style="margin-bottom:6px">{team["name"]}</h1>
     <p style="color:#666;font-size:13px;margin-bottom:20px">氏名を入力してください</p>
-    <form method="POST" action="/t/{code}/join">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
-        <div>
-          <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">苗字</label>
-          <input type="text" name="last_name" placeholder="田中" required style="text-align:center">
+
+    <!-- localStorage に記憶がある場合のワンタップ入室 -->
+    <div id="quick-join" style="display:none;margin-bottom:12px">
+      <form method="POST" action="/t/{code}/join" id="quick-form">
+        <input type="hidden" name="last_name" id="q-last">
+        <input type="hidden" name="first_name" id="q-first">
+        <button type="submit" class="btn btn-blue btn-block" style="font-size:16px;padding:14px">
+          <span id="q-name">入る</span>さんとして入る →
+        </button>
+      </form>
+      <button onclick="document.getElementById('quick-join').style.display='none';document.getElementById('name-form').style.display='block'" style="background:none;border:none;color:#aaa;font-size:12px;margin-top:10px;cursor:pointer;width:100%">別の名前で入る</button>
+    </div>
+
+    <!-- 通常フォーム -->
+    <div id="name-form">
+      <form method="POST" action="/t/{code}/join" onsubmit="rakSave(this)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
+          <div>
+            <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">苗字</label>
+            <input type="text" name="last_name" placeholder="田中" required style="text-align:center">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">名前</label>
+            <input type="text" name="first_name" placeholder="花子" required style="text-align:center">
+          </div>
         </div>
-        <div>
-          <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">名前</label>
-          <input type="text" name="first_name" placeholder="花子" required style="text-align:center">
-        </div>
-      </div>
-      <button class="btn btn-blue btn-block" type="submit">入る →</button>
-    </form>
+        <button class="btn btn-blue btn-block" type="submit">入る →</button>
+      </form>
+    </div>
+
     <div style="margin-top:16px"><a href="/t/{code}/help" style="font-size:12px;color:#aaa">使い方を見る →</a></div>
+    <script>
+    (function(){{
+      var k='rak_m_{code}';
+      try{{
+        var d=JSON.parse(localStorage.getItem(k)||'null');
+        if(d&&d.name){{
+          document.getElementById('q-name').textContent=d.name;
+          document.getElementById('q-last').value=d.last||'';
+          document.getElementById('q-first').value=d.first||'';
+          document.getElementById('quick-join').style.display='block';
+          document.getElementById('name-form').style.display='none';
+        }}
+      }}catch(e){{}}
+    }})();
+    function rakSave(f){{
+      try{{
+        var l=f.last_name.value.trim(),fn=f.first_name.value.trim();
+        if(l||fn)localStorage.setItem('rak_m_{code}',JSON.stringify({{last:l,first:fn,name:(l+' '+fn).trim()}}));
+      }}catch(e){{}}
+    }}
+    </script>
   </div>
 </div>'''
         return page(team['name'], body, code)
@@ -1163,6 +1203,7 @@ def member_join(code):
     first_name = request.form.get('first_name', '').strip()
     name = f'{last_name} {first_name}'.strip() if (last_name or first_name) else request.form.get('name', '').strip()
     if name:
+        session.permanent = True
         session[f'member_{code}'] = name
     return redirect(url_for('member_home', code=code))
 
@@ -1241,7 +1282,15 @@ def member_home(code):
     {event_items}
     <a href="/t/{code}/schedule" style="display:block;text-align:center;font-size:13px;color:var(--rak-amber);margin-top:12px">すべて見る →</a>
   </div>
-</div>'''
+</div>
+<script>
+(function(){{
+  try{{
+    var parts='{member}'.split(' ');
+    localStorage.setItem('rak_m_{code}',JSON.stringify({{last:parts[0]||'',first:parts[1]||'',name:'{member}'}}));
+  }}catch(e){{}}
+}})();
+</script>'''
     return page('ホーム', body, code, active='home')
 
 
@@ -1544,6 +1593,7 @@ def admin_login(code):
     if request.method == 'POST':
         pw = request.form.get('password', '')
         if pw == team['admin_password']:
+            session.permanent = True
             session[f'admin_{code}'] = True
             return redirect(url_for('admin_dash', code=code))
         error = 'パスワードが違います'

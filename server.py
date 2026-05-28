@@ -3372,6 +3372,10 @@ def mail_test():
             result.append(f'✅ 送信成功！ステータス: {res.status}')
             result.append(f'レスポンス: {body}')
             result.append(f'Gmailを確認してください → {NOTIFY_EMAIL}')
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='replace')
+        result.append(f'❌ HTTPError {e.code}: {e.reason}')
+        result.append(f'エラー詳細: {err_body}')
     except Exception as e:
         result.append(f'❌ エラー: {type(e).__name__}: {e}')
         result.append(traceback.format_exc())

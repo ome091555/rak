@@ -35,7 +35,7 @@ def send_inquiry_email(team_name, name, email, subject, message):
         return
     try:
         payload = json.dumps({
-            'from': 'Rak <onboarding@resend.dev>',
+            'from': 'Rak <send@runways.jp>',
             'to': [NOTIFY_EMAIL],
             'subject': f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}',
             'text': f'''Rakにお問い合わせが届きました。
@@ -3241,7 +3241,7 @@ def mail_test():
         return '<br>'.join(result)
     try:
         payload = json.dumps({
-            'from': 'Rak <onboarding@resend.dev>',
+            'from': 'Rak <send@runways.jp>',
             'to': [NOTIFY_EMAIL],
             'subject': '【Rakテスト】メール送信テスト',
             'text': 'テストメールです。正常に送信されました。'

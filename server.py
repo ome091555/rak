@@ -1149,6 +1149,7 @@ def team_portal(code):
       <input type="text" name="name" placeholder="例：田中 花子" required style="text-align:center;font-size:17px">
       <button class="btn btn-blue btn-block" type="submit">入る →</button>
     </form>
+    <div style="margin-top:16px"><a href="/t/{code}/help" style="font-size:12px;color:#aaa">使い方を見る →</a></div>
   </div>
 </div>'''
         return page(team['name'], body, code)
@@ -1323,6 +1324,7 @@ def schedule(code):
     {calendar_html}
   </div>
   {combined}
+  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/help" style="font-size:12px;color:#ccc">使い方ガイド</a></div>
 </div>
 <script>
 function scrollToDate(date) {{
@@ -1667,6 +1669,16 @@ def admin_dash(code):
 
     <details class="atile">
       <summary>
+        <span class="atile-icon" style="font-size:22px">❓</span>使い方
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#666;margin-bottom:10px">管理者・メンバーの使い方ガイド</div>
+        <a href="/t/{code}/help" class="btn btn-outline">ガイドを見る</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
         <span class="atile-icon">{_ICO_CROWN}</span>プラン
       </summary>
       <div class="atile-body">
@@ -1911,6 +1923,68 @@ def admin_memo_file_delete(code, file_id):
         return redirect(f'/t/{code}/admin/memos/{memo_id}')
     conn.close()
     return redirect(f'/t/{code}/admin/memos')
+
+
+# ── Help ──────────────────────────────────────────────────────────
+
+@app.route('/t/<code>/help')
+def team_help(code):
+    team = get_team(code)
+    if not team: return redirect('/')
+    admin = is_admin(code)
+
+    steps_member = [
+        ('チームに参加する', 'チームコードを入力してニックネームを登録するだけ。URLを開けばすぐに使えます。'),
+        ('予定を確認・出欠を回答する', '「予定」タブから練習や試合の日程を確認。参加・不参加・未定を回答できます。'),
+        ('お知らせを読む', '「連絡」タブに管理者からのお知らせが届きます。未読は赤いバッジで表示されます。'),
+        ('集金を確認する', '「集金」タブで支払い状況を確認。支払った分は管理者が記録します。'),
+        ('注文フォームに回答する', '弁当やウェアなどの注文フォームが届いたら「注文」タブから回答できます。'),
+    ]
+
+    steps_admin = [
+        ('チームを作成してコードを共有する', 'チーム登録後に表示されるチームコードをメンバーに共有します。LINEやメールで送るだけでOK。'),
+        ('メンバーを登録する', '「メンバー」タイルから名前を追加。出欠・集金管理に使われます。'),
+        ('予定を追加する', '「予定」タイルから練習や試合を登録。日時・場所・メモを設定できます。'),
+        ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成機能で下書きを自動生成できます。'),
+        ('集金を管理する', '「集金」タイルで集金項目を作成。誰が払ったか一覧で管理できます。'),
+        ('メモ・ファイルを管理する', '「メモ」タイルで管理者専用のメモを作成。PDFやExcelなどのファイルも添付できます。'),
+    ]
+
+    def step_html(steps, color):
+        html = ''
+        for i, (title, desc) in enumerate(steps, 1):
+            html += f'''
+      <div style="display:flex;gap:14px;margin-bottom:20px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:{color};color:#fff;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{i}</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">{title}</div>
+          <div style="font-size:13px;color:#666;line-height:1.6">{desc}</div>
+        </div>
+      </div>'''
+        return html
+
+    body = f'''
+<div class="container">
+  <h1 style="margin-bottom:4px">使い方ガイド</h1>
+  <p style="font-size:13px;color:#888;margin-bottom:20px">Rakの基本的な使い方をまとめました</p>
+
+  <div class="card">
+    <h2 style="margin-bottom:16px">{_ICO_PEOPLE} メンバーの方へ</h2>
+    {step_html(steps_member, '#d97706')}
+  </div>
+
+  {'<div class="card"><h2 style="margin-bottom:16px">⚙ 管理者の方へ</h2>' + step_html(steps_admin, '#111') + '</div>' if admin else ''}
+
+  <div class="card" style="background:#fef3c7;border-color:#fde68a">
+    <div style="font-weight:700;margin-bottom:6px">困ったときは</div>
+    <div style="font-size:13px;color:#666;line-height:1.7">
+      ご不明な点・機能のご要望は<a href="/feedback" style="color:#d97706">お問い合わせ</a>からお気軽にご連絡ください。
+    </div>
+  </div>
+
+  <div style="margin-top:4px"><a href="/t/{code}{'admin/dash' if admin else ''}" style="font-size:13px;color:#888">← 戻る</a></div>
+</div>'''
+    return page('使い方ガイド', body, code, active='admin' if admin else None)
 
 
 # ── Admin: events ─────────────────────────────────────────────────

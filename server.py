@@ -1133,9 +1133,18 @@ def team_portal(code):
   <div class="card" style="text-align:center">
     <div style="margin-bottom:12px">{_ICO_WELCOME}</div>
     <h1 style="margin-bottom:6px">{team["name"]}</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:20px">氏名（フルネーム）を入力してください</p>
+    <p style="color:#666;font-size:13px;margin-bottom:20px">氏名を入力してください</p>
     <form method="POST" action="/t/{code}/join">
-      <input type="text" name="name" placeholder="例：田中 花子（氏名）" required style="text-align:center;font-size:17px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
+        <div>
+          <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">苗字</label>
+          <input type="text" name="last_name" placeholder="田中" required style="text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#888;text-align:left;margin-bottom:4px;display:block">名前</label>
+          <input type="text" name="first_name" placeholder="花子" required style="text-align:center">
+        </div>
+      </div>
       <button class="btn btn-blue btn-block" type="submit">入る →</button>
     </form>
     <div style="margin-top:16px"><a href="/t/{code}/help" style="font-size:12px;color:#aaa">使い方を見る →</a></div>
@@ -1147,7 +1156,9 @@ def team_portal(code):
 
 @app.route('/t/<code>/join', methods=['POST'])
 def member_join(code):
-    name = request.form.get('name', '').strip()
+    last_name = request.form.get('last_name', '').strip()
+    first_name = request.form.get('first_name', '').strip()
+    name = f'{last_name} {first_name}'.strip() if (last_name or first_name) else request.form.get('name', '').strip()
     if name:
         session[f'member_{code}'] = name
     return redirect(url_for('schedule', code=code))
@@ -2438,7 +2449,9 @@ def admin_members(code):
         action = request.form.get('action')
         conn = get_db()
         if action == 'add':
-            name = request.form.get('name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            first_name = request.form.get('first_name', '').strip()
+            name = f'{last_name} {first_name}'.strip()
             number = request.form.get('number', '').strip()
             position = request.form.get('position', '').strip()
             if name:
@@ -2492,8 +2505,16 @@ def admin_members(code):
     <h2>メンバーを追加</h2>
     <form method="POST">
       <input type="hidden" name="action" value="add">
-      <label>名前 *</label>
-      <input type="text" name="name" placeholder="例：田中 花子" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>苗字 *</label>
+          <input type="text" name="last_name" placeholder="田中" required>
+        </div>
+        <div>
+          <label>名前 *</label>
+          <input type="text" name="first_name" placeholder="花子" required>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>背番号</label>
@@ -2527,7 +2548,9 @@ def admin_edit_member(code, member_id):
 
     msg = ''
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        first_name = request.form.get('first_name', '').strip()
+        name = f'{last_name} {first_name}'.strip()
         number = request.form.get('number', '').strip()
         position = request.form.get('position', '').strip()
         if name:
@@ -2538,13 +2561,24 @@ def admin_edit_member(code, member_id):
             return redirect(url_for('admin_members', code=code))
 
     conn.close()
+    _parts = m['name'].split(' ', 1)
+    _existing_last = _parts[0]
+    _existing_first = _parts[1] if len(_parts) > 1 else ''
     body = f'''
 <div class="container" style="max-width:480px">
   <div class="card">
     <h1>メンバーを編集</h1>
     <form method="POST">
-      <label>名前 *</label>
-      <input type="text" name="name" value="{m['name']}" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>苗字 *</label>
+          <input type="text" name="last_name" value="{_existing_last}" required>
+        </div>
+        <div>
+          <label>名前 *</label>
+          <input type="text" name="first_name" value="{_existing_first}" required>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>背番号</label>

@@ -1580,8 +1580,8 @@ def admin_dash(code):
     .atile{{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;cursor:pointer}}
     .atile summary{{list-style:none;padding:14px 8px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:500;color:#6b7280;user-select:none}}
     .atile summary::-webkit-details-marker{{display:none}}
-    .atile[open]{{border-color:#d97706}}
-    .atile[open] summary{{background:#f9fafb;border-bottom:1px solid #e5e7eb;color:#111827}}
+    .atile[open]{{border-color:#d97706;grid-column:1/-1}}
+    .atile[open] summary{{background:#f9fafb;border-bottom:1px solid #e5e7eb;color:#111827;flex-direction:row;justify-content:flex-start;gap:8px;padding:12px 14px;font-size:13px}}
     .atile[open] .atile-icon{{color:#d97706}}
     .atile-icon{{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#9ca3af}}
     .atile-body{{padding:12px;font-size:13px}}

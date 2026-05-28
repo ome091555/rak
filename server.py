@@ -273,7 +273,7 @@ def pro_gate(code, team, active='admin'):
     <div style="font-size:28px;font-weight:900;color:#d97706;margin-bottom:4px">¥2,980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
     <div style="font-size:12px;color:#888;margin-bottom:24px">年払い ¥29,800（2ヶ月分お得）</div>
     <a href="/t/{code}/upgrade" class="btn btn-blue btn-block" style="margin-top:0">Proにアップグレード</a>
-    <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボードに戻る</a></div>
+    <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
   </div>
 </div>'''
     return page('Proプランへアップグレード', body, code, active=active)
@@ -1325,7 +1325,7 @@ def schedule(code):
   </div>
   {combined}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a>' if admin else ''}
+    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>' if admin else ''}
     <a href="/t/{code}/help" style="font-size:12px;color:#ccc;margin-left:auto">使い方ガイド</a>
   </div>
 </div>
@@ -1394,7 +1394,7 @@ def notices(code):
     conn.close()
 
     new_btn = f'<a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ お知らせ作成</a>' if admin else ''
-    back_link = f'<a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a>' if admin else f'<a href="/t/{code}/schedule" style="font-size:13px;color:#888">← ホーム</a>'
+    back_link = f'<a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>' if admin else f'<a href="/t/{code}/schedule" style="font-size:13px;color:#888">← ホームに戻る</a>'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
@@ -1446,7 +1446,7 @@ def notice_detail(code, notice_id):
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center">
     <a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a>
-    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">ダッシュボード →</a>' if admin else '<a href="/t/' + code + '/schedule" style="font-size:13px;color:#888">ホーム →</a>'}
+    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>' if admin else '<a href="/t/' + code + '/schedule" style="font-size:13px;color:#888">← ホームに戻る</a>'}
   </div>
 </div>'''
     return page(n['title'], body, code, active='notices')
@@ -1746,7 +1746,7 @@ def admin_memos(code):
     <a href="/t/{code}/admin/memos/new" class="btn btn-blue">＋ 新規作成</a>
   </div>
   {rows}
-  <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← 管理に戻る</a></div>
+  <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メモ', body, code, active='admin')
 
@@ -1990,7 +1990,7 @@ def team_help(code):
     </div>
   </div>
 
-  <div style="margin-top:4px"><a href="/t/{code}/{'admin/dash' if admin else 'schedule'}" style="font-size:13px;color:#888">← 戻る</a></div>
+  <div style="margin-top:4px"><a href="/t/{code}/{'admin/dash' if admin else 'schedule'}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('使い方ガイド', body, code, active='admin' if admin else None)
 
@@ -2050,7 +2050,10 @@ def admin_new_event(code):
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュールに戻る</a></div>
+  <div style="display:flex;justify-content:space-between">
+    <a href="/t/{code}/schedule" style="font-size:13px;color:#888">← 予定一覧</a>
+    <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
+  </div>
 </div>'''
     return page('予定を追加', body, code, active='schedule')
 
@@ -2186,7 +2189,10 @@ def admin_edit_event(code, event_id):
       <button class="btn btn-blue btn-block" type="submit">保存する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/events/{event_id}" style="font-size:13px;color:#888">← 戻る</a></div>
+  <div style="display:flex;justify-content:space-between">
+    <a href="/t/{code}/admin/events/{event_id}" style="font-size:13px;color:#888">← 予定詳細</a>
+    <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
+  </div>
 </div>'''
     return page('予定を編集', body, code, active='schedule')
 
@@ -2268,7 +2274,10 @@ def admin_new_notice(code):
       <button class="btn btn-blue btn-block" type="submit">送信する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a></div>
+  <div style="display:flex;justify-content:space-between">
+    <a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a>
+    <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
+  </div>
 </div>'''
     return page('お知らせ作成', body, code, active='notices')
 
@@ -2410,7 +2419,7 @@ JSONのみ返してください。説明不要です。'''
 
   {tmpl_section}
 
-  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('AI文章作成', body, code, active='ai')
 
@@ -2511,7 +2520,7 @@ def admin_members(code):
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メンバー管理', body, code, active='admin')
 
@@ -2704,7 +2713,7 @@ def admin_fees(code):
     </div>
     {rows if fees else '<div class="empty">集金項目がありません</div>'}
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a></div>
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('集金管理', body, code, active='admin')
 
@@ -2882,7 +2891,7 @@ def admin_edit_fee(code, fee_id):
       <button class="btn btn-blue btn-block" type="submit">保存する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/fees/{fee_id}" style="font-size:13px;color:#888">← 戻る</a></div>
+  <div style="text-align:center"><a href="/t/{code}/admin/fees/{fee_id}" style="font-size:13px;color:#888">← 集金詳細に戻る</a></div>
 </div>'''
     return page('集金項目を編集', body, code, active='admin')
 
@@ -3765,7 +3774,7 @@ def upgrade_page(code):
     <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
     <h1 style="font-size:22px;margin-bottom:8px">Proプラン利用中</h1>
     <p style="color:#666;font-size:14px">すべての機能をご利用いただけます。</p>
-    <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a></div>
+    <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a></div>
   </div>
 </div>'''
         return page('プラン', body, code, active='admin')
@@ -3796,7 +3805,7 @@ def upgrade_page(code):
       </div>
     </div>
     {checkout_btn}
-    <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボードに戻る</a></div>
+    <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
   </div>
 </div>'''
     return page('Proプランへアップグレード', body, code, active='admin')
@@ -3832,7 +3841,7 @@ def upgrade_success(code):
     <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
     <h1 style="font-size:22px;margin-bottom:8px">アップグレード完了！</h1>
     <p style="color:#666;font-size:14px;margin-bottom:24px">Rak Proへようこそ。すべての機能が使えるようになりました。</p>
-    <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ダッシュボードへ</a>
+    <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a>
   </div>
 </div>'''
     return page('アップグレード完了', body, code, active='admin')

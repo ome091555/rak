@@ -733,7 +733,10 @@ def page(title, body, code=None, active=None):
         elif member:
             desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">{_ICO_USER_SM} {member}</span>'
 
-        bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
+        if admin:
+            bottom_nav = ''
+        else:
+            bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>

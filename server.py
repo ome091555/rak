@@ -765,6 +765,7 @@ def page(title, body, code=None, active=None):
   </a>
   {f'<span class="nav-team">{team_name}</span>' if team_name else ''}
   <div class="nav-links-desktop">{desktop_nav}</div>
+  {f'<a href="/t/{code}/help" style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#f1f4f9;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;text-decoration:none;flex-shrink:0">?</a>' if code and member and not admin else ''}
 </nav>
 {body}
 {bottom_nav}

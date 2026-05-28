@@ -34,35 +34,23 @@ def send_inquiry_email(team_name, name, email, subject, message):
         print('[RESEND] RESEND_API_KEY が未設定')
         return
     try:
-        payload = json.dumps({
-            'from': 'Rak <send@runways.jp>',
-            'to': [NOTIFY_EMAIL],
-            'subject': f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}',
-            'text': f'''Rakにお問い合わせが届きました。
-
-■ チーム名：{team_name}
-■ お名前：{name}
-■ メールアドレス：{email}
-■ 表題：{subject or "（未選択）"}
-■ メッセージ：
-{message}
-
----
-返信先：{email}
-管理画面：https://web-production-95cff.up.railway.app/rak/feedback
-'''
-        }).encode('utf-8')
-        req = urllib.request.Request(
+        import requests as _req
+        res = _req.post(
             'https://api.resend.com/emails',
-            data=payload,
             headers={
                 'Authorization': f'Bearer {RESEND_API_KEY}',
                 'Content-Type': 'application/json',
+                'User-Agent': 'RakApp/1.0',
             },
-            method='POST'
+            json={
+                'from': 'Rak <send@runways.jp>',
+                'to': [NOTIFY_EMAIL],
+                'subject': f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}',
+                'text': f'Rakにお問い合わせが届きました。\n\n■ チーム名：{team_name}\n■ お名前：{name}\n■ メールアドレス：{email}\n■ 表題：{subject or "（未選択）"}\n■ メッセージ：\n{message}\n\n---\n返信先：{email}',
+            },
+            timeout=10
         )
-        with urllib.request.urlopen(req, timeout=10) as res:
-            print(f'[RESEND] 送信成功: {res.status}')
+        print(f'[RESEND] ステータス: {res.status_code} {res.text}')
     except Exception as e:
         print(f'[RESEND ERROR] {type(e).__name__}: {e}')
 
@@ -3352,30 +3340,28 @@ def mail_test():
         result.append('❌ APIキーが読めていません')
         return '<br>'.join(result)
     try:
-        payload = json.dumps({
-            'from': 'Rak <send@runways.jp>',
-            'to': [NOTIFY_EMAIL],
-            'subject': '【Rakテスト】メール送信テスト',
-            'text': 'テストメールです。正常に送信されました。'
-        }).encode('utf-8')
-        req = urllib.request.Request(
+        import requests as _req
+        res = _req.post(
             'https://api.resend.com/emails',
-            data=payload,
             headers={
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json',
+                'User-Agent': 'RakApp/1.0',
             },
-            method='POST'
+            json={
+                'from': 'Rak <send@runways.jp>',
+                'to': [NOTIFY_EMAIL],
+                'subject': '【Rakテスト】メール送信テスト',
+                'text': 'テストメールです。正常に送信されました。',
+            },
+            timeout=10
         )
-        with urllib.request.urlopen(req, timeout=10) as res:
-            body = res.read().decode()
-            result.append(f'✅ 送信成功！ステータス: {res.status}')
-            result.append(f'レスポンス: {body}')
-            result.append(f'Gmailを確認してください → {NOTIFY_EMAIL}')
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode('utf-8', errors='replace')
-        result.append(f'❌ HTTPError {e.code}: {e.reason}')
-        result.append(f'エラー詳細: {err_body}')
+        result.append(f'ステータス: {res.status_code}')
+        result.append(f'レスポンス: {res.text}')
+        if res.status_code == 200:
+            result.append(f'✅ 送信成功！Gmailを確認 → {NOTIFY_EMAIL}')
+        else:
+            result.append('❌ 送信失敗')
     except Exception as e:
         result.append(f'❌ エラー: {type(e).__name__}: {e}')
         result.append(traceback.format_exc())

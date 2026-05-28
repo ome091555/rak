@@ -225,6 +225,7 @@ def init_db():
         'ALTER TABLE app_feedback ADD COLUMN team_name TEXT DEFAULT ""',
         'ALTER TABLE app_feedback ADD COLUMN email TEXT DEFAULT ""',
         'ALTER TABLE app_feedback ADD COLUMN subject TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN admin_memo TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -1602,11 +1603,35 @@ def admin_dash(code):
 
   {plan_card}
 
+  <div class="card">
+    <h2>📝 管理メモ</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">メンバーには見えない管理者専用のメモです</p>
+    <form method="post" action="/t/{code}/admin/memo">
+      <textarea name="memo" rows="6" style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical">{team['admin_memo'] or ''}</textarea>
+      <button type="submit" class="btn" style="margin-top:8px;width:100%">保存</button>
+    </form>
+  </div>
+
   <div style="text-align:right;margin-top:8px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
   </div>
 </div>'''
     return page('管理ダッシュボード', body, code, active='admin')
+
+
+# ── Admin: memo ───────────────────────────────────────────────────
+
+@app.route('/t/<code>/admin/memo', methods=['POST'])
+def admin_memo_save(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    memo = request.form.get('memo', '')
+    conn = get_db()
+    conn.execute('UPDATE teams SET admin_memo=? WHERE id=?', (memo, team['id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_dash', code=code))
 
 
 # ── Admin: events ─────────────────────────────────────────────────

@@ -361,7 +361,14 @@ FAVICON_LINK = (
     "%3Cpath d='M 54 64 L 72 94 L 112 28' stroke='white' stroke-width='11' stroke-linejoin='miter' fill='none'/%3E"
     "%3C/svg%3E"
     '"><meta name="theme-color" content="#d97706">'
+    '<link rel="manifest" href="/manifest.json">'
+    '<meta name="apple-mobile-web-app-capable" content="yes">'
+    '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
+    '<meta name="apple-mobile-web-app-title" content="Rak">'
+    '<link rel="apple-touch-icon" href="/icon.svg">'
 )
+
+PWA_SW = '<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}</script>'
 
 # ── オリジナル SVG アイコン (Apple絵文字に依存しない) ────────────────────────
 # 空状態イラスト 64×64 (アンバー円 + アイコン)
@@ -731,7 +738,50 @@ def page(title, body, code=None, active=None):
 </nav>
 {body}
 {bottom_nav}
+{PWA_SW}
 </body></html>''')
+
+
+# ── PWA ───────────────────────────────────────────────────────────
+
+_PWA_ICON_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 120">
+<rect width="130" height="120" rx="28" fill="#d97706"/>
+<path d="M 32 94 L 32 26 L 60 26 C 74 26 80 36 80 46 C 80 56 74 64 60 64 L 32 64" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>
+<path d="M 54 64 L 72 94 L 112 28" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>
+</svg>'''
+
+@app.route('/manifest.json')
+def pwa_manifest():
+    return jsonify({
+        "name": "Rak",
+        "short_name": "Rak",
+        "description": "チーム運営の「めんどくさい」を、ぜんぶラクに。",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#d97706",
+        "icons": [
+            {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+        ]
+    })
+
+@app.route('/icon.svg')
+def pwa_icon():
+    return Response(_PWA_ICON_SVG, mimetype='image/svg+xml')
+
+@app.route('/sw.js')
+def service_worker():
+    js = """const CACHE='rak-v1';
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+});"""
+    return Response(js, mimetype='application/javascript')
 
 
 # ── Home / Create ─────────────────────────────────────────────────
@@ -998,7 +1048,7 @@ footer a:hover{{color:#94a3b8}}
   </div>
   <p>© 2026 Rak</p>
 </footer>
-
+{PWA_SW}
 </body></html>''')
 
 @app.route('/join', methods=['POST'])

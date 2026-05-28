@@ -1144,9 +1144,9 @@ def team_portal(code):
   <div class="card" style="text-align:center">
     <div style="margin-bottom:12px">{_ICO_WELCOME}</div>
     <h1 style="margin-bottom:6px">{team["name"]}</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:20px">あなたの名前を入力してください</p>
+    <p style="color:#666;font-size:13px;margin-bottom:20px">氏名（フルネーム）を入力してください</p>
     <form method="POST" action="/t/{code}/join">
-      <input type="text" name="name" placeholder="例：田中 花子" required style="text-align:center;font-size:17px">
+      <input type="text" name="name" placeholder="例：田中 花子（氏名）" required style="text-align:center;font-size:17px">
       <button class="btn btn-blue btn-block" type="submit">入る →</button>
     </form>
     <div style="margin-top:16px"><a href="/t/{code}/help" style="font-size:12px;color:#aaa">使い方を見る →</a></div>
@@ -1398,6 +1398,7 @@ def notices(code):
     {new_btn}
   </div>
   {cards if ns else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_BELL + '</div>お知らせはまだありません</div>'}
+  <div style="text-align:right;margin-top:8px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">ホーム →</a></div>
 </div>'''
     return page('お知らせ', body, code, active='notices')
 
@@ -1439,7 +1440,10 @@ def notice_detail(code, notice_id):
     <div style="white-space:pre-wrap;line-height:1.8;color:#333">{n['body']}</div>
     {reader_list}
   </div>
-  <div style="text-align:center"><a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a></div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a>
+    <a href="/t/{code}/schedule" style="font-size:13px;color:#888">ホーム →</a>
+  </div>
 </div>'''
     return page(n['title'], body, code, active='notices')
 
@@ -1934,7 +1938,7 @@ def team_help(code):
     admin = is_admin(code)
 
     steps_member = [
-        ('チームに参加する', 'チームコードを入力してニックネームを登録するだけ。URLを開けばすぐに使えます。'),
+        ('チームに参加する', 'チームコードを入力して氏名（フルネーム）を登録するだけ。URLを開けばすぐに使えます。'),
         ('予定を確認・出欠を回答する', '「予定」タブから練習や試合の日程を確認。参加・不参加・未定を回答できます。'),
         ('お知らせを読む', '「連絡」タブに管理者からのお知らせが届きます。未読は赤いバッジで表示されます。'),
         ('集金を確認する', '「集金」タブで支払い状況を確認。支払った分は管理者が記録します。'),

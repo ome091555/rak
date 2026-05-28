@@ -352,7 +352,7 @@ FONT = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="pr
 # Rak brand mark: amber background, white R + checkmark (v2)
 NAV_MARK = (
     '<svg viewBox="0 0 130 120" width="22" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">'
-    '<rect width="130" height="120" rx="28" fill="%23d97706"/>'
+    '<rect width="130" height="120" rx="28" fill="#d97706"/>'
     '<path d="M 32 94 L 32 26 L 60 26 C 74 26 80 36 80 46 C 80 56 74 64 60 64 L 32 64" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>'
     '<path d="M 54 64 L 72 94 L 112 28" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>'
     '</svg>'
@@ -1325,10 +1325,7 @@ def schedule(code):
     {calendar_html}
   </div>
   {combined}
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>' if admin else ''}
-    <a href="/t/{code}/help" style="font-size:12px;color:#ccc;margin-left:auto">使い方ガイド</a>
-  </div>
+  {'<div style="margin-top:8px"><a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>' if admin else ''}
 </div>
 <script>
 function scrollToDate(date) {{
@@ -1403,7 +1400,7 @@ def notices(code):
     {new_btn}
   </div>
   {cards if ns else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_BELL + '</div>お知らせはまだありません</div>'}
-  <div style="margin-top:8px">{back_link}</div>
+  {'<div style="margin-top:8px">' + back_link + '</div>' if admin else ''}
 </div>'''
     return page('お知らせ', body, code, active='notices')
 

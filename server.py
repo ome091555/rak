@@ -1324,7 +1324,10 @@ def schedule(code):
     {calendar_html}
   </div>
   {combined}
-  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/help" style="font-size:12px;color:#ccc">使い方ガイド</a></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a>' if admin else ''}
+    <a href="/t/{code}/help" style="font-size:12px;color:#ccc;margin-left:auto">使い方ガイド</a>
+  </div>
 </div>
 <script>
 function scrollToDate(date) {{

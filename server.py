@@ -1581,7 +1581,7 @@ def admin_dash(code):
     conn = get_db()
     today = datetime.now(JST).strftime('%Y-%m-%d')
     events = conn.execute(
-        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 3',
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 7',
         (team['id'], today)
     ).fetchall()
     notices = conn.execute(
@@ -1599,6 +1599,16 @@ def admin_dash(code):
             if not p or not p['paid']:
                 unpaid_summary.append({'fee_title': f['title'], 'member': m['name'], 'amount': f['amount'], 'due_date': f['due_date'], 'fee_id': f['id']})
 
+    # 締切付き集金・注文フォーム
+    upcoming_fees = conn.execute(
+        "SELECT * FROM fees WHERE team_id=? AND due_date>=? AND due_date!='' ORDER BY due_date LIMIT 5",
+        (team['id'], today)
+    ).fetchall()
+    upcoming_orders = conn.execute(
+        "SELECT * FROM order_forms WHERE team_id=? AND deadline>=? AND deadline!='' ORDER BY deadline LIMIT 5",
+        (team['id'], today)
+    ).fetchall()
+
     members_all = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
     member_names = [m['name'] for m in members_all]
 
@@ -1606,24 +1616,59 @@ def admin_dash(code):
         answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
         return [n for n in member_names if n not in answered]
 
-    event_rows = ''
+    # 統合タイムライン（予定 + 集金締切 + 注文締切）
+    wd_jp = ['月','火','水','木','金','土','日']
+    def date_label(d):
+        try:
+            from datetime import date as _date
+            dt = _date.fromisoformat(d)
+            return f'{dt.month}/{dt.day}({wd_jp[dt.weekday()]})'
+        except Exception:
+            return d
+
+    timeline = []
     for ev in events:
         no_answer = get_no_answer(ev['id'])
-        no_answer_html = ''
+        sub = ''
         if no_answer:
-            names_str = '、'.join(no_answer[:5])
-            more = f' 他{len(no_answer)-5}名' if len(no_answer) > 5 else ''
-            no_answer_html = f'<div style="font-size:11px;color:#dc2626;margin-top:4px">未回答：{names_str}{more}</div>'
-        event_rows += f'''
-    <div class="card-sm row" style="justify-content:space-between;align-items:flex-start">
-      <div style="flex:1">
-        <div style="font-weight:700">{ev['title']}</div>
-        <div style="font-size:12px;color:#888">{fmt_date(ev['event_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}</div>
-        {no_answer_html}
+            sub = f'{len(no_answer)}名未回答'
+        timeline.append({'date': ev['event_date'], 'type': 'event', 'title': ev['title'],
+                         'time': ev['event_time'] or '', 'sub': sub,
+                         'url': f'/t/{code}/admin/events/{ev["id"]}', 'label': '詳細'})
+    for f in upcoming_fees:
+        timeline.append({'date': f['due_date'], 'type': 'fee', 'title': f'{f["title"]}　集金締切',
+                         'time': '', 'sub': f'¥{f["amount"]:,}',
+                         'url': f'/t/{code}/admin/fees', 'label': '管理'})
+    for o in upcoming_orders:
+        timeline.append({'date': o['deadline'], 'type': 'order', 'title': f'{o["title"]}　注文締切',
+                         'time': '', 'sub': '',
+                         'url': f'/t/{code}/orders', 'label': '詳細'})
+    timeline.sort(key=lambda x: (x['date'], x['type']))
+
+    type_color = {'event': '#111827', 'fee': '#d97706', 'order': '#6366f1'}
+    type_badge = {'event': '', 'fee': '<span style="font-size:10px;background:#fffbeb;color:#d97706;border-radius:4px;padding:1px 5px;margin-left:4px">集金</span>',
+                  'order': '<span style="font-size:10px;background:#eef2ff;color:#6366f1;border-radius:4px;padding:1px 5px;margin-left:4px">注文</span>'}
+
+    timeline_rows = ''
+    for item in timeline:
+        sub_html = ''
+        if item['time']:
+            sub_html += f'<span style="color:#9ca3af">{item["time"]}</span>'
+        if item['sub']:
+            sub_html += f'{"　" if sub_html else ""}<span style="color:#dc2626;font-size:11px">{item["sub"]}</span>'
+        timeline_rows += f'''
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #f3f4f6">
+      <div style="width:6px;height:6px;border-radius:50%;background:{type_color[item["type"]]};flex-shrink:0"></div>
+      <div style="min-width:52px;font-size:11px;color:#6b7280;font-family:var(--font-num);flex-shrink:0">{date_label(item["date"])}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{item["title"]}{type_badge[item["type"]]}</div>
+        {f'<div style="font-size:11px;margin-top:1px">{sub_html}</div>' if sub_html else ''}
       </div>
-      <a href="/t/{code}/admin/events/{ev['id']}" class="btn btn-sm btn-outline" style="margin-left:8px;flex-shrink:0">詳細</a>
+      <a href="{item["url"]}" style="font-size:12px;color:var(--rak-amber);flex-shrink:0">{item["label"]} →</a>
     </div>'''
-    event_rows = event_rows or '<div class="empty">予定なし</div>'
+
+    if not timeline:
+        timeline_rows = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">直近の予定・締切はありません</div>'
 
     conn.close()
 
@@ -1647,13 +1692,12 @@ def admin_dash(code):
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
 
-  <div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none">
-    <div style="font-size:13px;opacity:.8;margin-bottom:4px">チームコード</div>
-    <div style="font-size:36px;font-weight:900;letter-spacing:.15em">{code}</div>
-    <div style="font-size:13px;opacity:.7;margin-top:4px">このコードをメンバーに共有してください</div>
-    <div style="margin-top:12px;font-size:13px;background:rgba(255,255,255,.15);padding:8px 14px;border-radius:8px;word-break:break-all">
-      メンバー用URL: {request.host_url}t/{code}
+  <div style="background:#0a0a0a;color:#fff;border-radius:10px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+    <div>
+      <div style="font-size:10px;opacity:.45;letter-spacing:.05em;margin-bottom:1px">チームコード</div>
+      <div style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num)">{code}</div>
     </div>
+    <div style="margin-left:auto;font-size:11px;opacity:.4;text-align:right;word-break:break-all;line-height:1.5;max-width:55%">{request.host_url}t/{code}</div>
   </div>
 
   <style>
@@ -1671,11 +1715,14 @@ def admin_dash(code):
 
   <div class="admin-grid">
 
-    <details class="atile">
-      <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定</summary>
-      <div class="atile-body">
-        <a href="/t/{code}/admin/events/new" class="btn btn-blue">＋ 追加</a>
-        <a href="/t/{code}/schedule" class="btn btn-outline">すべて見る</a>
+    <details class="atile" open>
+      <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定・締切</summary>
+      <div class="atile-body" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
+        {timeline_rows}
+        <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6">
+          <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px">＋ 予定追加</a>
+          <a href="/t/{code}/schedule" class="btn btn-outline" style="flex:1;font-size:13px;padding:9px 10px">カレンダー</a>
+        </div>
       </div>
     </details>
 

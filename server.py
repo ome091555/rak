@@ -1391,6 +1391,7 @@ def notices(code):
     conn.close()
 
     new_btn = f'<a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ お知らせ作成</a>' if admin else ''
+    back_link = f'<a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ダッシュボード</a>' if admin else f'<a href="/t/{code}/schedule" style="font-size:13px;color:#888">← ホーム</a>'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
@@ -1398,7 +1399,7 @@ def notices(code):
     {new_btn}
   </div>
   {cards if ns else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_BELL + '</div>お知らせはまだありません</div>'}
-  <div style="text-align:right;margin-top:8px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">ホーム →</a></div>
+  <div style="margin-top:8px">{back_link}</div>
 </div>'''
     return page('お知らせ', body, code, active='notices')
 
@@ -1442,7 +1443,7 @@ def notice_detail(code, notice_id):
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center">
     <a href="/t/{code}/notices" style="font-size:13px;color:#888">← お知らせ一覧</a>
-    <a href="/t/{code}/schedule" style="font-size:13px;color:#888">ホーム →</a>
+    {'<a href="/t/' + code + '/admin/dash" style="font-size:13px;color:#888">ダッシュボード →</a>' if admin else '<a href="/t/' + code + '/schedule" style="font-size:13px;color:#888">ホーム →</a>'}
   </div>
 </div>'''
     return page(n['title'], body, code, active='notices')

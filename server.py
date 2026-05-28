@@ -1524,6 +1524,8 @@ def admin_dash(code):
     else:
         plan_card = f'<div class="card" style="border:2px solid #d97706;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥2,980/月</a></div>'
 
+    unpaid_badge = f'<span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">{len(unpaid_summary)}</span>' if unpaid_summary else ''
+
     body = f'''
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
@@ -1537,82 +1539,117 @@ def admin_dash(code):
     </div>
   </div>
 
-  <div class="card">
-    <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">{_ICO_CALENDAR} 直近の予定</h2>
-      <a href="/t/{code}/admin/events/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 追加</a>
-    </div>
-    {event_rows}
-    <div style="margin-top:10px"><a href="/t/{code}/schedule" style="font-size:13px">すべて見る →</a></div>
-  </div>
+  <style>
+    .admin-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}}
+    .atile{{background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;cursor:pointer}}
+    .atile summary{{list-style:none;padding:14px 8px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#111;user-select:none}}
+    .atile summary::-webkit-details-marker{{display:none}}
+    .atile[open]{{border-color:#d97706}}
+    .atile[open] summary{{background:#fef3c7;border-bottom:1px solid #fde68a}}
+    .atile-icon{{width:32px;height:32px;display:flex;align-items:center;justify-content:center}}
+    .atile-body{{padding:12px;font-size:13px}}
+    .atile-body .btn{{font-size:12px;padding:8px;display:block;text-align:center;margin-top:8px;width:100%;box-sizing:border-box}}
+  </style>
 
-  <div class="card">
-    <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">{_ICO_BELL_SM} 最近のお知らせ</h2>
-      <a href="/t/{code}/admin/notices/new" class="btn btn-sm btn-blue" style="margin-left:auto">＋ 作成</a>
-    </div>
-    {notice_rows}
-    <div style="margin-top:10px"><a href="/t/{code}/notices" style="font-size:13px">すべて見る →</a></div>
-  </div>
+  <div class="admin-grid">
 
-  <div class="card">
-    <div class="row" style="margin-bottom:12px">
-      <h2 style="margin:0">{_ICO_MONEY_SM} 集金 未払いリスト</h2>
-      <span class="badge {'badge-red' if unpaid_summary else 'badge-green'}" style="margin-left:auto">{'未払い ' + str(len(unpaid_summary)) + '件' if unpaid_summary else '全員支払済'}</span>
-    </div>
-    {''.join(f"""<div class="card-sm row" style="justify-content:space-between;align-items:center;background:#fff9f9">
-      <div>
-        <div style="font-weight:700;font-size:13px">{u['member']}</div>
-        <div style="font-size:12px;color:#888">{u['fee_title']}　¥{u['amount']:,}{('　期限：' + fmt_date(u['due_date'])) if u['due_date'] else ''}</div>
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_CALENDAR}</span>予定
+      </summary>
+      <div class="atile-body">
+        {event_rows}
+        <a href="/t/{code}/admin/events/new" class="btn btn-blue">＋ 追加</a>
+        <a href="/t/{code}/schedule" style="font-size:12px;display:block;text-align:center;margin-top:6px;color:#d97706">すべて見る →</a>
       </div>
-      <a href="/t/{code}/admin/fees/{u['fee_id']}" class="btn btn-sm btn-outline">管理</a>
-    </div>""" for u in unpaid_summary[:5]) if unpaid_summary else '<div class="empty">未払いなし ' + _ICO_CELEBRATE_SM + '</div>'}
-    {f'<div style="margin-top:8px;font-size:13px;color:#888">他 {len(unpaid_summary)-5}件…</div>' if len(unpaid_summary) > 5 else ''}
-    <div style="margin-top:10px"><a href="/t/{code}/admin/fees" style="font-size:13px">集金管理を見る →</a></div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_BELL_SM}</span>お知らせ
+      </summary>
+      <div class="atile-body">
+        {notice_rows}
+        <a href="/t/{code}/admin/notices/new" class="btn btn-blue">＋ 作成</a>
+        <a href="/t/{code}/notices" style="font-size:12px;display:block;text-align:center;margin-top:6px;color:#d97706">すべて見る →</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#888;margin-bottom:8px">未払い {len(unpaid_summary)}件</div>
+        {''.join(f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #f5f5f5">{u["member"]} / {u["fee_title"]}</div>' for u in unpaid_summary[:4]) if unpaid_summary else '<div style="font-size:12px;color:#16a34a">未払いなし ' + _ICO_CELEBRATE_SM + '</div>'}
+        <a href="/t/{code}/admin/fees" class="btn btn-outline">集金管理</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_PEOPLE}</span>メンバー
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#888;margin-bottom:10px">{len(member_names)}名登録中</div>
+        <a href="/t/{code}/admin/members" class="btn btn-outline">メンバー一覧</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#666;margin-bottom:10px">弁当・ウェアなど</div>
+        <a href="/t/{code}/orders" class="btn btn-outline">フォーム一覧</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon">{_ICO_CHART_SM}</span>AI文章
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#666;margin-bottom:10px">一言から丁寧な連絡文を生成</div>
+        <a href="/t/{code}/admin/ai" class="btn btn-outline">AI文章作成</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon" style="font-size:20px">📝</span>メモ
+      </summary>
+      <div class="atile-body">
+        <form method="post" action="/t/{code}/admin/memo">
+          <textarea name="memo" rows="5" style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical">{team['admin_memo'] or ''}</textarea>
+          <button type="submit" class="btn">保存</button>
+        </form>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon" style="font-size:20px">📬</span>問い合わせ
+      </summary>
+      <div class="atile-body">
+        <div style="font-size:12px;color:#666;margin-bottom:10px">機能の要望・不具合報告</div>
+        <a href="/feedback" class="btn btn-outline">送る →</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary>
+        <span class="atile-icon" style="font-size:20px">⚙️</span>プラン
+      </summary>
+      <div class="atile-body">
+        {'<div style="font-size:13px;font-weight:700;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;color:#888">すべての機能をご利用中</div>' if is_pro(team) else f'<div style="font-size:13px;margin-bottom:10px">現在: Freeプラン</div><a href="/t/{code}/upgrade" class="btn btn-blue">Proにアップグレード</a>'}
+      </div>
+    </details>
+
   </div>
 
-  <div class="card">
-    <h2>{_ICO_PEOPLE} メンバー管理</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">名簿の確認・追加・削除ができます</p>
-    <a href="/t/{code}/admin/members" class="btn btn-outline" style="display:block;text-align:center">メンバー一覧を見る →</a>
-  </div>
-
-  <div class="card">
-    <h2>{_ICO_MONEY_SM} 集金管理</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">集金項目の作成・支払い状況の管理ができます</p>
-    <a href="/t/{code}/admin/fees" class="btn btn-outline" style="display:block;text-align:center">集金管理を見る →</a>
-  </div>
-
-  <div class="card">
-    <h2>{_ICO_CLIPBOARD} 注文フォーム</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">弁当・ウェアなど、チーム独自の注文フォームを作成してメンバーの回答を集計できます</p>
-    <a href="/t/{code}/orders" class="btn btn-outline" style="display:block;text-align:center">注文フォームを見る →</a>
-  </div>
-
-  <div class="card">
-    <h2>✦ AI文章作成</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">一言メモから、丁寧な連絡文を自動生成します</p>
-    <a href="/t/{code}/admin/ai" class="btn btn-outline" style="display:block;text-align:center">AI文章作成を使う →</a>
-  </div>
-
-  <div class="card">
-    <h2>📬 Rakへのお問い合わせ</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:14px">機能の要望・不具合報告・ご意見はこちらから</p>
-    <a href="/feedback" class="btn btn-outline" style="display:block;text-align:center">お問い合わせ・要望を送る →</a>
-  </div>
-
-  {plan_card}
-
-  <div class="card">
-    <h2>📝 管理メモ</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:12px">メンバーには見えない管理者専用のメモです</p>
-    <form method="post" action="/t/{code}/admin/memo">
-      <textarea name="memo" rows="6" style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical">{team['admin_memo'] or ''}</textarea>
-      <button type="submit" class="btn" style="margin-top:8px;width:100%">保存</button>
-    </form>
-  </div>
-
-  <div style="text-align:right;margin-top:8px">
+  <div style="text-align:right;margin-top:16px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
   </div>
 </div>'''

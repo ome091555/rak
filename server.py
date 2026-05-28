@@ -412,64 +412,49 @@ _SVG_EMPTY_CHART = (
     '<rect x="40" y="18" width="9" height="32" rx="2" fill="#d97706"/>'
     '</svg>'
 )
-# セクションヘッダー用アイコン 22×22 (アンバー塗り + 白アイコン = どこでも視認しやすい)
+# セクション / タイル用アイコン 20×20 Lucide スタイル (currentColor)
 _ICO_PEOPLE = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<circle cx="8.5" cy="8" r="2.5" stroke="white" stroke-width="1.5"/>'
-    '<path d="M3.5 18C3.5 15 5.5 13 8.5 13" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
-    '<circle cx="14.5" cy="7.5" r="2.5" stroke="white" stroke-width="1.5"/>'
-    '<path d="M11 17.5C11 15 12.5 13 14.5 13C16.5 13 18.5 15 18.5 17.5"'
-    ' stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<circle cx="8" cy="6" r="3"/>'
+    '<path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/>'
+    '<circle cx="15" cy="7" r="2.5"/>'
+    '<path d="M18 18c0-2.7-1.5-5-3.5-6"/>'
     '</svg>'
 )
 _ICO_CALENDAR = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<rect x="4.5" y="7" width="13" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/>'
-    '<line x1="4.5" y1="11" x2="17.5" y2="11" stroke="white" stroke-width="1.2"/>'
-    '<line x1="8" y1="5" x2="8" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
-    '<line x1="14" y1="5" x2="14" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<rect x="3" y="4" width="14" height="13" rx="2"/>'
+    '<path d="M7 2v4M13 2v4M3 8h14"/>'
     '</svg>'
 )
 _ICO_CLIPBOARD = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<rect x="6" y="6" width="10" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>'
-    '<line x1="8" y1="10" x2="14" y2="10" stroke="white" stroke-width="1.3"/>'
-    '<line x1="8" y1="13" x2="14" y2="13" stroke="white" stroke-width="1.3"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<rect x="5" y="2" width="10" height="16" rx="2"/>'
+    '<path d="M8 7h4M8 10.5h4M8 14h2.5"/>'
     '</svg>'
 )
 _ICO_CHART_SM = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<rect x="5" y="14.5" width="3" height="3.5" rx="1" fill="white" opacity="0.65"/>'
-    '<rect x="9.5" y="11" width="3" height="7" rx="1" fill="white" opacity="0.82"/>'
-    '<rect x="14" y="7" width="3" height="11" rx="1" fill="white"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<path d="M10 3l1.8 5.5 5.2 1.5-5.2 1.5L10 17l-1.8-5.5L3 10l6-1.5z"/>'
     '</svg>'
 )
 _ICO_BELL_SM = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<path d="M11 5C8.5 5 7 7 7 9V13L5 15H17L15 13V9C15 7 13.5 5 11 5Z"'
-    ' stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
-    '<path d="M9 15Q9 17 11 17Q13 17 13 15" stroke="white" stroke-width="1.5" fill="none"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="vertical-align:middle">'
+    '<path d="M5 9c0-2.8 2.2-5 5-5s5 2.2 5 5v3l1.5 2.5h-13L5 12V9z"/>'
+    '<path d="M8.5 17.5a1.5 1.5 0 003 0"/>'
     '</svg>'
 )
 _ICO_MONEY_SM = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<circle cx="11" cy="11" r="5.5" stroke="white" stroke-width="1.5"/>'
-    '<path d="M11 6v10M8.5 8.5c.5-1.5 5.5-1.5 5.5 1.5 0 2.5-5.5 1.5-5.5 3.5 0 2 5 1.5 5.5 0"'
-    ' stroke="white" stroke-width="1.2" stroke-linecap="round" fill="none"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="vertical-align:middle">'
+    '<circle cx="10" cy="10" r="7"/>'
+    '<path d="M10 6v8M7.5 8c.5-1.5 5-1.5 5 1.5 0 2.5-5 1.5-5 4 0 2 4.5 1.5 5 0"/>'
     '</svg>'
 )
 # ユーザー表示 (ナビ)
 _ICO_USER_SM = (
-    '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:middle">'
-    '<circle cx="7" cy="5" r="3" stroke="#d97706" stroke-width="1.5"/>'
-    '<path d="M1 14C1 10.7 3.7 8 7 8C10.3 8 13 10.7 13 14"'
-    ' stroke="#d97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:middle;color:#6b7280">'
+    '<circle cx="7" cy="5" r="3"/>'
+    '<path d="M1 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>'
     '</svg>'
 )
 # アンバーチェックマーク (機能リスト・ステータス)
@@ -515,26 +500,30 @@ _ICO_CELEBRATE_SM = (
     '</svg>'
 )
 
-# アドミンタイル用 メモ・メール・プランアイコン（アンバー円＋白アイコン）
+# アドミンタイル用 メモ・メール・プランアイコン（Lucide スタイル）
 _ICO_MEMO = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<path d="M13.5 6.5L15.5 8.5L9 15H7V13L13.5 6.5Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
-    '<path d="M12 8L15 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<path d="M13.5 3.5l3 3L7 16H4v-3L13.5 3.5z"/>'
+    '<path d="M11.5 5.5l3 3"/>'
     '</svg>'
 )
 _ICO_MAIL = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<rect x="4.5" y="7.5" width="13" height="8" rx="1.5" stroke="white" stroke-width="1.5" fill="none"/>'
-    '<path d="M4.5 9L11 13L17.5 9" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<rect x="3" y="6" width="14" height="10" rx="2"/>'
+    '<path d="M3 8l7 5 7-5"/>'
     '</svg>'
 )
 _ICO_CROWN = (
-    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
-    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
-    '<path d="M5 15L5 14L7 10L11 13L15 10L17 14L17 15Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
-    '<line x1="5" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<path d="M3 14l2.5-7 4.5 3.5L14 7l2.5 7H3z"/>'
+    '<path d="M3 14h14"/>'
+    '</svg>'
+)
+_ICO_HELP = (
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<circle cx="10" cy="10" r="7"/>'
+    '<path d="M8 8c0-1.1.9-2 2-2s2 .9 2 2c0 1-1 1.5-2 2.5"/>'
+    '<circle cx="10" cy="14.5" r=".5" fill="currentColor"/>'
     '</svg>'
 )
 
@@ -552,132 +541,131 @@ ICONS = {
 CSS = '''
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --rak-black:#111111;
-  --rak-ink:#1f1f1f;
-  --rak-graphite:#525252;
-  --rak-mute:#8a8a8a;
-  --rak-line:#e7e7e7;
-  --rak-line-soft:#efefef;
+  --rak-black:#0a0a0a;
+  --rak-ink:#111827;
+  --rak-graphite:#4b5563;
+  --rak-mute:#6b7280;
+  --rak-line:#e5e7eb;
+  --rak-line-soft:#f3f4f6;
   --rak-bg:#ffffff;
-  --rak-bg-soft:#f5f5f5;
+  --rak-bg-soft:#f9fafb;
   --rak-amber:#d97706;
   --rak-amber-deep:#b45309;
-  --rak-amber-tint:#fef3c7;
-  --rak-success:#15803d;
-  --rak-success-tint:#dcfce7;
-  --rak-danger:#b91c1c;
-  --rak-danger-tint:#fee2e2;
+  --rak-amber-tint:#f9fafb;
+  --rak-success:#16a34a;
+  --rak-success-tint:#f0fdf4;
+  --rak-danger:#dc2626;
+  --rak-danger-tint:#fef2f2;
   --font-jp:"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
   --font-num:"Inter","Noto Sans JP",system-ui,sans-serif;
 }
-html,body{font-family:var(--font-jp);background:var(--rak-bg-soft);color:var(--rak-black);font-size:16px;line-height:1.7;min-height:100vh;-webkit-font-smoothing:antialiased}
+html,body{font-family:var(--font-jp);background:var(--rak-bg-soft);color:var(--rak-ink);font-size:15px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit}
 
 /* Nav */
-.nav{background:#fff;border-bottom:1px solid var(--rak-line-soft);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
-.nav-logo{font-weight:900;font-size:18px;color:var(--rak-black);display:flex;align-items:center;gap:8px;letter-spacing:-0.02em}
-.nav-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.nav-team{font-size:13px;color:var(--rak-graphite);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
-.nav-links-desktop{display:flex;gap:4px;margin-left:auto;align-items:center}
-.nav-links-desktop a{font-size:13px;color:var(--rak-graphite);padding:6px 10px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.nav-links-desktop a:hover{background:var(--rak-amber-tint);color:var(--rak-amber-deep);text-decoration:none}
-.nav-links-desktop a.active{color:var(--rak-black);font-weight:800}
+.nav{background:#fff;border-bottom:1px solid var(--rak-line);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.nav-logo{font-weight:600;font-size:17px;color:var(--rak-black);display:flex;align-items:center;gap:8px;letter-spacing:-0.01em}
+.nav-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.nav-team{font-size:13px;color:var(--rak-mute);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.nav-links-desktop{display:flex;gap:2px;margin-left:auto;align-items:center}
+.nav-links-desktop a{font-size:13px;color:var(--rak-mute);padding:5px 10px;border-radius:6px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.nav-links-desktop a:hover{background:var(--rak-bg-soft);color:var(--rak-ink);text-decoration:none}
+.nav-links-desktop a.active{color:var(--rak-ink);font-weight:600}
 
 /* Bottom nav */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--rak-line);z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
-.bottom-nav a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:var(--rak-mute);text-decoration:none;gap:3px;min-height:52px;font-weight:600}
-.nav-badge{position:absolute;top:5px;left:calc(50% + 4px);background:#ef4444;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;line-height:14px;pointer-events:none}
-.bottom-nav a.active{color:var(--rak-black)}
-.bottom-nav a.active .nav-b-icon::after{content:"";position:absolute;top:-8px;width:4px;height:4px;border-radius:50%;background:var(--rak-amber)}
+.bottom-nav a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;font-size:9px;color:var(--rak-mute);text-decoration:none;gap:3px;min-height:52px;font-weight:500}
+.nav-badge{position:absolute;top:5px;left:calc(50% + 4px);background:#ef4444;color:#fff;border-radius:10px;font-size:9px;font-weight:600;padding:1px 5px;min-width:16px;text-align:center;line-height:14px;pointer-events:none}
+.bottom-nav a.active{color:var(--rak-amber)}
 .nav-b-icon{display:flex;align-items:center;justify-content:center;position:relative}
 .nav-b-icon svg{width:22px;height:22px}
 .nav-d-icon{display:inline-flex;vertical-align:-3px;margin-right:4px}
 .nav-d-icon svg{width:15px;height:15px}
 
 /* Layout */
-.container{max-width:680px;margin:0 auto;padding:20px 14px}
+.container{max-width:680px;margin:0 auto;padding:24px 16px}
 
 /* Cards */
-.card{background:#fff;border-radius:14px;padding:20px;border:1px solid var(--rak-line);margin-bottom:14px}
-.card-sm{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid var(--rak-line);margin-bottom:8px}
+.card{background:#fff;border-radius:10px;padding:20px;border:1px solid var(--rak-line);margin-bottom:12px}
+.card-sm{background:#fff;border-radius:8px;padding:12px 16px;border:1px solid var(--rak-line);margin-bottom:6px}
 
 /* Typography */
-h1{font-size:21px;font-weight:900;margin-bottom:4px;letter-spacing:-0.02em}
-h2{font-size:17px;font-weight:800;margin-bottom:12px;letter-spacing:-0.01em}
-h3{font-size:15px;font-weight:800}
-label{display:block;font-size:12px;font-weight:700;color:var(--rak-graphite);margin-bottom:5px;margin-top:14px;letter-spacing:0.02em}
+h1{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.01em;color:var(--rak-black)}
+h2{font-size:16px;font-weight:600;margin-bottom:12px}
+h3{font-size:14px;font-weight:600}
+label{display:block;font-size:12px;font-weight:500;color:var(--rak-mute);margin-bottom:5px;margin-top:14px;letter-spacing:0.01em}
 label:first-of-type{margin-top:0}
 
 /* Forms */
-input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1.5px solid var(--rak-line);border-radius:10px;padding:11px 14px;font-size:16px;outline:none;font-family:inherit;background:var(--rak-bg-soft)}
-input:focus,textarea:focus,select:focus{border-color:var(--rak-amber);background:#fff}
+input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1px solid var(--rak-line);border-radius:8px;padding:10px 12px;font-size:16px;outline:none;font-family:inherit;background:#fff;color:var(--rak-ink)}
+input:focus,textarea:focus,select:focus{border-color:var(--rak-amber);box-shadow:0 0 0 3px rgba(217,119,6,.08)}
 textarea{resize:vertical;min-height:80px}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:transform .1s;text-decoration:none;text-align:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:background .1s;text-decoration:none;text-align:center}
 .btn:active{transform:scale(0.98)}
 .btn-blue{background:var(--rak-black);color:#fff}
-.btn-blue:hover{background:#333;text-decoration:none;color:#fff}
-.btn-outline{background:#fff;color:var(--rak-black);border:1.5px solid var(--rak-line)}
-.btn-outline:hover{background:var(--rak-bg-soft);text-decoration:none;color:var(--rak-black)}
-.btn-gray{background:var(--rak-bg-soft);color:var(--rak-graphite);border:none}
-.btn-gray:hover{background:#e4e4e4;text-decoration:none;color:var(--rak-graphite)}
+.btn-blue:hover{background:#1f2937;text-decoration:none;color:#fff}
+.btn-outline{background:#fff;color:var(--rak-ink);border:1px solid var(--rak-line)}
+.btn-outline:hover{background:var(--rak-bg-soft);text-decoration:none;color:var(--rak-ink)}
+.btn-gray{background:var(--rak-bg-soft);color:var(--rak-graphite)}
+.btn-gray:hover{background:var(--rak-line);text-decoration:none;color:var(--rak-graphite)}
 .btn-amber{background:var(--rak-amber);color:#fff}
 .btn-amber:hover{background:var(--rak-amber-deep);color:#fff;text-decoration:none}
-.btn-block{display:block;width:100%;margin-top:16px}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+.btn-block{display:block;width:100%;margin-top:12px}
+.btn-sm{padding:6px 12px;font-size:13px;border-radius:6px}
 
 /* Badges */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.02em}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500}
 .badge-green{background:var(--rak-success-tint);color:var(--rak-success)}
 .badge-red{background:var(--rak-danger-tint);color:var(--rak-danger)}
-.badge-gray{background:#f0f0f0;color:var(--rak-graphite)}
-.badge-blue{background:var(--rak-amber-tint);color:var(--rak-amber-deep)}
+.badge-gray{background:var(--rak-bg-soft);color:var(--rak-mute)}
+.badge-blue{background:var(--rak-bg-soft);color:var(--rak-amber)}
 
 /* Alerts */
-.msg-ok{background:var(--rak-success-tint);color:var(--rak-success);padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600;border:1.5px solid #bbf7d0}
-.msg-err{background:var(--rak-danger-tint);color:var(--rak-danger);padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600}
+.msg-ok{background:var(--rak-success-tint);color:var(--rak-success);padding:12px 16px;border-radius:8px;margin-bottom:14px;font-weight:500;border:1px solid #bbf7d0}
+.msg-err{background:var(--rak-danger-tint);color:var(--rak-danger);padding:12px 16px;border-radius:8px;margin-bottom:14px;font-weight:500}
 
 /* Section labels */
-.section-label{font-size:11px;font-weight:700;letter-spacing:0.12em;color:var(--rak-amber);background:var(--rak-amber-tint);padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:14px}
+.section-label{font-size:11px;font-weight:600;letter-spacing:0.08em;color:var(--rak-mute);text-transform:uppercase;display:inline-block;margin-bottom:10px}
 
 /* Misc */
-.empty{text-align:center;padding:36px 20px;color:var(--rak-mute);font-weight:600}
+.empty{text-align:center;padding:32px 20px;color:var(--rak-mute);font-size:14px}
 .row{display:flex;align-items:center;gap:10px}
-.divider{border:none;border-top:1px solid var(--rak-line);margin:16px 0}
+.divider{border:none;border-top:1px solid var(--rak-line);margin:14px 0}
 
 /* Dashboard special */
-.team-code-card{background:var(--rak-black);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;border:none}
-.team-code-card::before{content:"";position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:var(--rak-amber);opacity:.15}
-.mini-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.mini-stat{background:var(--rak-bg-soft);border-radius:10px;padding:12px}
-.mini-stat .v{font-family:var(--font-num);font-size:20px;font-weight:900;letter-spacing:-0.02em}
+.team-code-card{background:var(--rak-black);color:#fff;border-radius:10px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;border:none}
+.team-code-card::before{content:"";position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:var(--rak-amber);opacity:.12}
+.mini-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.mini-stat{background:var(--rak-bg-soft);border-radius:8px;padding:12px}
+.mini-stat .v{font-family:var(--font-num);font-size:20px;font-weight:600;letter-spacing:-0.02em}
 .mini-stat .v.amber{color:var(--rak-amber)}
-.mini-stat .l{font-size:10px;color:var(--rak-mute);font-weight:600;margin-top:1px}
+.mini-stat .l{font-size:10px;color:var(--rak-mute);font-weight:500;margin-top:2px}
 
 /* Event list */
-.event-list{background:#fff;border:1px solid var(--rak-line);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.event-row{padding:16px;border-bottom:1px solid var(--rak-line-soft);display:flex;gap:14px;align-items:flex-start}
+.event-list{background:#fff;border:1px solid var(--rak-line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.event-row{padding:14px 16px;border-bottom:1px solid var(--rak-line-soft);display:flex;gap:14px;align-items:flex-start}
 .event-row:last-child{border-bottom:none}
-.date-block{min-width:52px;text-align:center;background:var(--rak-bg-soft);border-radius:10px;padding:8px 6px}
+.date-block{min-width:48px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:7px 5px}
 .date-block.hl{background:var(--rak-black);color:#fff}
-.date-block .month{font-size:10px;font-weight:700;opacity:.7}
-.date-block .day{font-family:var(--font-num);font-size:22px;font-weight:900;line-height:1.1;letter-spacing:-0.02em}
-.date-block .wd{font-size:10px;font-weight:600;opacity:.7}
-.att-bar{display:flex;gap:6px;font-size:11px;font-weight:700}
-.att-chip{flex:1;background:var(--rak-bg-soft);border-radius:6px;padding:6px 4px;text-align:center}
-.att-chip .v{font-family:var(--font-num);font-weight:900;font-size:14px}
+.date-block .month{font-size:9px;font-weight:500;opacity:.7}
+.date-block .day{font-family:var(--font-num);font-size:20px;font-weight:600;line-height:1.1;letter-spacing:-0.02em}
+.date-block .wd{font-size:9px;font-weight:500;opacity:.7}
+.att-bar{display:flex;gap:6px;font-size:11px;font-weight:500}
+.att-chip{flex:1;background:var(--rak-bg-soft);border-radius:6px;padding:5px 4px;text-align:center}
+.att-chip .v{font-family:var(--font-num);font-weight:600;font-size:13px}
 .att-chip .l{color:var(--rak-mute);font-size:9px;margin-top:1px}
 .att-chip.green .v{color:var(--rak-success)}
 .att-chip.red .v{color:var(--rak-danger)}
 .att-chip.amber .v{color:var(--rak-amber)}
 
 /* Notice rows */
-.notice-list{background:#fff;border:1px solid var(--rak-line);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.notice-row{padding:14px 16px;border-bottom:1px solid var(--rak-line-soft);display:flex;align-items:center;gap:12px}
+.notice-list{background:#fff;border:1px solid var(--rak-line);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.notice-row{padding:12px 16px;border-bottom:1px solid var(--rak-line-soft);display:flex;align-items:center;gap:12px}
 .notice-row:last-child{border-bottom:none}
-.notice-row .read-bar{width:56px;height:3px;background:var(--rak-line-soft);border-radius:2px;overflow:hidden;margin-top:4px}
+.notice-row .read-bar{width:48px;height:2px;background:var(--rak-line-soft);border-radius:2px;overflow:hidden;margin-top:3px}
 .notice-row .read-bar>i{display:block;height:100%;background:var(--rak-amber)}
 .notice-row .read-bar>i.complete{background:var(--rak-success)}
 
@@ -1577,13 +1565,14 @@ def admin_dash(code):
   </div>
 
   <style>
-    .admin-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}}
-    .atile{{background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;cursor:pointer}}
-    .atile summary{{list-style:none;padding:14px 8px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#111;user-select:none}}
+    .admin-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}}
+    .atile{{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;cursor:pointer}}
+    .atile summary{{list-style:none;padding:14px 8px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:500;color:#6b7280;user-select:none}}
     .atile summary::-webkit-details-marker{{display:none}}
     .atile[open]{{border-color:#d97706}}
-    .atile[open] summary{{background:#fef3c7;border-bottom:1px solid #fde68a}}
-    .atile-icon{{width:32px;height:32px;display:flex;align-items:center;justify-content:center}}
+    .atile[open] summary{{background:#f9fafb;border-bottom:1px solid #e5e7eb;color:#111827}}
+    .atile[open] .atile-icon{{color:#d97706}}
+    .atile-icon{{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#9ca3af}}
     .atile-body{{padding:12px;font-size:13px}}
     .atile-body .btn{{font-size:12px;padding:8px;display:block;text-align:center;margin-top:8px;width:100%;box-sizing:border-box}}
   </style>
@@ -1675,7 +1664,7 @@ def admin_dash(code):
 
     <details class="atile">
       <summary>
-        <span class="atile-icon" style="font-size:22px">❓</span>使い方
+        <span class="atile-icon">{_ICO_HELP}</span>使い方
       </summary>
       <div class="atile-body">
         <div style="font-size:12px;color:#666;margin-bottom:10px">管理者・メンバーの使い方ガイド</div>

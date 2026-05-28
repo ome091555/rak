@@ -1219,68 +1219,121 @@ def member_home(code):
     if admin and not member:
         return redirect(url_for('admin_dash', code=code))
 
-    conn = get_db()
-    today_s = datetime.now(JST).strftime('%Y-%m-%d')
+    now = datetime.now(JST)
+    today_s = now.strftime('%Y-%m-%d')
+    try:
+        vy = int(request.args.get('y', now.year))
+        vm = int(request.args.get('m', now.month))
+        vm = max(1, min(12, vm))
+    except Exception:
+        vy, vm = now.year, now.month
+    py, pm = (vy - 1, 12) if vm == 1 else (vy, vm - 1)
+    ny, nm = (vy + 1, 1) if vm == 12 else (vy, vm + 1)
+    month_start = f'{vy}-{vm:02d}-01'
+    month_end = f'{ny}-{nm:02d}-01'
 
-    events = conn.execute(
-        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 3',
-        (team['id'], today_s)
+    conn = get_db()
+
+    # カレンダー用データ
+    cal_events = conn.execute(
+        'SELECT event_date, end_date FROM events WHERE team_id=? AND event_date>=? AND event_date<? ORDER BY event_date',
+        (team['id'], month_start, month_end)
+    ).fetchall()
+    cal_fees = conn.execute(
+        "SELECT due_date FROM fees WHERE team_id=? AND due_date>=? AND due_date<? AND due_date!=''",
+        (team['id'], month_start, month_end)
+    ).fetchall()
+    cal_orders = conn.execute(
+        "SELECT deadline FROM order_forms WHERE team_id=? AND deadline>=? AND deadline<? AND deadline!=''",
+        (team['id'], month_start, month_end)
     ).fetchall()
 
+    ev_dates = set()
+    for ev in cal_events:
+        cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
+        end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
+        while cur <= end_d:
+            ev_dates.add(cur.strftime('%Y-%m-%d'))
+            cur += timedelta(days=1)
+    fee_dates_cal = set(f['due_date'] for f in cal_fees)
+    order_dates_cal = set(o['deadline'] for o in cal_orders)
+    calendar_html = build_calendar(vy, vm, ev_dates, fee_dates_cal, order_dates_cal)
+
+    # バッジカウント
     unread = conn.execute(
         'SELECT COUNT(*) FROM notices WHERE team_id=? AND id NOT IN (SELECT notice_id FROM reads WHERE member_name=?)',
         (team['id'], member)
     ).fetchone()[0]
-
     unpaid = conn.execute(
         '''SELECT COUNT(*) FROM fees f WHERE f.team_id=?
            AND NOT EXISTS (SELECT 1 FROM fee_payments WHERE fee_id=f.id AND member_name=? AND paid=1)''',
         (team['id'], member)
     ).fetchone()[0]
 
+    # 直近の予定リスト（今月以降3件）
+    upcoming = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 4',
+        (team['id'], today_s)
+    ).fetchall()
     conn.close()
 
     event_items = ''
-    for ev in events:
+    for ev in upcoming:
         event_items += f'''
     <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rak-line-soft)">
-      <div style="min-width:44px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:6px 4px">
+      <div style="min-width:40px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:5px 4px">
         <div style="font-size:9px;color:var(--rak-mute)">{fmt_date(ev["event_date"])[:5]}</div>
-        <div style="font-size:18px;font-weight:600;font-family:var(--font-num);line-height:1.2">{int(ev["event_date"].split("-")[2])}</div>
+        <div style="font-size:17px;font-weight:600;font-family:var(--font-num);line-height:1.2">{int(ev["event_date"].split("-")[2])}</div>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{ev["title"]}</div>
+        <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{ev["title"]}</div>
         {f'<div style="font-size:12px;color:var(--rak-mute)">{ev["event_time"]}</div>' if ev["event_time"] else ''}
       </div>
-      <a href="/t/{code}/schedule" style="font-size:12px;color:var(--rak-amber);flex-shrink:0">詳細 →</a>
+      <a href="/t/{code}/schedule" style="font-size:12px;color:var(--rak-amber);flex-shrink:0">詳細</a>
     </div>'''
     if not event_items:
-        event_items = '<div style="padding:16px 0;text-align:center;color:var(--rak-mute);font-size:13px">直近の予定はありません</div>'
+        event_items = '<div style="padding:14px 0;text-align:center;color:var(--rak-mute);font-size:13px">予定はありません</div>'
+
+    first_name = member.split()[-1] if ' ' in member else member
 
     body = f'''
 <div class="container" style="max-width:480px">
-  <div style="margin-bottom:20px">
-    <div style="font-size:13px;color:var(--rak-mute)">{team["name"]}</div>
-    <h1 style="margin-top:2px">こんにちは、{member.split()[-1] if " " in member else member}さん</h1>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div>
+      <div style="font-size:12px;color:var(--rak-mute)">{team["name"]}</div>
+      <h1 style="margin-top:1px">{first_name}さん</h1>
+    </div>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <a href="/t/{code}/notices" style="position:relative;display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
+        {"" if not unread else f'<span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px">{unread}</span>'}
+        <div style="font-size:18px;font-weight:600;color:{"var(--rak-amber)" if unread else "var(--rak-black)"}">{unread}</div>
+        <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未読</div>
+      </a>
+      <a href="/t/{code}/fees" style="display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
+        <div style="font-size:18px;font-weight:600;color:{"var(--rak-danger)" if unpaid else "var(--rak-black)"}">{unpaid}</div>
+        <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未払い</div>
+      </a>
+    </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-    <a href="/t/{code}/notices" style="display:block;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:16px;text-decoration:none">
-      <div style="font-size:11px;color:var(--rak-mute);font-weight:500;margin-bottom:6px">お知らせ</div>
-      <div style="font-size:24px;font-weight:600;font-family:var(--font-num);color:{"var(--rak-amber)" if unread else "var(--rak-black)"}">{unread}</div>
-      <div style="font-size:11px;color:var(--rak-mute);margin-top:2px">未読</div>
-    </a>
-    <a href="/t/{code}/fees" style="display:block;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:16px;text-decoration:none">
-      <div style="font-size:11px;color:var(--rak-mute);font-weight:500;margin-bottom:6px">集金</div>
-      <div style="font-size:24px;font-weight:600;font-family:var(--font-num);color:{"var(--rak-danger)" if unpaid else "var(--rak-black)"}">{unpaid}</div>
-      <div style="font-size:11px;color:var(--rak-mute);margin-top:2px">未払い</div>
-    </a>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <a href="/t/{code}/home?y={py}&m={pm}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--rak-bg-soft);color:var(--rak-mute);font-size:18px;text-decoration:none">‹</a>
+      <div style="flex:1;text-align:center;font-weight:600;font-size:15px">{vy}年{vm}月</div>
+      <a href="/t/{code}/home?y={ny}&m={nm}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--rak-bg-soft);color:var(--rak-mute);font-size:18px;text-decoration:none">›</a>
+    </div>
+    {calendar_html}
+    <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--rak-mute);justify-content:center">
+      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#111;margin-right:3px;vertical-align:middle"></span>予定</span>
+      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#dc2626;margin-right:3px;vertical-align:middle"></span>集金</span>
+      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;margin-right:3px;vertical-align:middle"></span>注文</span>
+    </div>
   </div>
 
   <div class="card">
-    <div style="font-size:12px;font-weight:600;color:var(--rak-mute);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">直近の予定</div>
+    <div style="font-size:11px;font-weight:600;color:var(--rak-mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">直近の予定</div>
     {event_items}
-    <a href="/t/{code}/schedule" style="display:block;text-align:center;font-size:13px;color:var(--rak-amber);margin-top:12px">すべて見る →</a>
+    <a href="/t/{code}/schedule" style="display:block;text-align:center;font-size:13px;color:var(--rak-amber);margin-top:10px">すべて見る →</a>
   </div>
 </div>
 <script>
@@ -1296,11 +1349,14 @@ def member_home(code):
 
 # ── Schedule ──────────────────────────────────────────────────────
 
-def build_calendar(year, month, event_dates):
-    import calendar
-    cal = calendar.monthcalendar(year, month)
+def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
+    import calendar as _cal
+    fee_dates = fee_dates or set()
+    order_dates = order_dates or set()
+    cal = _cal.monthcalendar(year, month)
     wd_labels = ['月','火','水','木','金','土','日']
-    header = ''.join(f'<div style="text-align:center;font-size:11px;font-weight:700;color:#888;padding:4px 0">{d}</div>' for d in wd_labels)
+    header = ''.join(f'<div style="text-align:center;font-size:11px;font-weight:500;color:#9ca3af;padding:4px 0">{d}</div>' for d in wd_labels)
+    today_str = datetime.now(JST).strftime('%Y-%m-%d')
     rows = ''
     for week in cal:
         for day in week:
@@ -1308,19 +1364,22 @@ def build_calendar(year, month, event_dates):
                 rows += '<div></div>'
             else:
                 date_str = f'{year}-{month:02d}-{day:02d}'
-                has_event = date_str in event_dates
-                today_str = datetime.now(JST).strftime('%Y-%m-%d')
+                has_ev  = date_str in event_dates
+                has_fee = date_str in fee_dates
+                has_ord = date_str in order_dates
+                has_any = has_ev or has_fee or has_ord
                 is_today = date_str == today_str
-                dot = '<div style="width:5px;height:5px;border-radius:50%;background:#111;margin:2px auto 0"></div>' if has_event else ''
-                bg = 'background:#111;color:#fff;' if is_today else ('background:#fef3c7;' if has_event else '')
-                cursor = 'pointer' if has_event else 'default'
-                fw = '700' if (is_today or has_event) else '400'
-                onclick = f'onclick="scrollToDate(\'{date_str}\')"' if has_event else ''
-                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw}">{day}</div>{dot}</div>'
-    return f'''
-<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
-  {header}{rows}
-</div>'''
+                bg = 'background:#0a0a0a;color:#fff;' if is_today else ''
+                fw = '700' if (is_today or has_any) else '400'
+                cursor = 'pointer' if has_ev else 'default'
+                onclick = f'onclick="scrollToDate(\'{date_str}\')"' if has_ev else ''
+                dots = ''
+                if has_ev:  dots += '<div style="width:5px;height:5px;border-radius:50%;background:#111;display:inline-block;margin:0 1px"></div>'
+                if has_fee: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#dc2626;display:inline-block;margin:0 1px"></div>'
+                if has_ord: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#16a34a;display:inline-block;margin:0 1px"></div>'
+                dot_row = f'<div style="display:flex;justify-content:center;min-height:7px;margin-top:2px">{dots}</div>'
+                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw}">{day}</div>{dot_row}</div>'
+    return f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">{header}{rows}</div>'
 
 @app.route('/t/<code>/schedule')
 def schedule(code):
@@ -1357,15 +1416,21 @@ def schedule(code):
         "SELECT * FROM fees WHERE team_id=? AND due_date>=? AND due_date<? AND due_date!='' ORDER BY due_date",
         (team['id'], month_start, month_end)
     ).fetchall()
+    orders_in_month = conn.execute(
+        "SELECT deadline FROM order_forms WHERE team_id=? AND deadline>=? AND deadline<? AND deadline!=''",
+        (team['id'], month_start, month_end)
+    ).fetchall()
 
-    event_dates = set(f['due_date'] for f in fees_in_month)
+    ev_dates = set()
     for ev in all_events:
         cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
         end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
         while cur <= end_d:
-            event_dates.add(cur.strftime('%Y-%m-%d'))
+            ev_dates.add(cur.strftime('%Y-%m-%d'))
             cur += timedelta(days=1)
-    calendar_html = build_calendar(vy, vm, event_dates)
+    fee_dates = set(f['due_date'] for f in fees_in_month)
+    order_dates = set(o['deadline'] for o in orders_in_month)
+    calendar_html = build_calendar(vy, vm, ev_dates, fee_dates, order_dates)
 
     event_cards = ''
     for ev in all_events:

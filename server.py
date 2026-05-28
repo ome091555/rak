@@ -500,6 +500,29 @@ _ICO_CELEBRATE_SM = (
     '</svg>'
 )
 
+# アドミンタイル用 メモ・メール・プランアイコン（アンバー円＋白アイコン）
+_ICO_MEMO = (
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<path d="M13.5 6.5L15.5 8.5L9 15H7V13L13.5 6.5Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
+    '<path d="M12 8L15 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '</svg>'
+)
+_ICO_MAIL = (
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<rect x="4.5" y="7.5" width="13" height="8" rx="1.5" stroke="white" stroke-width="1.5" fill="none"/>'
+    '<path d="M4.5 9L11 13L17.5 9" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+    '</svg>'
+)
+_ICO_CROWN = (
+    '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="vertical-align:middle">'
+    '<circle cx="11" cy="11" r="11" fill="#d97706"/>'
+    '<path d="M5 15L5 14L7 10L11 13L15 10L17 14L17 15Z" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="none"/>'
+    '<line x1="5" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'
+    '</svg>'
+)
+
 ICONS = {
     'schedule': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 2v4M13 2v4M3 8h14"/></svg>',
     'notices':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9c0-2.8 2.2-5 5-5s5 2.2 5 5v3l1.5 2.5h-13L5 12V9z"/><path d="M8.5 17.5a1.5 1.5 0 003 0"/></svg>',
@@ -1606,7 +1629,7 @@ def admin_dash(code):
 
     <details class="atile">
       <summary>
-        <span class="atile-icon" style="font-size:20px">📝</span>メモ
+        <span class="atile-icon">{_ICO_MEMO}</span>メモ
       </summary>
       <div class="atile-body">
         <form method="post" action="/t/{code}/admin/memo">
@@ -1618,7 +1641,7 @@ def admin_dash(code):
 
     <details class="atile">
       <summary>
-        <span class="atile-icon" style="font-size:20px">📬</span>問い合わせ
+        <span class="atile-icon">{_ICO_MAIL}</span>問い合わせ
       </summary>
       <div class="atile-body">
         <div style="font-size:12px;color:#666;margin-bottom:10px">機能の要望・不具合報告</div>
@@ -1628,7 +1651,7 @@ def admin_dash(code):
 
     <details class="atile">
       <summary>
-        <span class="atile-icon" style="font-size:20px">⚙️</span>プラン
+        <span class="atile-icon">{_ICO_CROWN}</span>プラン
       </summary>
       <div class="atile-body">
         {'<div style="font-size:13px;font-weight:700;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;color:#888">すべての機能をご利用中</div>' if is_pro(team) else f'<div style="font-size:13px;margin-bottom:10px">現在: Freeプラン</div><a href="/t/{code}/upgrade" class="btn btn-blue">Proにアップグレード</a>'}

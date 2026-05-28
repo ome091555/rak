@@ -197,6 +197,21 @@ def init_db():
             message TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS admin_memos (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS memo_files (
+            id TEXT PRIMARY KEY,
+            memo_id TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            stored_name TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
     ''')
     conn.commit()
     # migration: end_date column
@@ -1635,10 +1650,8 @@ def admin_dash(code):
         <span class="atile-icon">{_ICO_MEMO}</span>メモ
       </summary>
       <div class="atile-body">
-        <form method="post" action="/t/{code}/admin/memo">
-          <textarea name="memo" rows="5" style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical">{team['admin_memo'] or ''}</textarea>
-          <button type="submit" class="btn">保存</button>
-        </form>
+        <div style="font-size:12px;color:#666;margin-bottom:10px">複数メモ・ファイル添付対応</div>
+        <a href="/t/{code}/admin/memos" class="btn btn-outline">メモを開く</a>
       </div>
     </details>
 
@@ -1683,6 +1696,221 @@ def admin_memo_save(code):
     conn.commit()
     conn.close()
     return redirect(url_for('admin_dash', code=code))
+
+
+# ── Admin: memos ──────────────────────────────────────────────────
+
+MEMO_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(os.environ.get('DATABASE', 'rak.db'))), 'memo_files')
+
+@app.route('/t/<code>/admin/memos')
+def admin_memos(code):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    memos = conn.execute('SELECT * FROM admin_memos WHERE team_id=? ORDER BY updated_at DESC', (team['id'],)).fetchall()
+    conn.close()
+    rows = ''.join(f'''
+    <a href="/t/{code}/admin/memos/{m['id']}" style="display:block;text-decoration:none;color:inherit">
+      <div class="card-sm" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:700;font-size:14px">{m['title']}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px">{m['updated_at']}</div>
+        </div>
+        <span style="color:#d97706;font-size:18px">›</span>
+      </div>
+    </a>''' for m in memos) or '<div class="empty card">メモはまだありません</div>'
+    body = f'''
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h1 style="margin:0">{_ICO_MEMO} メモ</h1>
+    <a href="/t/{code}/admin/memos/new" class="btn btn-blue">＋ 新規作成</a>
+  </div>
+  {rows}
+  <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← 管理に戻る</a></div>
+</div>'''
+    return page('メモ', body, code, active='admin')
+
+@app.route('/t/<code>/admin/memos/new', methods=['GET', 'POST'])
+def admin_memo_new(code):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    error = ''
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        if not title:
+            error = 'タイトルを入力してください'
+        else:
+            mid = new_id()
+            now = now_str()
+            conn = get_db()
+            conn.execute('INSERT INTO admin_memos (id,team_id,title,content,created_at,updated_at) VALUES (?,?,?,?,?,?)',
+                         (mid, team['id'], title, content, now, now))
+            conn.commit()
+            conn.close()
+            return redirect(f'/t/{code}/admin/memos/{mid}')
+    body = f'''
+<div class="container">
+  <h1>{_ICO_MEMO} 新規メモ</h1>
+  {'<div class="msg-err">' + error + '</div>' if error else ''}
+  <div class="card">
+    <form method="POST">
+      <label>タイトル *</label>
+      <input type="text" name="title" placeholder="例：5月練習日程メモ" required>
+      <label>内容</label>
+      <textarea name="content" rows="8" placeholder="メモの内容を入力..."></textarea>
+      <button type="submit" class="btn btn-blue btn-block" style="margin-top:16px">保存</button>
+    </form>
+  </div>
+  <div><a href="/t/{code}/admin/memos" style="font-size:13px;color:#888">← メモ一覧に戻る</a></div>
+</div>'''
+    return page('新規メモ', body, code, active='admin')
+
+@app.route('/t/<code>/admin/memos/<memo_id>')
+def admin_memo_detail(code, memo_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    memo = conn.execute('SELECT * FROM admin_memos WHERE id=? AND team_id=?', (memo_id, team['id'])).fetchone()
+    if not memo: conn.close(); return redirect(f'/t/{code}/admin/memos')
+    files = conn.execute('SELECT * FROM memo_files WHERE memo_id=? ORDER BY created_at DESC', (memo_id,)).fetchall()
+    conn.close()
+    content_html = memo['content'].replace('\n', '<br>') if memo['content'] else '<span style="color:#aaa">内容なし</span>'
+    file_rows = ''.join(f'''
+    <div class="card-sm" style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{f['original_name']}</div>
+      <div style="display:flex;gap:8px;flex-shrink:0;margin-left:8px">
+        <a href="/t/{code}/admin/memos/file/{f['id']}" class="btn btn-sm btn-outline">DL</a>
+        <form method="post" action="/t/{code}/admin/memos/file/{f['id']}/delete" style="margin:0">
+          <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none">削除</button>
+        </form>
+      </div>
+    </div>''' for f in files) or '<div style="font-size:13px;color:#aaa">添付ファイルなし</div>'
+    body = f'''
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+    <h1 style="margin:0;flex:1">{memo['title']}</h1>
+    <a href="/t/{code}/admin/memos/{memo_id}/edit" class="btn btn-sm btn-outline" style="margin-left:8px;flex-shrink:0">編集</a>
+  </div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:16px">更新: {memo['updated_at']}</div>
+
+  <div class="card">
+    <div style="font-size:14px;line-height:1.8">{content_html}</div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">添付ファイル</h2>
+    </div>
+    {file_rows}
+    <form method="POST" action="/t/{code}/admin/memos/{memo_id}/file" enctype="multipart/form-data" style="margin-top:14px">
+      <input type="file" name="file" style="font-size:13px;margin-bottom:8px">
+      <button type="submit" class="btn btn-outline btn-block">アップロード</button>
+    </form>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+    <a href="/t/{code}/admin/memos" style="font-size:13px;color:#888">← メモ一覧</a>
+    <form method="post" action="/t/{code}/admin/memos/{memo_id}/delete" style="margin:0">
+      <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none;font-size:12px">このメモを削除</button>
+    </form>
+  </div>
+</div>'''
+    return page(memo['title'], body, code, active='admin')
+
+@app.route('/t/<code>/admin/memos/<memo_id>/edit', methods=['GET', 'POST'])
+def admin_memo_edit(code, memo_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    memo = conn.execute('SELECT * FROM admin_memos WHERE id=? AND team_id=?', (memo_id, team['id'])).fetchone()
+    if not memo: conn.close(); return redirect(f'/t/{code}/admin/memos')
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        if title:
+            conn.execute('UPDATE admin_memos SET title=?,content=?,updated_at=? WHERE id=?',
+                         (title, content, now_str(), memo_id))
+            conn.commit()
+        conn.close()
+        return redirect(f'/t/{code}/admin/memos/{memo_id}')
+    conn.close()
+    body = f'''
+<div class="container">
+  <h1>{_ICO_MEMO} メモを編集</h1>
+  <div class="card">
+    <form method="POST">
+      <label>タイトル</label>
+      <input type="text" name="title" value="{memo['title']}" required>
+      <label>内容</label>
+      <textarea name="content" rows="10">{memo['content'] or ''}</textarea>
+      <button type="submit" class="btn btn-blue btn-block" style="margin-top:16px">保存</button>
+    </form>
+  </div>
+  <div><a href="/t/{code}/admin/memos/{memo_id}" style="font-size:13px;color:#888">← キャンセル</a></div>
+</div>'''
+    return page('メモ編集', body, code, active='admin')
+
+@app.route('/t/<code>/admin/memos/<memo_id>/delete', methods=['POST'])
+def admin_memo_delete(code, memo_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    files = conn.execute('SELECT stored_name FROM memo_files WHERE memo_id=?', (memo_id,)).fetchall()
+    for f in files:
+        try: os.remove(os.path.join(MEMO_FILE_DIR, f['stored_name']))
+        except: pass
+    conn.execute('DELETE FROM memo_files WHERE memo_id=?', (memo_id,))
+    conn.execute('DELETE FROM admin_memos WHERE id=? AND team_id=?', (memo_id, team['id']))
+    conn.commit()
+    conn.close()
+    return redirect(f'/t/{code}/admin/memos')
+
+@app.route('/t/<code>/admin/memos/<memo_id>/file', methods=['POST'])
+def admin_memo_file_upload(code, memo_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    memo = conn.execute('SELECT id FROM admin_memos WHERE id=? AND team_id=?', (memo_id, team['id'])).fetchone()
+    if not memo: conn.close(); return redirect(f'/t/{code}/admin/memos')
+    f = request.files.get('file')
+    if f and f.filename:
+        os.makedirs(MEMO_FILE_DIR, exist_ok=True)
+        fid = new_id()
+        ext = os.path.splitext(f.filename)[1]
+        stored = f'{fid}{ext}'
+        f.save(os.path.join(MEMO_FILE_DIR, stored))
+        conn.execute('INSERT INTO memo_files (id,memo_id,original_name,stored_name,created_at) VALUES (?,?,?,?,?)',
+                     (fid, memo_id, f.filename, stored, now_str()))
+        conn.commit()
+    conn.close()
+    return redirect(f'/t/{code}/admin/memos/{memo_id}')
+
+@app.route('/t/<code>/admin/memos/file/<file_id>')
+def admin_memo_file_download(code, file_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    conn = get_db()
+    f = conn.execute('SELECT * FROM memo_files WHERE id=?', (file_id,)).fetchone()
+    conn.close()
+    if not f: return 'Not found', 404
+    return send_file(os.path.join(MEMO_FILE_DIR, f['stored_name']),
+                     download_name=f['original_name'], as_attachment=True)
+
+@app.route('/t/<code>/admin/memos/file/<file_id>/delete', methods=['POST'])
+def admin_memo_file_delete(code, file_id):
+    if not is_admin(code): return redirect(url_for('admin_login', code=code))
+    conn = get_db()
+    f = conn.execute('SELECT * FROM memo_files WHERE id=?', (file_id,)).fetchone()
+    if f:
+        try: os.remove(os.path.join(MEMO_FILE_DIR, f['stored_name']))
+        except: pass
+        memo_id = f['memo_id']
+        conn.execute('DELETE FROM memo_files WHERE id=?', (file_id,))
+        conn.commit()
+        conn.close()
+        return redirect(f'/t/{code}/admin/memos/{memo_id}')
+    conn.close()
+    return redirect(f'/t/{code}/admin/memos')
 
 
 # ── Admin: events ─────────────────────────────────────────────────

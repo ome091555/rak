@@ -1152,7 +1152,10 @@ def team_portal(code):
 </div>'''
         return page(team['name'], body, code)
 
-    return redirect(url_for('schedule', code=code))
+    # logged-in member or admin → member home
+    if is_admin(code):
+        return redirect(url_for('admin_dash', code=code))
+    return redirect(url_for('member_home', code=code))
 
 @app.route('/t/<code>/join', methods=['POST'])
 def member_join(code):
@@ -1161,7 +1164,85 @@ def member_join(code):
     name = f'{last_name} {first_name}'.strip() if (last_name or first_name) else request.form.get('name', '').strip()
     if name:
         session[f'member_{code}'] = name
-    return redirect(url_for('schedule', code=code))
+    return redirect(url_for('member_home', code=code))
+
+@app.route('/t/<code>/home')
+def member_home(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    admin = is_admin(code)
+    if not member and not admin:
+        return redirect(url_for('team_portal', code=code))
+    if admin and not member:
+        return redirect(url_for('admin_dash', code=code))
+
+    conn = get_db()
+    today_s = datetime.now(JST).strftime('%Y-%m-%d')
+
+    events = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 3',
+        (team['id'], today_s)
+    ).fetchall()
+
+    unread = conn.execute(
+        'SELECT COUNT(*) FROM notices WHERE team_id=? AND id NOT IN (SELECT notice_id FROM reads WHERE member_name=?)',
+        (team['id'], member)
+    ).fetchone()[0]
+
+    unpaid = conn.execute(
+        '''SELECT COUNT(*) FROM fees f WHERE f.team_id=?
+           AND NOT EXISTS (SELECT 1 FROM fee_payments WHERE fee_id=f.id AND member_name=? AND paid=1)''',
+        (team['id'], member)
+    ).fetchone()[0]
+
+    conn.close()
+
+    event_items = ''
+    for ev in events:
+        event_items += f'''
+    <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rak-line-soft)">
+      <div style="min-width:44px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:6px 4px">
+        <div style="font-size:9px;color:var(--rak-mute)">{fmt_date(ev["event_date"])[:5]}</div>
+        <div style="font-size:18px;font-weight:600;font-family:var(--font-num);line-height:1.2">{int(ev["event_date"].split("-")[2])}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{ev["title"]}</div>
+        {f'<div style="font-size:12px;color:var(--rak-mute)">{ev["event_time"]}</div>' if ev["event_time"] else ''}
+      </div>
+      <a href="/t/{code}/schedule" style="font-size:12px;color:var(--rak-amber);flex-shrink:0">詳細 →</a>
+    </div>'''
+    if not event_items:
+        event_items = '<div style="padding:16px 0;text-align:center;color:var(--rak-mute);font-size:13px">直近の予定はありません</div>'
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div style="margin-bottom:20px">
+    <div style="font-size:13px;color:var(--rak-mute)">{team["name"]}</div>
+    <h1 style="margin-top:2px">こんにちは、{member.split()[-1] if " " in member else member}さん</h1>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+    <a href="/t/{code}/notices" style="display:block;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:16px;text-decoration:none">
+      <div style="font-size:11px;color:var(--rak-mute);font-weight:500;margin-bottom:6px">お知らせ</div>
+      <div style="font-size:24px;font-weight:600;font-family:var(--font-num);color:{"var(--rak-amber)" if unread else "var(--rak-black)"}">{unread}</div>
+      <div style="font-size:11px;color:var(--rak-mute);margin-top:2px">未読</div>
+    </a>
+    <a href="/t/{code}/fees" style="display:block;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:16px;text-decoration:none">
+      <div style="font-size:11px;color:var(--rak-mute);font-weight:500;margin-bottom:6px">集金</div>
+      <div style="font-size:24px;font-weight:600;font-family:var(--font-num);color:{"var(--rak-danger)" if unpaid else "var(--rak-black)"}">{unpaid}</div>
+      <div style="font-size:11px;color:var(--rak-mute);margin-top:2px">未払い</div>
+    </a>
+  </div>
+
+  <div class="card">
+    <div style="font-size:12px;font-weight:600;color:var(--rak-mute);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">直近の予定</div>
+    {event_items}
+    <a href="/t/{code}/schedule" style="display:block;text-align:center;font-size:13px;color:var(--rak-amber);margin-top:12px">すべて見る →</a>
+  </div>
+</div>'''
+    return page('ホーム', body, code, active='home')
 
 
 # ── Schedule ──────────────────────────────────────────────────────

@@ -1874,7 +1874,7 @@ def admin_dash(code):
 
   <div class="admin-grid">
 
-    <details class="atile" open>
+    <details class="atile" open data-default-open>
       <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定・締切</summary>
       <div class="atile-body" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
         {timeline_rows}
@@ -1970,7 +1970,16 @@ def admin_dash(code):
   <div style="text-align:right;margin-top:16px">
     <a href="/t/{code}/admin/logout" style="font-size:12px;color:#aaa">ログアウト</a>
   </div>
-</div>'''
+</div>
+<script>
+window.addEventListener('pageshow', function(e) {{
+  if (e.persisted) {{
+    document.querySelectorAll('.atile[open]').forEach(function(d) {{
+      if (!d.dataset.defaultOpen) d.removeAttribute('open');
+    }});
+  }}
+}});
+</script>'''
     return page('管理ダッシュボード', body, code, active='admin')
 
 

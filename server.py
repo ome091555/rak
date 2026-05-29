@@ -4511,7 +4511,7 @@ def admin_ledger(code):
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
         <div>
           <label>タイトル *</label>
-          <input type="text" name="title" placeholder="例：5月会費、グラウンド代" required>
+          <input type="text" name="title" placeholder="例：5月会費" required>
         </div>
         <div>
           <label>金額（円）*</label>

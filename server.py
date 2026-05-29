@@ -642,6 +642,7 @@ label:first-of-type{margin-top:0}
 
 /* Forms */
 input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1px solid var(--rak-line);border-radius:8px;padding:10px 12px;font-size:16px;outline:none;font-family:inherit;background:#fff;color:var(--rak-ink)}
+input[type=text],input[type=password],input[type=date],input[type=time],select{height:44px;box-sizing:border-box}
 input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
 input:focus,textarea:focus,select:focus{border-color:var(--rak-amber);box-shadow:0 0 0 3px rgba(217,119,6,.08)}
 textarea{resize:vertical;min-height:80px}

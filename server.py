@@ -3959,7 +3959,7 @@ def feedback():
       <button class="btn btn-blue btn-block" type="submit">送信する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/" style="font-size:13px;color:#aaa">← トップに戻る</a></div>
+  <div style="text-align:center"><a href="javascript:history.back()" style="font-size:13px;color:#aaa">← ホームに戻る</a></div>
 </div>'''
     return page('お問い合わせ', body)
 

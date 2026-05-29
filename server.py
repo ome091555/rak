@@ -4501,15 +4501,12 @@ def admin_ledger(code):
     <h2 style="margin-bottom:12px">収支を追加</h2>
     <form method="POST">
       <input type="hidden" name="action" value="add">
+      <input type="hidden" name="type" id="type-hidden" value="expense">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;min-width:0">
-          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a;width:16px;height:16px;flex-shrink:0;margin:0;padding:0">
-          <span style="font-size:13px;font-weight:500;color:#16a34a">収入</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;min-width:0">
-          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626;width:16px;height:16px;flex-shrink:0;margin:0;padding:0">
-          <span style="font-size:13px;font-weight:500;color:#dc2626">支出</span>
-        </label>
+        <button type="button" id="btn-income" onclick="rakSetType('income')"
+          style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;text-align:center;width:100%">収入</button>
+        <button type="button" id="btn-expense" onclick="rakSetType('expense')"
+          style="padding:10px 12px;border:1.5px solid #dc2626;border-radius:8px;background:#fff5f5;font-size:13px;font-weight:500;color:#dc2626;cursor:pointer;text-align:center;width:100%">支出</button>
       </div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
         <div>
@@ -4522,7 +4519,7 @@ def admin_ledger(code):
         </div>
         <div>
           <label>日付 *</label>
-          <input type="date" name="entry_date" value="{today_val}" required>
+          <input type="date" name="entry_date" value="{today_val}" required style="line-height:1.2;height:auto;padding:10px 12px">
         </div>
         <div>
           <label>カテゴリ</label>
@@ -4549,19 +4546,29 @@ def admin_ledger(code):
   </div>
 </div>
 <script>
-(function(){{
-  var radios = document.querySelectorAll('input[name="type"]');
-  var sel = document.getElementById('cat-select');
-  function updateCats(){{
-    var t = document.querySelector('input[name="type"]:checked').value;
-    var ig = document.getElementById('income-cats');
-    var eg = document.getElementById('expense-cats');
-    ig.style.display = t==='income' ? '' : 'none';
-    eg.style.display = t==='expense' ? '' : 'none';
-    sel.value = '';
+var _rakType = 'expense';
+function rakSetType(t){{
+  _rakType = t;
+  document.getElementById('type-hidden').value = t;
+  var bi = document.getElementById('btn-income');
+  var be = document.getElementById('btn-expense');
+  if(t==='income'){{
+    bi.style.border='1.5px solid #16a34a'; bi.style.background='#f0fdf4'; bi.style.color='#16a34a';
+    be.style.border='1px solid #e5e7eb'; be.style.background='#f9fafb'; be.style.color='#6b7280';
+  }}else{{
+    be.style.border='1.5px solid #dc2626'; be.style.background='#fff5f5'; be.style.color='#dc2626';
+    bi.style.border='1px solid #e5e7eb'; bi.style.background='#f9fafb'; bi.style.color='#6b7280';
   }}
-  radios.forEach(function(r){{ r.addEventListener('change', updateCats); }});
-  updateCats();
+  var ig=document.getElementById('income-cats');
+  var eg=document.getElementById('expense-cats');
+  ig.style.display=t==='income'?'':'none';
+  eg.style.display=t==='expense'?'':'none';
+  document.getElementById('cat-select').value='';
+}}
+(function(){{
+  var ig=document.getElementById('income-cats');
+  var eg=document.getElementById('expense-cats');
+  ig.style.display='none';
 }})();
 </script>'''
     return page('会計', body, code, active='admin')

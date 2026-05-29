@@ -928,17 +928,18 @@ button{{font-family:inherit;cursor:pointer}}
 .sec-label{{font-size:11px;font-weight:700;letter-spacing:.15em;color:var(--rak-amber);margin-bottom:12px;display:block}}
 .sec-title{{font-size:clamp(22px,4vw,30px);font-weight:900;letter-spacing:-0.02em;line-height:1.25;margin-bottom:8px;color:#0f172a}}
 .sec-sub{{font-size:14px;color:#64748b;margin-bottom:40px}}
-.feat-list{{max-width:720px;margin:0 auto;display:grid;gap:12px}}
-.feat-card{{border:1px solid var(--rak-line);border-radius:12px;padding:18px;display:flex;gap:16px;align-items:flex-start;background:#fff;transition:.15s}}
-.feat-card:hover{{border-color:#ccc;background:#fafafa}}
-.feat-num{{font-family:var(--font-num);font-size:11px;font-weight:800;color:var(--rak-mute);letter-spacing:.05em;padding-top:2px;min-width:24px}}
-.feat-body{{flex:1}}
-.feat-head{{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}}
-.feat-title{{font-size:15px;font-weight:800}}
-.feat-desc{{font-size:13px;color:var(--rak-graphite);line-height:1.6}}
-.badge-free{{background:#f0f0f0;color:var(--rak-graphite);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}}
-.badge-pro{{background:var(--rak-black);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}}
-@media(min-width:640px){{.feat-list{{grid-template-columns:1fr 1fr}}}}
+.feat-grid{{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+.fcard{{border-radius:14px;padding:18px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:120px}}
+.fcard-free{{background:#fff;border:1px solid var(--rak-line)}}
+.fcard-pro{{background:var(--rak-black);color:#fff}}
+.fcard-top{{display:flex;justify-content:space-between;align-items:flex-start}}
+.fcard-num{{font-family:var(--font-num);font-size:12px;font-weight:700;color:#aaa}}
+.fcard-pro .fcard-num{{color:#555}}
+.fdot{{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}}
+.fdot-green{{background:#16a34a}}
+.fdot-amber{{background:var(--rak-amber)}}
+.fcard-title{{font-size:17px;font-weight:800;line-height:1.3;margin-top:10px}}
+.fcard-pro .fcard-title{{color:#fff}}
 
 /* Pricing */
 .pricing{{padding:72px 24px;background:var(--rak-bg-soft)}}
@@ -1023,66 +1024,48 @@ footer a:hover{{color:#94a3b8}}
     <span class="sec-label">FEATURES</span>
     <div class="sec-title">チーム運営に<br>必要なものぜんぶ。</div>
     <div class="sec-sub">練習の時間を増やすために、管理の時間を減らす。</div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#16a34a;margin-bottom:10px">FREE — 無料で使える</div>
-    <div class="feat-list" style="margin-bottom:28px">
-      <div class="feat-card">
-        <div class="feat-num">01</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">スケジュール管理</span><span class="badge-free">FREE</span></div>
-          <div class="feat-desc">練習・試合・イベントを一元管理。出欠もワンタップで報告できる。</div>
-        </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:#16a34a;white-space:nowrap">FREE　無料で使える</span>
+      <div style="flex:1;height:1px;background:#bbf7d0"></div>
+    </div>
+    <div class="feat-grid" style="margin-bottom:32px">
+      <div class="fcard fcard-free">
+        <div class="fcard-top"><span class="fcard-num">01</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-title">スケジュール<br>管理</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-num">02</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">チーム連絡・既読管理</span><span class="badge-free">FREE</span></div>
-          <div class="feat-desc">LINEより整理された連絡。誰が読んだか一目で確認できる。</div>
-        </div>
+      <div class="fcard fcard-free">
+        <div class="fcard-top"><span class="fcard-num">02</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-title">連絡・<br>既読管理</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-num">03</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">メンバー管理</span><span class="badge-free">FREE</span></div>
-          <div class="feat-desc">背番号・ポジション・名簿をまとめてデジタル化。</div>
-        </div>
+      <div class="fcard fcard-free">
+        <div class="fcard-top"><span class="fcard-num">03</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-title">メンバー<br>管理</div>
+      </div>
+      <div class="fcard fcard-free">
+        <div class="fcard-top"><span class="fcard-num">04</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-title">チームコード<br>招待</div>
       </div>
     </div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--rak-amber);margin-bottom:10px">PRO — アップグレードで解放</div>
-    <div class="feat-list">
-      <div class="feat-card">
-        <div class="feat-num">04</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">集金・費用管理</span><span class="badge-pro">PRO</span></div>
-          <div class="feat-desc">部費・遠征費を自動催促。未払いリストを見える化。</div>
-        </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--rak-amber);white-space:nowrap">PRO　アップグレードで解放</span>
+      <div style="flex:1;height:1px;background:#fde68a"></div>
+    </div>
+    <div class="feat-grid">
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">05</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-title">集金・<br>費用管理</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-num">05</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">注文フォーム</span><span class="badge-pro">PRO</span></div>
-          <div class="feat-desc">ウェア・弁当・備品の注文を一括受付。Excelエクスポートも。</div>
-        </div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">06</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-title">注文<br>フォーム</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-num">06</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">ユニフォーム管理</span><span class="badge-pro">PRO</span></div>
-          <div class="feat-desc">サイズ・背番号・受取状況をメンバーごとに一覧管理。配布漏れゼロに。</div>
-        </div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">07</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-title">会計・<br>収支記録</div>
       </div>
-      <div class="feat-card">
-        <div class="feat-num">07</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">会計・収支記録</span><span class="badge-pro">PRO</span></div>
-          <div class="feat-desc">収入・支出をカテゴリ別に記録。残高をリアルタイムで把握。</div>
-        </div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-num">08</div>
-        <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">AI文章生成</span><span class="badge-pro">PRO</span></div>
-          <div class="feat-desc">メモを入力するだけで、試合お知らせ・連絡文をAIが自動作成。</div>
-        </div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">08</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-title">AI文章<br>生成</div>
       </div>
     </div>
   </div>

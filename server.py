@@ -230,6 +230,17 @@ def init_db():
             notes TEXT DEFAULT '',
             UNIQUE(uniform_id, member_name)
         );
+        CREATE TABLE IF NOT EXISTS ledger (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            amount INTEGER DEFAULT 0,
+            category TEXT DEFAULT '',
+            entry_date TEXT NOT NULL,
+            memo TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
     ''')
     conn.commit()
     # migration: end_date column
@@ -548,6 +559,13 @@ _ICO_UNIFORM = (
     '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
     '<path d="M7 3L3 7.5l3 1.5V17h8V9l3-1.5L14 3H7z"/>'
     '<path d="M7 3c.5 1.5 1.5 2.5 3 2.5s2.5-1 3-2.5"/>'
+    '</svg>'
+)
+_ICO_LEDGER = (
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<rect x="3" y="2" width="14" height="16" rx="2"/>'
+    '<path d="M7 7h6M7 10.5h6M7 14h4"/>'
+    '<path d="M3 6h14" stroke-width="1"/>'
     '</svg>'
 )
 
@@ -1908,6 +1926,13 @@ def admin_dash(code):
       <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム</summary>
       <div class="atile-body">
         <a href="/t/{code}/admin/uniforms" class="btn btn-outline">管理</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary><span class="atile-icon">{_ICO_LEDGER}</span>会計</summary>
+      <div class="atile-body">
+        <a href="/t/{code}/admin/ledger" class="btn btn-outline">収支記録</a>
       </div>
     </details>
 
@@ -4359,6 +4384,171 @@ def member_uniforms(code):
   </div>
 </div>'''
     return page('ユニフォーム', body, code, active='uniforms')
+
+
+# ── Admin: ledger (会計) ──────────────────────────────────────────
+
+LEDGER_INCOME_CATS = ['会費', '寄付', 'スポンサー', 'その他収入']
+LEDGER_EXPENSE_CATS = ['遠征費', '練習場代', 'ユニフォーム', '備品・消耗品', '飲食費', 'その他支出']
+
+@app.route('/t/<code>/admin/ledger', methods=['GET', 'POST'])
+def admin_ledger(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+        if action == 'add':
+            entry_type = request.form.get('type', 'expense')
+            title      = request.form.get('title', '').strip()
+            amount_s   = request.form.get('amount', '0').replace(',', '').strip()
+            category   = request.form.get('category', '').strip()
+            entry_date = request.form.get('entry_date', '').strip()
+            memo       = request.form.get('memo', '').strip()
+            if title and entry_date:
+                conn = get_db()
+                conn.execute('INSERT INTO ledger VALUES (?,?,?,?,?,?,?,?,?)',
+                             (new_id(), team['id'], entry_type, title,
+                              int(amount_s or 0), category, entry_date, memo, now_str()))
+                conn.commit()
+                conn.close()
+        elif action == 'delete':
+            entry_id = request.form.get('entry_id', '')
+            conn = get_db()
+            conn.execute('DELETE FROM ledger WHERE id=? AND team_id=?', (entry_id, team['id']))
+            conn.commit()
+            conn.close()
+        return redirect(url_for('admin_ledger', code=code))
+
+    conn = get_db()
+    entries = conn.execute(
+        'SELECT * FROM ledger WHERE team_id=? ORDER BY entry_date DESC, created_at DESC',
+        (team['id'],)
+    ).fetchall()
+    conn.close()
+
+    total_income  = sum(e['amount'] for e in entries if e['type'] == 'income')
+    total_expense = sum(e['amount'] for e in entries if e['type'] == 'expense')
+    balance = total_income - total_expense
+
+    bal_color = '#16a34a' if balance >= 0 else '#dc2626'
+
+    rows = ''
+    for e in entries:
+        sign   = '+' if e['type'] == 'income' else '-'
+        color  = '#16a34a' if e['type'] == 'income' else '#dc2626'
+        cat_badge = f'<span style="font-size:10px;background:#f3f4f6;color:#6b7280;border-radius:4px;padding:1px 5px;margin-left:5px">{e["category"]}</span>' if e['category'] else ''
+        memo_txt  = f'<div style="font-size:11px;color:#9ca3af;margin-top:1px">{e["memo"]}</div>' if e['memo'] else ''
+        rows += f'''
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6">
+      <div style="min-width:52px;font-size:11px;color:#6b7280;flex-shrink:0">{fmt_date(e['entry_date'])}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">{e['title']}{cat_badge}</div>
+        {memo_txt}
+      </div>
+      <div style="font-size:14px;font-weight:600;color:{color};flex-shrink:0">{sign}¥{e['amount']:,}</div>
+      <form method="POST" onsubmit="return confirm('削除しますか？')" style="margin:0">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="entry_id" value="{e['id']}">
+        <button type="submit" style="background:none;border:none;color:#d1d5db;font-size:16px;cursor:pointer;padding:2px 4px">×</button>
+      </form>
+    </div>'''
+
+    if not rows:
+        rows = '<div style="padding:20px 0;text-align:center;color:#9ca3af;font-size:13px">収支記録がありません</div>'
+
+    income_opts  = ''.join(f'<option value="{c}">{c}</option>' for c in LEDGER_INCOME_CATS)
+    expense_opts = ''.join(f'<option value="{c}">{c}</option>' for c in LEDGER_EXPENSE_CATS)
+
+    today_val = datetime.now(JST).strftime('%Y-%m-%d')
+
+    body = f'''
+<div class="container" style="max-width:560px">
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:#6b7280;margin-bottom:4px">収入合計</div>
+      <div style="font-size:18px;font-weight:600;color:#16a34a">¥{total_income:,}</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:#6b7280;margin-bottom:4px">支出合計</div>
+      <div style="font-size:18px;font-weight:600;color:#dc2626">¥{total_expense:,}</div>
+    </div>
+    <div style="background:#0a0a0a;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:4px">残高</div>
+      <div style="font-size:18px;font-weight:600;color:{bal_color if balance != 0 else '#fff'}">{"+" if balance > 0 else ""}¥{balance:,}</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin-bottom:12px">収支を追加</h2>
+    <form method="POST">
+      <input type="hidden" name="action" value="add">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <label style="flex:1;display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer">
+          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a">
+          <span style="font-size:13px;font-weight:500;color:#16a34a">収入</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer">
+          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626">
+          <span style="font-size:13px;font-weight:500;color:#dc2626">支出</span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label>タイトル *</label>
+          <input type="text" name="title" placeholder="例：5月会費、グラウンド代" required>
+        </div>
+        <div>
+          <label>金額（円）*</label>
+          <input type="text" name="amount" placeholder="例：5000" required>
+        </div>
+        <div>
+          <label>日付 *</label>
+          <input type="date" name="entry_date" value="{today_val}" required>
+        </div>
+        <div>
+          <label>カテゴリ</label>
+          <select name="category" id="cat-select" style="width:100%;padding:9px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;background:#fff">
+            <option value="">選択しない</option>
+            <optgroup label="収入" id="income-cats">{income_opts}</optgroup>
+            <optgroup label="支出" id="expense-cats">{expense_opts}</optgroup>
+          </select>
+        </div>
+      </div>
+      <label style="margin-top:8px">メモ（任意）</label>
+      <input type="text" name="memo" placeholder="補足など">
+      <button class="btn btn-blue btn-block" type="submit" style="margin-top:4px">追加する</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-bottom:12px">収支一覧</h2>
+    {rows}
+  </div>
+
+  <div style="text-align:center;margin-top:8px">
+    <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
+  </div>
+</div>
+<script>
+(function(){{
+  var radios = document.querySelectorAll('input[name="type"]');
+  var sel = document.getElementById('cat-select');
+  function updateCats(){{
+    var t = document.querySelector('input[name="type"]:checked').value;
+    var ig = document.getElementById('income-cats');
+    var eg = document.getElementById('expense-cats');
+    ig.style.display = t==='income' ? '' : 'none';
+    eg.style.display = t==='expense' ? '' : 'none';
+    sel.value = '';
+  }}
+  radios.forEach(function(r){{ r.addEventListener('change', updateCats); }});
+  updateCats();
+}})();
+</script>'''
+    return page('会計', body, code, active='admin')
 
 
 @app.route('/stripe/webhook', methods=['POST'])

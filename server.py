@@ -4487,13 +4487,13 @@ def admin_ledger(code):
     <h2 style="margin-bottom:12px">収支を追加</h2>
     <form method="POST">
       <input type="hidden" name="action" value="add">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;height:44px;box-sizing:border-box">
-          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a;width:16px;height:16px;flex-shrink:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;align-items:stretch">
+        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer">
+          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a;width:16px;height:16px;flex-shrink:0;margin:0">
           <span style="font-size:13px;font-weight:500;color:#16a34a">収入</span>
         </label>
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;height:44px;box-sizing:border-box">
-          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626;width:16px;height:16px;flex-shrink:0">
+        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer">
+          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626;width:16px;height:16px;flex-shrink:0;margin:0">
           <span style="font-size:13px;font-weight:500;color:#dc2626">支出</span>
         </label>
       </div>

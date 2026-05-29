@@ -4495,7 +4495,7 @@ def admin_ledger(code):
           <span style="font-size:13px;font-weight:500;color:#dc2626">支出</span>
         </label>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
         <div>
           <label>タイトル *</label>
           <input type="text" name="title" placeholder="例：5月会費、グラウンド代" required>

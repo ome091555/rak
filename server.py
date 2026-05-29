@@ -1112,6 +1112,8 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-items">
           <div class="acc">＋ 集金・費用管理</div>
           <div class="acc">＋ 注文フォーム</div>
+          <div class="acc">＋ ユニフォーム管理</div>
+          <div class="acc">＋ 会計・収支記録</div>
           <div class="acc">＋ AI文章生成</div>
           <div style="color:#aaa;margin-top:6px">＋ メンバー無制限</div>
           <div style="color:#aaa">＋ Excelエクスポート</div>

@@ -249,6 +249,12 @@ def init_db():
         conn.commit()
     except Exception:
         pass
+    # migration: end_time column
+    try:
+        conn.execute('ALTER TABLE events ADD COLUMN end_time TEXT DEFAULT ""')
+        conn.commit()
+    except Exception:
+        pass
     # migration: plan / stripe columns
     for col_sql in [
         'ALTER TABLE teams ADD COLUMN plan TEXT DEFAULT "free"',
@@ -1507,7 +1513,7 @@ def schedule(code):
           <div class="row" style="flex-wrap:wrap;gap:6px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
-              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date_range(ev['event_date'], ev['end_date'])}{' ' + ev['event_time'] if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
+              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date_range(ev['event_date'], ev['end_date'])}{'　' + ev['event_time'] + ('〜' + (ev['end_time'] if ev['end_time'] else '') if ev['event_time'] else '') if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <span class="badge badge-green">出席 {attending}</span>
@@ -2285,20 +2291,26 @@ def admin_new_event(code):
     error = ''
 
     if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        date = request.form.get('event_date', '').strip()
+        title    = request.form.get('title', '').strip()
+        date     = request.form.get('event_date', '').strip()
         end_date = request.form.get('end_date', '').strip()
-        time = request.form.get('event_time', '').strip()
+        time     = request.form.get('event_time', '').strip()
+        end_time = request.form.get('end_time', '').strip()
         location = request.form.get('location', '').strip()
-        note = request.form.get('note', '').strip()
+        note     = request.form.get('note', '').strip()
         if end_date and end_date < date:
             end_date = date
         if not title or not date:
             error = 'タイトルと日付を入力してください'
         else:
             conn = get_db()
+            eid = new_id()
             conn.execute('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?)',
-                         (new_id(), team['id'], title, date, time, location, note, now_str(), end_date))
+                         (eid, team['id'], title, date, time, location, note, now_str(), end_date))
+            try:
+                conn.execute('UPDATE events SET end_time=? WHERE id=?', (end_time, eid))
+            except Exception:
+                pass
             conn.commit()
             conn.close()
             return redirect(url_for('schedule', code=code))
@@ -2314,15 +2326,25 @@ def admin_new_event(code):
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>開始日 *</label>
-          <input type="date" name="event_date" required>
+          <input type="date" name="event_date" id="ev-date" required oninput="rakDateJa(this,'ev-date-ja')">
+          <div id="ev-date-ja" style="font-size:11px;color:#6b7280;margin-top:3px;min-height:16px"></div>
         </div>
         <div>
-          <label>終了日（複数日の場合）</label>
-          <input type="date" name="end_date">
+          <label>終了日（複数日）</label>
+          <input type="date" name="end_date" id="ev-end-date" oninput="rakDateJa(this,'ev-end-date-ja')">
+          <div id="ev-end-date-ja" style="font-size:11px;color:#6b7280;margin-top:3px;min-height:16px"></div>
         </div>
       </div>
-      <label>時間</label>
-      <input type="time" name="event_time">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>開始時刻</label>
+          <input type="time" name="event_time">
+        </div>
+        <div>
+          <label>終了時刻</label>
+          <input type="time" name="end_time">
+        </div>
+      </div>
       <label>場所</label>
       <input type="text" name="location" placeholder="例：市営グラウンドA面">
       <label>備考・詳細</label>
@@ -2334,7 +2356,16 @@ def admin_new_event(code):
     <a href="/t/{code}/schedule" style="font-size:13px;color:#888">← 予定一覧</a>
     <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
   </div>
-</div>'''
+</div>
+<script>
+function rakDateJa(inp,tid){{
+  var v=inp.value;
+  if(!v){{document.getElementById(tid).textContent='';return;}}
+  var p=v.split('-'),d=new Date(v+'T00:00:00');
+  var wd=['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById(tid).textContent=p[0]+'年'+parseInt(p[1])+'月'+parseInt(p[2])+'日（'+wd+'）';
+}}
+</script>'''
     return page('予定を追加', body, code, active='schedule')
 
 @app.route('/t/<code>/admin/events/<event_id>')
@@ -2420,12 +2451,19 @@ def admin_edit_event(code, event_id):
         conn.close()
         return redirect(url_for('schedule', code=code))
 
+    ev_end_time = ''
+    try:
+        ev_end_time = ev['end_time'] or ''
+    except Exception:
+        pass
+
     error = ''
     if request.method == 'POST':
         title    = request.form.get('title', '').strip()
         date     = request.form.get('event_date', '').strip()
         end_date = request.form.get('end_date', '').strip()
         time     = request.form.get('event_time', '').strip()
+        end_time = request.form.get('end_time', '').strip()
         location = request.form.get('location', '').strip()
         note     = request.form.get('note', '').strip()
         if end_date and end_date < date:
@@ -2437,11 +2475,25 @@ def admin_edit_event(code, event_id):
                 'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,location=?,note=? WHERE id=?',
                 (title, date, end_date, time, location, note, event_id)
             )
+            try:
+                conn.execute('UPDATE events SET end_time=? WHERE id=?', (end_time, event_id))
+            except Exception:
+                pass
             conn.commit()
             conn.close()
             return redirect(url_for('admin_event_detail', code=code, event_id=event_id))
 
     conn.close()
+
+    ev_date_ja = ''
+    try:
+        import datetime as _dt
+        d = _dt.date.fromisoformat(ev['event_date'])
+        wd = ['月','火','水','木','金','土','日'][d.weekday()]
+        ev_date_ja = f"{d.year}年{d.month}月{d.day}日（{wd}）"
+    except Exception:
+        pass
+
     body = f'''
 <div class="container" style="max-width:480px">
   <div class="card">
@@ -2453,15 +2505,25 @@ def admin_edit_event(code, event_id):
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>開始日 *</label>
-          <input type="date" name="event_date" value="{ev['event_date']}" required>
+          <input type="date" name="event_date" id="ev-date" value="{ev['event_date']}" required oninput="rakDateJa(this,'ev-date-ja')">
+          <div id="ev-date-ja" style="font-size:11px;color:#6b7280;margin-top:3px">{ev_date_ja}</div>
         </div>
         <div>
-          <label>終了日（複数日の場合）</label>
-          <input type="date" name="end_date" value="{ev['end_date'] or ''}">
+          <label>終了日（複数日）</label>
+          <input type="date" name="end_date" id="ev-end-date" value="{ev['end_date'] or ''}" oninput="rakDateJa(this,'ev-end-date-ja')">
+          <div id="ev-end-date-ja" style="font-size:11px;color:#6b7280;margin-top:3px"></div>
         </div>
       </div>
-      <label>時間</label>
-      <input type="time" name="event_time" value="{ev['event_time'] or ''}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>開始時刻</label>
+          <input type="time" name="event_time" value="{ev['event_time'] or ''}">
+        </div>
+        <div>
+          <label>終了時刻</label>
+          <input type="time" name="end_time" value="{ev_end_time}">
+        </div>
+      </div>
       <label>場所</label>
       <input type="text" name="location" value="{ev['location'] or ''}">
       <label>備考・詳細</label>
@@ -2473,7 +2535,16 @@ def admin_edit_event(code, event_id):
     <a href="/t/{code}/admin/events/{event_id}" style="font-size:13px;color:#888">← 予定詳細</a>
     <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
   </div>
-</div>'''
+</div>
+<script>
+function rakDateJa(inp,tid){{
+  var v=inp.value;
+  if(!v){{document.getElementById(tid).textContent='';return;}}
+  var p=v.split('-'),d=new Date(v+'T00:00:00');
+  var wd=['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById(tid).textContent=p[0]+'年'+parseInt(p[1])+'月'+parseInt(p[2])+'日（'+wd+'）';
+}}
+</script>'''
     return page('予定を編集', body, code, active='schedule')
 
 

@@ -576,6 +576,7 @@ _ICO_LEDGER = (
 )
 
 ICONS = {
+    'home':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L10 3l7 6.5"/><path d="M5 8.5V17h4v-4h2v4h4V8.5"/></svg>',
     'schedule': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 2v4M13 2v4M3 8h14"/></svg>',
     'notices':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9c0-2.8 2.2-5 5-5s5 2.2 5 5v3l1.5 2.5h-13L5 12V9z"/><path d="M8.5 17.5a1.5 1.5 0 003 0"/></svg>',
     'members':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.7-1.5-5-3.5-6"/></svg>',
@@ -763,6 +764,7 @@ def page(title, body, code=None, active=None):
     bottom_nav = ''
     if code:
         tabs = [
+            ('home',      'home',      'ホーム',  f'/t/{code}/home'),
             ('schedule',  'schedule',  '予定',    f'/t/{code}/schedule'),
             ('notices',   'notices',   '連絡',    f'/t/{code}/notices'),
             ('members',   'members',   'メンバー', f'/t/{code}/members'),

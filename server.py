@@ -3518,7 +3518,16 @@ def order_form_view(code, form_id):
         body = f'''
 <div class="container" style="max-width:680px">
   <div class="card">
-    <div style="font-weight:700;font-size:20px;margin-bottom:4px">{form["title"]}</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
+      <div style="font-weight:700;font-size:20px">{form["title"]}</div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <a href="/t/{code}/admin/orders/{form_id}/edit" class="btn btn-sm btn-outline">編集</a>
+        <form method="POST" action="/t/{code}/admin/orders/{form_id}/delete"
+              onsubmit="return confirm('このフォームを削除しますか？回答データもすべて消えます。')" style="margin:0">
+          <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
+        </form>
+      </div>
+    </div>
     {desc_html}
     {deadline_html}
     <div style="margin-top:12px">
@@ -3663,6 +3672,74 @@ def admin_new_order_form(code):
   <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
 </div>'''
     return page('フォーム作成', body, code, active='orders')
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/edit', methods=['GET', 'POST'])
+def admin_edit_order_form(code, form_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    form = conn.execute('SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])).fetchone()
+    if not form:
+        conn.close()
+        return redirect(url_for('orders_list', code=code))
+
+    error = ''
+    if request.method == 'POST':
+        title       = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        deadline    = request.form.get('deadline', '').strip()
+        if not title:
+            error = 'フォーム名を入力してください'
+        else:
+            conn.execute('UPDATE order_forms SET title=?,description=?,deadline=? WHERE id=?',
+                         (title, description, deadline, form_id))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('order_form_view', code=code, form_id=form_id))
+
+    conn.close()
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1>フォームを編集</h1>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>フォーム名 *</label>
+      <input type="text" name="title" value="{form['title']}" required>
+      <label>説明（任意）</label>
+      <textarea name="description" rows="3">{form['description'] or ''}</textarea>
+      <label>回答期限（任意）</label>
+      <input type="date" name="deadline" value="{form['deadline'] or ''}">
+      <button class="btn btn-blue btn-block" type="submit">保存する</button>
+    </form>
+  </div>
+  <div style="text-align:center">
+    <a href="/t/{code}/orders/{form_id}" style="font-size:13px;color:#888">← フォームに戻る</a>
+  </div>
+</div>'''
+    return page('フォームを編集', body, code, active='orders')
+
+
+@app.route('/t/<code>/admin/orders/<form_id>/delete', methods=['POST'])
+def admin_delete_order_form(code, form_id):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    form = conn.execute('SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])).fetchone()
+    if form:
+        resp_ids = [r['id'] for r in conn.execute('SELECT id FROM order_responses WHERE form_id=?', (form_id,)).fetchall()]
+        for rid in resp_ids:
+            conn.execute('DELETE FROM order_response_values WHERE response_id=?', (rid,))
+        conn.execute('DELETE FROM order_responses WHERE form_id=?', (form_id,))
+        conn.execute('DELETE FROM order_form_fields WHERE form_id=?', (form_id,))
+        conn.execute('DELETE FROM order_form_photos WHERE form_id=?', (form_id,))
+        conn.execute('DELETE FROM order_forms WHERE id=?', (form_id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('orders_list', code=code))
 
 
 @app.route('/uploads/<photo_id>')

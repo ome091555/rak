@@ -213,6 +213,23 @@ def init_db():
             stored_name TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS uniforms (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS uniform_assignments (
+            id TEXT PRIMARY KEY,
+            uniform_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            size TEXT DEFAULT '',
+            number TEXT DEFAULT '',
+            received INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            UNIQUE(uniform_id, member_name)
+        );
     ''')
     conn.commit()
     # migration: end_date column
@@ -527,6 +544,12 @@ _ICO_HELP = (
     '<circle cx="10" cy="14.5" r=".5" fill="currentColor"/>'
     '</svg>'
 )
+_ICO_UNIFORM = (
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">'
+    '<path d="M7 3L3 7.5l3 1.5V17h8V9l3-1.5L14 3H7z"/>'
+    '<path d="M7 3c.5 1.5 1.5 2.5 3 2.5s2.5-1 3-2.5"/>'
+    '</svg>'
+)
 
 ICONS = {
     'schedule': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M7 2v4M13 2v4M3 8h14"/></svg>',
@@ -534,6 +557,7 @@ ICONS = {
     'members':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.7-1.5-5-3.5-6"/></svg>',
     'fees':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v8M7.5 8c.5-1.5 5-1.5 5 1.5 0 2.5-5 1.5-5 4 0 2 4.5 1.5 5 0"/></svg>',
     'orders':   '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M8 7h4M8 10.5h4M8 14h2.5"/></svg>',
+    'uniforms': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3L3 7.5l3 1.5V17h8V9l3-1.5L14 3H7z"/><path d="M7 3c.5 1.5 1.5 2.5 3 2.5s2.5-1 3-2.5"/></svg>',
     'admin':    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg>',
     'ai':       '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l1.8 5 5.2 2-5.2 2-1.8 5-1.8-5-5.2-2 5.2-2z"/></svg>',
     'ask':      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12a2 2 0 01-2 2H6l-3 3V5a2 2 0 012-2h10a2 2 0 012 2v7z"/></svg>',
@@ -714,11 +738,12 @@ def page(title, body, code=None, active=None):
     bottom_nav = ''
     if code:
         tabs = [
-            ('schedule', 'schedule', '予定',    f'/t/{code}/schedule'),
-            ('notices',  'notices',  '連絡',    f'/t/{code}/notices'),
-            ('members',  'members',  'メンバー', f'/t/{code}/members'),
-            ('fees',     'fees',     '集金',    f'/t/{code}/fees'),
-            ('orders',   'orders',   '注文',    f'/t/{code}/orders'),
+            ('schedule',  'schedule',  '予定',    f'/t/{code}/schedule'),
+            ('notices',   'notices',   '連絡',    f'/t/{code}/notices'),
+            ('members',   'members',   'メンバー', f'/t/{code}/members'),
+            ('fees',      'fees',      '集金',    f'/t/{code}/fees'),
+            ('orders',    'orders',    '注文',    f'/t/{code}/orders'),
+            ('uniforms',  'uniforms',  'ユニ',    f'/t/{code}/uniforms'),
         ]
         if admin:
             tabs.append(('admin', 'admin', '管理', f'/t/{code}/admin/dash'))
@@ -1876,6 +1901,13 @@ def admin_dash(code):
       <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章</summary>
       <div class="atile-body">
         <a href="/t/{code}/admin/ai" class="btn btn-outline">文章を作成</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム</summary>
+      <div class="atile-body">
+        <a href="/t/{code}/admin/uniforms" class="btn btn-outline">管理</a>
       </div>
     </details>
 
@@ -4081,6 +4113,252 @@ def upgrade_success(code):
   </div>
 </div>'''
     return page('アップグレード完了', body, code, active='admin')
+
+
+# ── Admin: uniforms ───────────────────────────────────────────────
+
+@app.route('/t/<code>/admin/uniforms', methods=['GET', 'POST'])
+def admin_uniforms(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    error = ''
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        if not name:
+            error = 'ユニフォーム名を入力してください'
+        else:
+            uid = new_id()
+            conn = get_db()
+            conn.execute('INSERT INTO uniforms VALUES (?,?,?,?,?)',
+                         (uid, team['id'], name, description, now_str()))
+            members = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
+            for m in members:
+                conn.execute('INSERT OR IGNORE INTO uniform_assignments VALUES (?,?,?,?,?,?,?)',
+                             (new_id(), uid, m['name'], '', '', 0, ''))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin_uniform_detail', code=code, uid=uid))
+
+    conn = get_db()
+    uniforms = conn.execute('SELECT * FROM uniforms WHERE team_id=? ORDER BY created_at DESC', (team['id'],)).fetchall()
+    rows = ''
+    for u in uniforms:
+        received = conn.execute('SELECT COUNT(*) FROM uniform_assignments WHERE uniform_id=? AND received=1', (u['id'],)).fetchone()[0]
+        total = conn.execute('SELECT COUNT(*) FROM uniform_assignments WHERE uniform_id=?', (u['id'],)).fetchone()[0]
+        rows += f'''
+        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:600">{u['name']}</div>
+            <div style="font-size:12px;color:#888">受取済 {received}/{total}名{('　' + u['description']) if u['description'] else ''}</div>
+          </div>
+          <a href="/t/{code}/admin/uniforms/{u['id']}" class="btn btn-sm btn-outline">管理</a>
+        </div>'''
+    conn.close()
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <h1 style="margin:0">{_ICO_UNIFORM} ユニフォーム管理</h1>
+    </div>
+    {rows if uniforms else '<div class="empty">ユニフォームがまだ登録されていません</div>'}
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">新しいユニフォームを追加</h2>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>ユニフォーム名 *</label>
+      <input type="text" name="name" placeholder="例：ホームユニ2026、アウェイユニ" required>
+      <label>備考（任意）</label>
+      <input type="text" name="description" placeholder="例：10月配布予定">
+      <button class="btn btn-blue btn-block" type="submit">追加する</button>
+    </form>
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+</div>'''
+    return page('ユニフォーム管理', body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/uniforms/<uid>', methods=['GET', 'POST'])
+def admin_uniform_detail(code, uid):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    u = conn.execute('SELECT * FROM uniforms WHERE id=? AND team_id=?', (uid, team['id'])).fetchone()
+    if not u:
+        conn.close()
+        return redirect(url_for('admin_uniforms', code=code))
+
+    if request.method == 'POST':
+        members = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
+        for m in members:
+            mname = m['name']
+            size = request.form.get(f'size_{mname}', '').strip()
+            number = request.form.get(f'number_{mname}', '').strip()
+            received = 1 if request.form.get(f'received_{mname}') else 0
+            notes = request.form.get(f'notes_{mname}', '').strip()
+            conn.execute('''
+                INSERT INTO uniform_assignments (id,uniform_id,member_name,size,number,received,notes)
+                VALUES (?,?,?,?,?,?,?)
+                ON CONFLICT(uniform_id,member_name) DO UPDATE SET
+                  size=excluded.size, number=excluded.number,
+                  received=excluded.received, notes=excluded.notes
+            ''', (new_id(), uid, mname, size, number, received, notes))
+        conn.commit()
+
+    members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
+    assignments = conn.execute('SELECT * FROM uniform_assignments WHERE uniform_id=?', (uid,)).fetchall()
+    assign_map = {a['member_name']: a for a in assignments}
+    for m in members:
+        if m['name'] not in assign_map:
+            conn.execute('INSERT OR IGNORE INTO uniform_assignments VALUES (?,?,?,?,?,?,?)',
+                         (new_id(), uid, m['name'], '', '', 0, ''))
+    conn.commit()
+    assignments = conn.execute('SELECT * FROM uniform_assignments WHERE uniform_id=?', (uid,)).fetchall()
+    assign_map = {a['member_name']: a for a in assignments}
+    conn.close()
+
+    received_count = sum(1 for a in assign_map.values() if a['received'])
+
+    rows = ''
+    for m in members:
+        a = assign_map.get(m['name'], {})
+        size_val = a['size'] if a else ''
+        num_val = a['number'] if a else ''
+        recv_val = a['received'] if a else 0
+        notes_val = a['notes'] if a else ''
+        checked = 'checked' if recv_val else ''
+        rows += f'''
+    <tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:10px 8px;font-weight:500;white-space:nowrap">{m['name']}</td>
+      <td style="padding:10px 4px">
+        <select name="size_{m['name']}" style="width:100%;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff">
+          <option value="">-</option>
+          {''.join(f'<option value="{s}" {"selected" if size_val==s else ""}>{s}</option>' for s in ['XS','S','M','L','XL','XXL','3XL'])}
+          <option value="{size_val}" {'selected' if size_val and size_val not in ['XS','S','M','L','XL','XXL','3XL'] else ''}>{size_val if size_val and size_val not in ['XS','S','M','L','XL','XXL','3XL'] else 'その他'}</option>
+        </select>
+      </td>
+      <td style="padding:10px 4px">
+        <input type="text" name="number_{m['name']}" value="{num_val}" placeholder="#" style="width:60px;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;text-align:center">
+      </td>
+      <td style="padding:10px 8px;text-align:center">
+        <input type="checkbox" name="received_{m['name']}" {checked} style="width:16px;height:16px;accent-color:#d97706">
+      </td>
+    </tr>'''
+
+    desc_html = f'<div style="font-size:13px;color:#888;margin-bottom:8px">{u["description"]}</div>' if u['description'] else ''
+    if not members:
+        table_html = '<div class="empty">メンバーがいません。先にメンバー名簿を登録してください。</div>'
+    else:
+        table_html = f'''
+    <form method="POST">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid #e5e7eb">
+              <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">名前</th>
+              <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">サイズ</th>
+              <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">番号</th>
+              <th style="text-align:center;padding:8px;font-size:12px;color:#6b7280;font-weight:500">受取</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn-blue btn-block" type="submit">保存する</button>
+      </div>
+    </form>'''
+
+    body = f'''
+<div class="container" style="max-width:600px">
+  <div class="card" style="margin-bottom:12px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <h1 style="margin:0">{u['name']}</h1>
+      <form method="POST" action="/t/{code}/admin/uniforms/{uid}/delete"
+            onsubmit="return confirm('このユニフォームを削除しますか？')" style="margin:0">
+        <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
+      </form>
+    </div>
+    {desc_html}
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <span class="badge badge-green">受取済 {received_count}名</span>
+      <span class="badge badge-red">未受取 {len(members)-received_count}名</span>
+    </div>
+  </div>
+  <div class="card">
+    {table_html}
+  </div>
+  <div style="text-align:center"><a href="/t/{code}/admin/uniforms" style="font-size:13px;color:#888">← 一覧に戻る</a></div>
+</div>'''
+    return page(u['name'], body, code, active='admin')
+
+
+@app.route('/t/<code>/admin/uniforms/<uid>/delete', methods=['POST'])
+def admin_delete_uniform(code, uid):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    conn = get_db()
+    conn.execute('DELETE FROM uniform_assignments WHERE uniform_id=?', (uid,))
+    conn.execute('DELETE FROM uniforms WHERE id=? AND team_id=?', (uid, team['id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_uniforms', code=code))
+
+
+# ── Member: uniforms ──────────────────────────────────────────────
+
+@app.route('/t/<code>/uniforms')
+def member_uniforms(code):
+    team = get_team(code)
+    if not team:
+        return redirect('/')
+    member = get_member(code)
+    if not member:
+        return redirect(url_for('team_portal', code=code))
+
+    conn = get_db()
+    uniforms = conn.execute('SELECT * FROM uniforms WHERE team_id=? ORDER BY created_at', (team['id'],)).fetchall()
+    rows = ''
+    for u in uniforms:
+        a = conn.execute('SELECT * FROM uniform_assignments WHERE uniform_id=? AND member_name=?', (u['id'], member)).fetchone()
+        if not a:
+            continue
+        recv_badge = (
+            f'<span style="font-size:11px;background:#f0fdf4;color:#16a34a;border-radius:4px;padding:2px 7px;font-weight:500">受取済</span>'
+            if a['received'] else
+            f'<span style="font-size:11px;background:#f9fafb;color:#6b7280;border-radius:4px;padding:2px 7px;font-weight:500">未受取</span>'
+        )
+        details = []
+        if a['size']:   details.append(f'サイズ：{a["size"]}')
+        if a['number']: details.append(f'番号：{a["number"]}')
+        rows += f'''
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--rak-line-soft)">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:14px">{u['name']}</div>
+        <div style="font-size:12px;color:var(--rak-mute);margin-top:2px">{'　'.join(details) if details else '詳細未設定'}</div>
+      </div>
+      {recv_badge}
+    </div>'''
+
+    if not rows:
+        rows = '<div style="padding:20px 0;text-align:center;color:var(--rak-mute);font-size:13px">ユニフォーム情報はまだ登録されていません</div>'
+
+    conn.close()
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  <div class="card">
+    <h1 style="margin-bottom:16px">{_ICO_UNIFORM} ユニフォーム</h1>
+    {rows}
+  </div>
+</div>'''
+    return page('ユニフォーム', body, code, active='uniforms')
 
 
 @app.route('/stripe/webhook', methods=['POST'])

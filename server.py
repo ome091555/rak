@@ -995,7 +995,7 @@ footer a:hover{{color:#94a3b8}}
 <section class="hero">
   <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
   <h1>チーム運営の<br><span class="highlight"><span>"めんどくさい"</span></span>を、<br>ぜんぶ<span style="color:var(--rak-amber)">ラク</span>に。</h1>
-  <p>予定管理・連絡・集金・注文フォーム。<br>バラバラだった仕事をRak一つにまとめる。</p>
+  <p>予定管理・連絡・集金・ユニフォーム・会計まで。<br>バラバラだった仕事をRak一つにまとめる。</p>
   <div class="hero-btns">
     <a href="/create" class="btn-primary">無料でチームを作る →</a>
     <a href="#features" class="btn-ghost">機能を見る</a>
@@ -1061,6 +1061,20 @@ footer a:hover{{color:#94a3b8}}
       </div>
       <div class="feat-card">
         <div class="feat-num">06</div>
+        <div class="feat-body">
+          <div class="feat-head"><span class="feat-title">ユニフォーム管理</span><span class="badge-free">FREE</span></div>
+          <div class="feat-desc">サイズ・背番号・受取状況をメンバーごとに一覧管理。配布漏れゼロに。</div>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">07</div>
+        <div class="feat-body">
+          <div class="feat-head"><span class="feat-title">会計・収支記録</span><span class="badge-free">FREE</span></div>
+          <div class="feat-desc">収入・支出をカテゴリ別に記録。残高をリアルタイムで把握。</div>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">08</div>
         <div class="feat-body">
           <div class="feat-head"><span class="feat-title">AI文章生成</span><span class="badge-pro">PRO</span></div>
           <div class="feat-desc">メモを入力するだけで、試合お知らせ・連絡文をAIが自動作成。</div>

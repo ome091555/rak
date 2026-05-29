@@ -3388,9 +3388,6 @@ def orders_list(code):
     {new_btn}
   </div>
   {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文フォームはまだありません</div>'}
-  <div style="text-align:center;margin-top:8px">
-    <a href="/t/{code}/home" style="font-size:13px;color:#888">← ホームに戻る</a>
-  </div>
 </div>'''
     return page('注文フォーム', body, code, active='orders')
 

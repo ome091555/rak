@@ -1023,7 +1023,8 @@ footer a:hover{{color:#94a3b8}}
     <span class="sec-label">FEATURES</span>
     <div class="sec-title">チーム運営に<br>必要なものぜんぶ。</div>
     <div class="sec-sub">練習の時間を増やすために、管理の時間を減らす。</div>
-    <div class="feat-list">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#16a34a;margin-bottom:10px">FREE — 無料で使える</div>
+    <div class="feat-list" style="margin-bottom:28px">
       <div class="feat-card">
         <div class="feat-num">01</div>
         <div class="feat-body">
@@ -1045,6 +1046,9 @@ footer a:hover{{color:#94a3b8}}
           <div class="feat-desc">背番号・ポジション・名簿をまとめてデジタル化。</div>
         </div>
       </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--rak-amber);margin-bottom:10px">PRO — アップグレードで解放</div>
+    <div class="feat-list">
       <div class="feat-card">
         <div class="feat-num">04</div>
         <div class="feat-body">
@@ -1062,14 +1066,14 @@ footer a:hover{{color:#94a3b8}}
       <div class="feat-card">
         <div class="feat-num">06</div>
         <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">ユニフォーム管理</span><span class="badge-free">FREE</span></div>
+          <div class="feat-head"><span class="feat-title">ユニフォーム管理</span><span class="badge-pro">PRO</span></div>
           <div class="feat-desc">サイズ・背番号・受取状況をメンバーごとに一覧管理。配布漏れゼロに。</div>
         </div>
       </div>
       <div class="feat-card">
         <div class="feat-num">07</div>
         <div class="feat-body">
-          <div class="feat-head"><span class="feat-title">会計・収支記録</span><span class="badge-free">FREE</span></div>
+          <div class="feat-head"><span class="feat-title">会計・収支記録</span><span class="badge-pro">PRO</span></div>
           <div class="feat-desc">収入・支出をカテゴリ別に記録。残高をリアルタイムで把握。</div>
         </div>
       </div>

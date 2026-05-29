@@ -1947,7 +1947,7 @@ def admin_dash(code):
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_MAIL}</span>問い合わせ</summary>
       <div class="atile-body">
-        <a href="/feedback" class="btn btn-outline">送る</a>
+        <a href="/feedback?from={code}" class="btn btn-outline">送る</a>
       </div>
     </details>
 
@@ -3911,6 +3911,9 @@ def admin_new_survey(code):
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     sent = request.args.get('sent') == '1'
+    from_code = request.args.get('from', '').strip().upper()
+    back_url = f'/t/{from_code}/admin/dash' if from_code else '/'
+    back_label = 'ダッシュボードに戻る' if from_code else 'トップに戻る'
     error = ''
     if request.method == 'POST':
         team_name = request.form.get('team_name', '').strip()
@@ -3959,7 +3962,7 @@ def feedback():
       <button class="btn btn-blue btn-block" type="submit">送信する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="javascript:history.back()" style="font-size:13px;color:#aaa">← ホームに戻る</a></div>
+  <div style="text-align:center"><a href="{back_url}" style="font-size:13px;color:#aaa">← {back_label}</a></div>
 </div>'''
     return page('お問い合わせ', body)
 

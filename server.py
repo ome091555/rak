@@ -641,8 +641,7 @@ label{display:block;font-size:12px;font-weight:500;color:var(--rak-mute);margin-
 label:first-of-type{margin-top:0}
 
 /* Forms */
-input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1px solid var(--rak-line);border-radius:8px;padding:10px 12px;font-size:16px;outline:none;font-family:inherit;background:#fff;color:var(--rak-ink)}
-input[type=text],input[type=password],input[type=date],input[type=time],select{height:44px;box-sizing:border-box}
+input[type=text],input[type=password],input[type=date],input[type=time],textarea,select{width:100%;border:1px solid var(--rak-line);border-radius:8px;padding:10px 12px;font-size:16px;outline:none;font-family:inherit;background:#fff;color:var(--rak-ink);box-sizing:border-box}
 input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
 input:focus,textarea:focus,select:focus{border-color:var(--rak-amber);box-shadow:0 0 0 3px rgba(217,119,6,.08)}
 textarea{resize:vertical;min-height:80px}
@@ -4487,13 +4486,13 @@ def admin_ledger(code):
     <h2 style="margin-bottom:12px">収支を追加</h2>
     <form method="POST">
       <input type="hidden" name="action" value="add">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;align-items:center">
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0 12px;cursor:pointer;height:44px;box-sizing:border-box">
-          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a;width:16px;height:16px;flex-shrink:0;margin:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;box-sizing:border-box">
+          <input type="radio" name="type" value="income" id="type-income" style="accent-color:#16a34a;width:16px;height:16px;flex-shrink:0;margin:0;padding:0;border:none;background:none">
           <span style="font-size:13px;font-weight:500;color:#16a34a">収入</span>
         </label>
-        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:0 12px;cursor:pointer;height:44px;box-sizing:border-box">
-          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626;width:16px;height:16px;flex-shrink:0;margin:0">
+        <label style="display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;box-sizing:border-box">
+          <input type="radio" name="type" value="expense" id="type-expense" checked style="accent-color:#dc2626;width:16px;height:16px;flex-shrink:0;margin:0;padding:0;border:none;background:none">
           <span style="font-size:13px;font-weight:500;color:#dc2626">支出</span>
         </label>
       </div>

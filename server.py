@@ -25,6 +25,7 @@ ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(DATABASE)), 'uploads')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
+STRIPE_PRICE_ID_PRO_YEARLY = os.environ.get('STRIPE_PRICE_ID_PRO_YEARLY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
@@ -4413,12 +4414,23 @@ def upgrade_page(code):
         return page('プラン', body, code, active='admin')
 
     stripe_ready = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO)
-    checkout_btn = f'''
+    if stripe_ready:
+        yearly_btn = ''
+        if STRIPE_PRICE_ID_PRO_YEARLY:
+            yearly_btn = f'''
+    <form method="POST" action="/t/{code}/upgrade/checkout" style="margin-top:10px">
+      <input type="hidden" name="plan" value="yearly">
+      <button class="btn btn-block" type="submit" style="font-size:16px;padding:15px;background:#fff;color:#d97706;border:1.5px solid #f59e0b">年額プラン ¥9,800/年（2ヶ月分お得）</button>
+    </form>'''
+        checkout_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout">
-      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">Proにアップグレード（¥980/月）</button>
-    </form>
+      <input type="hidden" name="plan" value="monthly">
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">月額プラン ¥980/月</button>
+    </form>{yearly_btn}
     <div style="font-size:12px;color:#aaa;margin-top:8px">いつでもキャンセル可能。クレジットカード払い。</div>
-    ''' if stripe_ready else '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
+    '''
+    else:
+        checkout_btn = '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
 
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
@@ -4453,10 +4465,14 @@ def upgrade_checkout(code):
     import stripe
     stripe.api_key = STRIPE_SECRET_KEY
     team = get_team(code)
+    plan = request.form.get('plan', 'monthly')
+    price_id = STRIPE_PRICE_ID_PRO
+    if plan == 'yearly' and STRIPE_PRICE_ID_PRO_YEARLY:
+        price_id = STRIPE_PRICE_ID_PRO_YEARLY
     base = request.host_url.rstrip('/')
     checkout = stripe.checkout.Session.create(
         payment_method_types=['card'],
-        line_items=[{'price': STRIPE_PRICE_ID_PRO, 'quantity': 1}],
+        line_items=[{'price': price_id, 'quantity': 1}],
         mode='subscription',
         success_url=f'{base}/t/{code}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}',
         cancel_url=f'{base}/t/{code}/upgrade',

@@ -899,6 +899,18 @@ def legal_tokushoho():
 def home():
     LP_LOGO = '<svg width="30" height="27" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
     LP_LOGO_W = '<svg width="24" height="22" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
+    _sv = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+    IC_CAL = f'<svg {_sv}><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>'
+    IC_MEGA = f'<svg {_sv}><path d="M3 10.5v3a1 1 0 0 0 1 1h2l5 4V5.5l-5 4H4a1 1 0 0 0-1 1Z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg>'
+    IC_USERS = f'<svg {_sv}><circle cx="9" cy="8" r="3.3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 5.2a3 3 0 0 1 0 5.6"/><path d="M17.8 19a5.3 5.3 0 0 0-2.6-4.5"/></svg>'
+    IC_LINK = f'<svg {_sv}><path d="M9.5 14.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.2 1.2"/><path d="M14.5 9.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.2-1.2"/></svg>'
+    IC_YEN = f'<svg {_sv}><circle cx="12" cy="12" r="8.5"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13.5h5M9.5 15.7h5"/></svg>'
+    IC_CLIP = f'<svg {_sv}><path d="M9 4.5H7a2 2 0 0 0-2 2V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.5a2 2 0 0 0-2-2h-2"/><rect x="9" y="2.5" width="6" height="4" rx="1.5"/><path d="M8.5 12h7M8.5 15.5h5"/></svg>'
+    IC_CHART = f'<svg {_sv}><path d="M4 4v16h16"/><rect x="7.5" y="12" width="2.8" height="5" rx="1"/><rect x="12" y="8.5" width="2.8" height="8.5" rx="1"/><rect x="16.5" y="14" width="2.8" height="3" rx="1"/></svg>'
+    IC_AI = f'<svg {_sv}><path d="M12 4l1.7 4.6L18 10.3l-4.3 1.7L12 16.5l-1.7-4.5L6 10.3l4.3-1.7L12 4Z"/><path d="M18.5 14.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z"/></svg>'
+    IC_HOME = f'<svg {_sv}><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg>'
+    IC_BELL = f'<svg {_sv}><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>'
+    IC_BALL = f'<svg {_sv}><circle cx="12" cy="12" r="8.5"/><path d="M12 7.2l3.2 2.4-1.2 3.8h-4L8.8 9.6 12 7.2Z"/></svg>'
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8">
@@ -912,106 +924,171 @@ def home():
 :root{{
   --rak-black:#111111;--rak-graphite:#525252;--rak-mute:#8a8a8a;
   --rak-line:#e7e7e7;--rak-line-soft:#efefef;
-  --rak-bg-soft:#f5f5f5;
-  --rak-amber:#d97706;--rak-amber-deep:#b45309;--rak-amber-tint:#fef3c7;
+  --rak-bg-soft:#fffaf2;
+  --rak-amber:#f59e0b;--rak-amber-deep:#d97706;--rak-amber-tint:#fef3c7;
+  --rak-sky:#0ea5e9;--rak-sky-tint:#e0f2fe;
   --font-jp:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;
   --font-num:"Inter","Noto Sans JP",system-ui,sans-serif;
 }}
 *{{box-sizing:border-box;margin:0;padding:0}}
-html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased}}
+html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}}
 a{{color:inherit;text-decoration:none}}
 button{{font-family:inherit;cursor:pointer}}
 
 /* Nav */
-.lp-nav{{background:#fff;border-bottom:1px solid var(--rak-line-soft);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}}
+.lp-nav{{background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--rak-line-soft);padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}}
 .lp-logo{{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;letter-spacing:-0.02em}}
 .lp-nav-links{{display:flex;gap:8px;align-items:center}}
 .lp-nav-links a{{font-size:14px;color:var(--rak-graphite);padding:7px 14px;border-radius:8px;font-weight:600}}
 .lp-nav-links a:hover{{background:var(--rak-amber-tint);color:var(--rak-amber-deep)}}
-.btn-nav{{background:var(--rak-black)!important;color:#fff!important;border-radius:8px;padding:9px 18px!important;font-weight:700!important}}
-.btn-nav:hover{{background:#333!important}}
+.btn-nav{{background:var(--rak-amber)!important;color:#fff!important;border-radius:999px;padding:9px 20px!important;font-weight:800!important;box-shadow:0 4px 14px rgba(245,158,11,.35)}}
+.btn-nav:hover{{background:var(--rak-amber-deep)!important}}
 
-/* Hero */
-.hero{{background:linear-gradient(160deg,#fafafa 0%,#f5f5f5 100%);padding:72px 24px 64px;text-align:center}}
-.hero-badge{{display:inline-flex;align-items:center;gap:6px;background:rgba(217,119,6,.1);color:var(--rak-amber);font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:22px;letter-spacing:.04em}}
-.hero-badge .dot{{width:6px;height:6px;border-radius:50%;background:var(--rak-amber)}}
-.hero h1{{font-size:clamp(30px,5vw,50px);font-weight:900;line-height:1.2;margin-bottom:18px;color:#0f172a;letter-spacing:-0.025em}}
+/* Hero — bright, app-forward, two columns */
+.hero{{position:relative;background:
+   radial-gradient(900px 500px at 88% -10%,rgba(245,158,11,.18),transparent 60%),
+   radial-gradient(700px 500px at -5% 20%,rgba(14,165,233,.12),transparent 55%),
+   linear-gradient(170deg,#fffdf8 0%,#fff5e6 100%);
+   padding:64px 24px 72px;overflow:hidden}}
+.hero-inner{{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}}
+.hero-l{{text-align:left}}
+.hero-badge{{display:inline-flex;align-items:center;gap:7px;background:#fff;color:var(--rak-amber-deep);font-size:12.5px;font-weight:800;padding:7px 15px;border-radius:999px;margin-bottom:22px;letter-spacing:.02em;box-shadow:0 3px 12px rgba(245,158,11,.16)}}
+.hero-badge .dot{{width:7px;height:7px;border-radius:50%;background:var(--rak-amber);box-shadow:0 0 0 4px rgba(245,158,11,.18)}}
+.hero h1{{font-size:clamp(32px,5.2vw,54px);font-weight:900;line-height:1.16;margin-bottom:20px;color:#0f172a;letter-spacing:-0.03em}}
 .highlight{{position:relative;display:inline-block}}
-.highlight::before{{content:"";position:absolute;left:0;right:0;bottom:4px;height:12px;background:var(--rak-amber-tint);z-index:0}}
+.highlight::before{{content:"";position:absolute;left:-2px;right:-2px;bottom:3px;height:14px;background:var(--rak-amber-tint);z-index:0;border-radius:3px}}
 .highlight>span{{position:relative;z-index:1}}
-.hero p{{font-size:16px;line-height:1.75;color:var(--rak-graphite);max-width:480px;margin:0 auto 32px}}
-.hero-btns{{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}}
-.btn-primary{{background:var(--rak-black);color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:8px;transition:background .12s}}
-.btn-primary:hover{{background:#333;color:#fff}}
-.btn-ghost{{color:var(--rak-amber-deep);padding:13px 24px;border-radius:10px;font-size:15px;font-weight:600;display:inline-flex;align-items:center;border:1.5px solid #fde68a}}
+.hero p.lead{{font-size:16.5px;line-height:1.8;color:var(--rak-graphite);max-width:460px;margin:0 0 30px}}
+.hero-btns{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}}
+.btn-primary{{background:var(--rak-amber);color:#fff;padding:15px 30px;border-radius:999px;font-size:15.5px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .12s;box-shadow:0 8px 22px rgba(245,158,11,.4)}}
+.btn-primary:hover{{background:var(--rak-amber-deep);color:#fff;transform:translateY(-2px);box-shadow:0 12px 26px rgba(245,158,11,.5)}}
+.btn-ghost{{color:#0f172a;background:#fff;padding:14px 24px;border-radius:999px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;border:1.5px solid #f1e3c6;box-shadow:0 2px 8px rgba(0,0,0,.04)}}
 .btn-ghost:hover{{background:var(--rak-amber-tint)}}
-.hero-note{{font-size:12px;color:var(--rak-mute);margin-bottom:32px}}
+.hero-note{{font-size:12.5px;color:var(--rak-mute);margin-bottom:26px;display:flex;align-items:center;gap:6px}}
+.hero-note b{{color:var(--rak-amber-deep);font-weight:800}}
 
 /* Code input */
-.code-wrap{{max-width:420px;margin:0 auto}}
-.code-wrap .lbl{{font-size:12px;color:var(--rak-mute);margin-bottom:10px;text-align:center;font-weight:600}}
-.code-bar{{display:flex;gap:8px;background:#fff;border:1.5px solid var(--rak-line);border-radius:12px;padding:6px 6px 6px 16px;box-shadow:0 2px 12px rgba(0,0,0,.05)}}
-.code-bar input{{flex:1;border:none;outline:none;font-size:16px;font-weight:700;font-family:var(--font-num);letter-spacing:.1em;text-transform:uppercase;background:transparent;min-width:0}}
-.code-bar button{{background:var(--rak-black);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700}}
+.code-wrap{{max-width:380px}}
+.code-wrap .lbl{{font-size:12px;color:var(--rak-mute);margin-bottom:9px;font-weight:600}}
+.code-bar{{display:flex;gap:8px;background:#fff;border:1.5px solid var(--rak-line);border-radius:999px;padding:6px 6px 6px 18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}}
+.code-bar input{{flex:1;border:none;outline:none;font-size:15px;font-weight:700;font-family:var(--font-num);letter-spacing:.1em;text-transform:uppercase;background:transparent;min-width:0}}
+.code-bar button{{background:#0f172a;color:#fff;border:none;border-radius:999px;padding:10px 20px;font-size:14px;font-weight:800}}
 .code-bar button:hover{{background:#333}}
 
-/* Trust strip */
+/* Phone mockup */
+.hero-r{{display:flex;justify-content:center;perspective:1400px}}
+.phone{{position:relative;width:284px;height:580px;background:#0f172a;border-radius:44px;padding:11px;box-shadow:0 30px 70px rgba(15,23,42,.32),0 0 0 2px rgba(255,255,255,.4) inset;transform:rotateY(-9deg) rotateX(3deg);transition:transform .4s}}
+.hero-r:hover .phone{{transform:rotateY(0) rotateX(0)}}
+.phone::before{{content:"";position:absolute;top:16px;left:50%;transform:translateX(-50%);width:104px;height:24px;background:#0f172a;border-radius:0 0 16px 16px;z-index:5}}
+.scr{{width:100%;height:100%;background:#f6f7f9;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;position:relative}}
+.scr-status{{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 6px;font-size:12px;font-weight:700;font-family:var(--font-num);color:#0f172a}}
+.scr-head{{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:12px 18px 16px;display:flex;align-items:center;justify-content:space-between}}
+.scr-team{{display:flex;align-items:center;gap:9px}}
+.scr-team .em{{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;color:#fff}}
+.scr-team .em svg{{width:18px;height:18px}}
+.scr-team .nm{{font-size:15px;font-weight:800;line-height:1.2}}
+.scr-team .sub{{font-size:10.5px;opacity:.85;font-weight:600}}
+.scr-bell{{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;position:relative}}
+.scr-bell svg{{width:16px;height:16px}}
+.scr-bell::after{{content:"";position:absolute;top:7px;right:8px;width:7px;height:7px;background:#ef4444;border-radius:50%;border:1.5px solid #e5890b}}
+.scr-body{{flex:1;padding:14px 14px 0;overflow:hidden}}
+.scr-sec{{font-size:11px;font-weight:800;color:#94a3b8;letter-spacing:.06em;margin:4px 2px 8px}}
+.mc{{background:#fff;border-radius:15px;padding:13px 14px;box-shadow:0 2px 10px rgba(15,23,42,.05);margin-bottom:11px}}
+.mc-ev{{display:flex;gap:11px;align-items:center}}
+.mc-date{{width:46px;height:46px;border-radius:12px;background:var(--rak-amber-tint);color:var(--rak-amber-deep);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}}
+.mc-date .d{{font-size:17px;font-weight:900;font-family:var(--font-num);line-height:1}}
+.mc-date .m{{font-size:9px;font-weight:700}}
+.mc-ev-t{{font-size:13.5px;font-weight:800;color:#0f172a;margin-bottom:3px}}
+.mc-ev-s{{font-size:11px;color:#64748b;font-weight:600}}
+.mc-tag{{display:inline-block;background:#dcfce7;color:#16a34a;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;margin-top:5px}}
+.mc-msg-t{{font-size:12.5px;font-weight:800;color:#0f172a;margin-bottom:4px}}
+.mc-msg-b{{font-size:11px;color:#64748b;line-height:1.6;font-weight:500}}
+.mc-read{{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10.5px;font-weight:800;color:var(--rak-amber-deep)}}
+.mc-read .bar{{flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden}}
+.mc-read .bar i{{display:block;height:100%;width:93%;background:var(--rak-amber);border-radius:3px}}
+.mc-pay{{display:flex;align-items:center;justify-content:space-between}}
+.mc-pay .l{{font-size:12.5px;font-weight:800;color:#0f172a}}
+.mc-pay .amt{{font-size:15px;font-weight:900;font-family:var(--font-num);color:#16a34a}}
+.scr-nav{{display:flex;justify-content:space-around;align-items:center;background:#fff;border-top:1px solid #eef1f4;padding:9px 6px 12px}}
+.scr-nav div{{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:700;color:#cbd5e1}}
+.scr-nav div.on{{color:var(--rak-amber-deep)}}
+.scr-nav .ic{{display:inline-flex}}
+.scr-nav .ic svg{{width:19px;height:19px}}
+
+/* Logo strip / catch */
+.catch{{background:#fff;padding:30px 24px;border-bottom:1px solid var(--rak-line-soft)}}
+.catch-in{{max-width:880px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:14px}}
+.chip{{display:inline-flex;align-items:center;gap:7px;background:var(--rak-bg-soft);border:1px solid #f3e7cf;color:#7c5e2a;font-size:13px;font-weight:700;padding:9px 16px;border-radius:999px}}
+.chip .d{{width:7px;height:7px;border-radius:50%;background:var(--rak-amber)}}
 
 /* Features */
-.features{{padding:72px 24px;background:#fff}}
-.sec-label{{font-size:11px;font-weight:700;letter-spacing:.15em;color:var(--rak-amber);margin-bottom:12px;display:block}}
-.sec-title{{font-size:clamp(22px,4vw,30px);font-weight:900;letter-spacing:-0.02em;line-height:1.25;margin-bottom:8px;color:#0f172a}}
-.sec-sub{{font-size:14px;color:#64748b;margin-bottom:40px}}
-.feat-grid{{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}}
-.fcard{{border-radius:14px;padding:18px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:120px}}
-.fcard-free{{background:#fff;border:1px solid var(--rak-line)}}
-.fcard-pro{{background:var(--rak-black);color:#fff}}
+.features{{padding:76px 24px;background:#fff}}
+.sec-label{{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--rak-amber);margin-bottom:12px;display:block}}
+.sec-title{{font-size:clamp(24px,4.2vw,32px);font-weight:900;letter-spacing:-0.025em;line-height:1.22;margin-bottom:8px;color:#0f172a}}
+.sec-sub{{font-size:14.5px;color:#64748b;margin-bottom:40px}}
+.feat-grid{{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:13px}}
+.fcard{{border-radius:16px;padding:18px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:124px;transition:transform .14s,box-shadow .14s}}
+.fcard:hover{{transform:translateY(-3px)}}
+.fcard-free{{background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03)}}
+.fcard-free:hover{{box-shadow:0 10px 24px rgba(0,0,0,.07)}}
+.fcard-pro{{background:linear-gradient(150deg,#1c1c1c,#000);color:#fff}}
+.fcard-pro:hover{{box-shadow:0 12px 28px rgba(245,158,11,.25)}}
 .fcard-top{{display:flex;justify-content:space-between;align-items:flex-start}}
-.fcard-num{{font-family:var(--font-num);font-size:12px;font-weight:700;color:#aaa}}
+.fcard-num{{font-family:var(--font-num);font-size:12px;font-weight:800;color:#cbd5e1}}
 .fcard-pro .fcard-num{{color:#555}}
-.fdot{{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}}
-.fdot-green{{background:#16a34a}}
-.fdot-amber{{background:var(--rak-amber)}}
+.fcard-ic{{display:inline-flex;color:var(--rak-amber)}}
+.fcard-ic svg{{width:27px;height:27px}}
 .fcard-title{{font-size:17px;font-weight:800;line-height:1.3;margin-top:10px}}
 .fcard-pro .fcard-title{{color:#fff}}
 
 /* Pricing */
-.pricing{{padding:72px 24px;background:var(--rak-bg-soft)}}
+.pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}
 .plan-grid{{max-width:640px;margin:0 auto;display:grid;gap:16px}}
-.plan-card{{background:#fff;border:1px solid var(--rak-line);border-radius:14px;padding:24px}}
-.plan-card.dark{{background:var(--rak-black);color:#fff;border:none;position:relative}}
-.plan-name{{font-size:13px;font-weight:700;color:var(--rak-mute);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}}
+.plan-card{{background:#fff;border:1px solid var(--rak-line);border-radius:18px;padding:26px;box-shadow:0 4px 18px rgba(0,0,0,.04)}}
+.plan-card.dark{{background:linear-gradient(160deg,#1c1c1c,#000);color:#fff;border:none;position:relative;box-shadow:0 16px 40px rgba(15,23,42,.18)}}
+.plan-name{{font-size:13px;font-weight:800;color:var(--rak-mute);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}}
 .plan-card.dark .plan-name{{color:#aaa}}
 .plan-price{{display:flex;align-items:baseline;gap:4px;margin-bottom:16px}}
-.plan-price .num{{font-family:var(--font-num);font-size:38px;font-weight:900;letter-spacing:-0.03em}}
+.plan-price .num{{font-family:var(--font-num);font-size:40px;font-weight:900;letter-spacing:-0.03em}}
 .plan-price .per{{color:var(--rak-mute);font-size:13px}}
 .plan-card.dark .plan-price .per{{color:#aaa}}
-.plan-items{{font-size:13px;color:var(--rak-graphite);line-height:1.9;margin-bottom:20px}}
+.plan-items{{font-size:13px;color:var(--rak-graphite);line-height:1.95;margin-bottom:20px}}
 .plan-card.dark .plan-items{{color:#ddd}}
 .plan-card.dark .plan-items .acc{{color:var(--rak-amber)}}
-.plan-rec{{position:absolute;top:-10px;right:16px;background:var(--rak-amber);color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:6px;letter-spacing:.05em}}
-.plan-btn-w{{display:block;text-align:center;padding:13px;border-radius:10px;font-weight:700;font-size:14px;background:#fff;color:var(--rak-amber-deep);border:1.5px solid var(--rak-amber)}}
+.plan-rec{{position:absolute;top:-11px;right:18px;background:var(--rak-amber);color:#fff;font-size:10px;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.05em;box-shadow:0 4px 12px rgba(245,158,11,.4)}}
+.plan-btn-w{{display:block;text-align:center;padding:14px;border-radius:999px;font-weight:800;font-size:14px;background:#fff;color:var(--rak-amber-deep);border:1.5px solid var(--rak-amber)}}
 .plan-btn-w:hover{{background:var(--rak-amber-tint)}}
-.plan-btn-b{{display:block;text-align:center;padding:13px;border-radius:10px;font-weight:700;font-size:14px;background:var(--rak-amber);color:#fff;border:none}}
+.plan-btn-b{{display:block;text-align:center;padding:14px;border-radius:999px;font-weight:800;font-size:14px;background:var(--rak-amber);color:#fff;border:none;box-shadow:0 8px 20px rgba(245,158,11,.4)}}
 .plan-btn-b:hover{{background:var(--rak-amber-deep)}}
 @media(min-width:560px){{.plan-grid{{grid-template-columns:1fr 1fr}}}}
 
 /* Footer CTA */
-.cta-sec{{background:#0f172a;padding:72px 24px;text-align:center;color:#fff}}
-.cta-sec h2{{font-size:clamp(24px,4vw,34px);font-weight:900;margin-bottom:14px;letter-spacing:-0.02em}}
+.cta-sec{{background:
+   radial-gradient(600px 300px at 80% 0%,rgba(245,158,11,.25),transparent 60%),
+   #0f172a;padding:80px 24px;text-align:center;color:#fff}}
+.cta-sec h2{{font-size:clamp(26px,4.5vw,38px);font-weight:900;margin-bottom:14px;letter-spacing:-0.025em}}
 .cta-sec p{{font-size:15px;color:#94a3b8;margin-bottom:30px}}
-.btn-amber-solid{{background:var(--rak-amber);color:#fff;padding:15px 36px;border-radius:10px;font-size:16px;font-weight:700;display:inline-block}}
-.btn-amber-solid:hover{{background:var(--rak-amber-deep);color:#fff}}
+.btn-amber-solid{{background:var(--rak-amber);color:#fff;padding:16px 40px;border-radius:999px;font-size:16px;font-weight:800;display:inline-block;box-shadow:0 10px 30px rgba(245,158,11,.45)}}
+.btn-amber-solid:hover{{background:var(--rak-amber-deep);color:#fff;transform:translateY(-2px)}}
 footer{{background:#0f172a;border-top:1px solid #1e293b;color:#475569;padding:24px;text-align:center;font-size:12px}}
-.footer-links{{display:flex;gap:20px;justify-content:center;margin-bottom:10px}}
+.footer-links{{display:flex;gap:20px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}}
 footer a{{color:#475569}}
 footer a:hover{{color:#94a3b8}}
 .footer-logo{{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:12px;font-weight:700;font-size:16px;color:#475569}}
 
+@media(max-width:840px){{
+  .hero-inner{{grid-template-columns:1fr;gap:36px;text-align:center;max-width:440px}}
+  .hero-l{{text-align:center}}
+  .hero p.lead{{margin-left:auto;margin-right:auto}}
+  .hero-btns,.hero-note{{justify-content:center}}
+  .code-wrap{{margin:0 auto}}
+  .phone{{transform:none}}
+  .hero-r{{order:-1}}
+}}
 @media(max-width:600px){{
-  .hero{{padding:52px 20px 48px}}
-  .features,.pricing{{padding:52px 20px}}
-  .cta-sec{{padding:52px 20px}}
+  .hero{{padding:48px 20px 56px}}
+  .features,.pricing{{padding:56px 20px}}
+  .cta-sec{{padding:60px 20px}}
   .lp-nav-links .hide-sp{{display:none}}
 }}
 </style>
@@ -1022,26 +1099,77 @@ footer a:hover{{color:#94a3b8}}
     {LP_LOGO}Rak
   </a>
   <div class="lp-nav-links">
-    <a href="/feedback" class="hide-sp">お問い合わせ</a>
+    <a href="#features" class="hide-sp">機能</a>
+    <a href="#pricing" class="hide-sp">料金</a>
     <a href="/create" class="btn-nav">無料で始める</a>
   </div>
 </nav>
 
 <section class="hero">
-  <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
-  <h1>チーム運営の<br><span class="highlight"><span>"めんどくさい"</span></span>を、<br>ぜんぶ<span style="color:var(--rak-amber)">ラク</span>に。</h1>
-  <p>予定管理・連絡・集金・ユニフォーム・会計まで。<br>バラバラだった仕事をRak一つにまとめる。</p>
-  <div class="hero-btns">
-    <a href="/create" class="btn-primary">無料でチームを作る →</a>
-    <a href="#features" class="btn-ghost">機能を見る</a>
+  <div class="hero-inner">
+    <div class="hero-l">
+      <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
+      <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
+      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。練習に集中できる。</p>
+      <div class="hero-btns">
+        <a href="/create" class="btn-primary">無料でチームを作る →</a>
+        <a href="#features" class="btn-ghost">機能を見る</a>
+      </div>
+      <p class="hero-note"><b>登録不要</b>・<b>クレカ不要</b>・今日から使える</p>
+      <div class="code-wrap">
+        <p class="lbl">すでにコードをお持ちの方</p>
+        <form method="POST" action="/join" class="code-bar">
+          <input type="text" name="code" placeholder="チームコードを入力">
+          <button type="submit">参加</button>
+        </form>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="phone"><div class="scr">
+        <div class="scr-status"><span>9:41</span><span>● ● ● ▮</span></div>
+        <div class="scr-head">
+          <div class="scr-team">
+            <div class="em">{IC_BALL}</div>
+            <div><div class="nm">FC サンライズ</div><div class="sub">メンバー 22名</div></div>
+          </div>
+          <div class="scr-bell">{IC_BELL}</div>
+        </div>
+        <div class="scr-body">
+          <div class="scr-sec">今日の予定</div>
+          <div class="mc"><div class="mc-ev">
+            <div class="mc-date"><span class="d">7</span><span class="m">SAT</span></div>
+            <div><div class="mc-ev-t">練習　18:00–20:00</div><div class="mc-ev-s">市民グラウンド A面</div><span class="mc-tag">出席 18 / 22</span></div>
+          </div></div>
+          <div class="scr-sec">お知らせ</div>
+          <div class="mc">
+            <div class="mc-msg-t">今週末の試合について</div>
+            <div class="mc-msg-b">集合は8時半、駅前ロータリーです。ユニフォームは白で…</div>
+            <div class="mc-read"><span>既読</span><div class="bar"><i></i></div><span>14 / 15</span></div>
+          </div>
+          <div class="scr-sec">集金</div>
+          <div class="mc"><div class="mc-pay">
+            <div class="l">6月 月会費</div>
+            <div class="amt">¥3,000</div>
+          </div></div>
+        </div>
+        <div class="scr-nav">
+          <div class="on"><span class="ic">{IC_HOME}</span>ホーム</div>
+          <div><span class="ic">{IC_CAL}</span>予定</div>
+          <div><span class="ic">{IC_MEGA}</span>連絡</div>
+          <div><span class="ic">{IC_YEN}</span>集金</div>
+          <div><span class="ic">{IC_USERS}</span>メンバー</div>
+        </div>
+      </div></div>
+    </div>
   </div>
-  <p class="hero-note">登録不要・クレジットカード不要</p>
-  <div class="code-wrap">
-    <p class="lbl">すでにコードをお持ちの方</p>
-    <form method="POST" action="/join" class="code-bar">
-      <input type="text" name="code" placeholder="チームコードを入力">
-      <button type="submit">参加</button>
-    </form>
+</section>
+
+<section class="catch">
+  <div class="catch-in">
+    <span class="chip"><span class="d"></span>LINEで連絡が流れない</span>
+    <span class="chip"><span class="d"></span>集金の管理がラク</span>
+    <span class="chip"><span class="d"></span>誰が来るか一目で</span>
+    <span class="chip"><span class="d"></span>会計も自動で記録</span>
   </div>
 </section>
 
@@ -1056,41 +1184,41 @@ footer a:hover{{color:#94a3b8}}
     </div>
     <div class="feat-grid" style="margin-bottom:32px">
       <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">01</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-top"><span class="fcard-num">01</span><span class="fcard-ic">{IC_CAL}</span></div>
         <div class="fcard-title">スケジュール<br>管理</div>
       </div>
       <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">02</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-top"><span class="fcard-num">02</span><span class="fcard-ic">{IC_MEGA}</span></div>
         <div class="fcard-title">連絡・<br>既読管理</div>
       </div>
       <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">03</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-top"><span class="fcard-num">03</span><span class="fcard-ic">{IC_USERS}</span></div>
         <div class="fcard-title">メンバー<br>管理</div>
       </div>
       <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">04</span><span class="fdot fdot-green"></span></div>
+        <div class="fcard-top"><span class="fcard-num">04</span><span class="fcard-ic">{IC_LINK}</span></div>
         <div class="fcard-title">チームコード<br>招待</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--rak-amber);white-space:nowrap">PRO　アップグレードで解放</span>
+      <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--rak-amber-deep);white-space:nowrap">PRO　アップグレードで解放</span>
       <div style="flex:1;height:1px;background:#fde68a"></div>
     </div>
     <div class="feat-grid">
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">05</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-top"><span class="fcard-num">05</span><span class="fcard-ic">{IC_YEN}</span></div>
         <div class="fcard-title">集金・<br>費用管理</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">06</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-top"><span class="fcard-num">06</span><span class="fcard-ic">{IC_CLIP}</span></div>
         <div class="fcard-title">注文<br>フォーム</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">07</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-top"><span class="fcard-num">07</span><span class="fcard-ic">{IC_CHART}</span></div>
         <div class="fcard-title">会計・<br>収支記録</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">08</span><span class="fdot fdot-amber"></span></div>
+        <div class="fcard-top"><span class="fcard-num">08</span><span class="fcard-ic">{IC_AI}</span></div>
         <div class="fcard-title">AI文章<br>生成</div>
       </div>
     </div>

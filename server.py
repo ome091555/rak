@@ -1166,9 +1166,9 @@ footer a:hover{{color:#94a3b8}}
 
 <section class="catch">
   <div class="catch-in">
-    <span class="chip"><span class="d"></span>LINEで連絡が流れない</span>
+    <span class="chip"><span class="d"></span>連絡が埋もれない</span>
     <span class="chip"><span class="d"></span>集金の管理がラク</span>
-    <span class="chip"><span class="d"></span>誰が来るか一目で</span>
+    <span class="chip"><span class="d"></span>出欠が一目でわかる</span>
     <span class="chip"><span class="d"></span>会計も自動で記録</span>
   </div>
 </section>

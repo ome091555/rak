@@ -8,6 +8,8 @@ import json
 from datetime import datetime, timezone, timedelta
 from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file
 
+from legal import terms_html, privacy_html, tokushoho_html
+
 try:
     import anthropic
     HAS_ANTHROPIC = True
@@ -26,6 +28,7 @@ STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
+FREE_MEMBER_LIMIT = 20
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
@@ -286,6 +289,25 @@ def is_pro(team):
     if not STRIPE_SECRET_KEY:
         return True  # Stripe未設定時は全機能解放
     return team and team['plan'] in ('pro', 'league')
+
+def count_team_members(team_id, conn=None):
+    own = conn is None
+    if own:
+        conn = get_db()
+    n = conn.execute('SELECT COUNT(*) FROM members WHERE team_id=?', (team_id,)).fetchone()[0]
+    if own:
+        conn.close()
+    return n
+
+def can_add_team_member(team, conn=None):
+    if is_pro(team):
+        return True
+    return count_team_members(team['id'], conn) < FREE_MEMBER_LIMIT
+
+def member_count_label(team, count):
+    if is_pro(team):
+        return f'{count}名'
+    return f'{count}/{FREE_MEMBER_LIMIT}名'
 
 def pro_gate(code, team, active='admin'):
     body = f'''
@@ -856,6 +878,21 @@ self.addEventListener('fetch',e=>{
     return Response(js, mimetype='application/javascript')
 
 
+@app.route('/legal/terms')
+def legal_terms():
+    return terms_html()
+
+
+@app.route('/legal/privacy')
+def legal_privacy():
+    return privacy_html()
+
+
+@app.route('/legal/tokushoho')
+def legal_tokushoho():
+    return tokushoho_html()
+
+
 # ── Home / Create ─────────────────────────────────────────────────
 
 @app.route('/')
@@ -919,11 +956,6 @@ button{{font-family:inherit;cursor:pointer}}
 .code-bar button:hover{{background:#333}}
 
 /* Trust strip */
-.trust{{background:var(--rak-black);color:#fff;padding:26px 24px;display:flex;justify-content:space-around;text-align:center}}
-.trust-item .num{{font-family:var(--font-num);font-size:24px;font-weight:800}}
-.trust-item .num.amber{{color:var(--rak-amber)}}
-.trust-item .lbl{{font-size:11px;color:#aaa;margin-top:3px;font-weight:600}}
-.trust-sep{{width:1px;background:#333}}
 
 /* Features */
 .features{{padding:72px 24px;background:#fff}}
@@ -1013,14 +1045,6 @@ footer a:hover{{color:#94a3b8}}
   </div>
 </section>
 
-<div class="trust">
-  <div class="trust-item"><div class="num">2,400+</div><div class="lbl">導入チーム</div></div>
-  <div class="trust-sep"></div>
-  <div class="trust-item"><div class="num amber">87<span style="font-size:16px">%</span></div><div class="lbl">連絡時間削減</div></div>
-  <div class="trust-sep"></div>
-  <div class="trust-item"><div class="num">4.8</div><div class="lbl">ユーザー評価</div></div>
-</div>
-
 <section class="features" id="features">
   <div style="max-width:720px;margin:0 auto">
     <span class="sec-label">FEATURES</span>
@@ -1085,7 +1109,7 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-items">
           <div>✓ スケジュール管理</div>
           <div>✓ チーム連絡・既読管理</div>
-          <div>✓ メンバー管理（30名まで）</div>
+          <div>✓ メンバー管理（20名まで）</div>
           <div>✓ チームコード招待</div>
         </div>
         <a href="/create" class="plan-btn-w">無料で始める</a>
@@ -1118,6 +1142,9 @@ footer a:hover{{color:#94a3b8}}
 <footer>
   <div class="footer-logo">{LP_LOGO_W}Rak</div>
   <div class="footer-links">
+    <a href="/legal/terms">利用規約</a>
+    <a href="/legal/privacy">プライバシー</a>
+    <a href="/legal/tokushoho">特定商取引法</a>
     <a href="/feedback">お問い合わせ</a>
     <a href="/create">チームを作る</a>
   </div>
@@ -1915,7 +1942,7 @@ def admin_dash(code):
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_PEOPLE}</span>メンバー</summary>
       <div class="atile-body">
-        <span style="font-size:12px;color:#888;white-space:nowrap">{len(member_names)}名</span>
+        <span style="font-size:12px;color:#888;white-space:nowrap">{member_count_label(team, len(member_names))}</span>
         <a href="/t/{code}/admin/members" class="btn btn-outline">一覧・追加</a>
       </div>
     </details>
@@ -2813,10 +2840,13 @@ def admin_members(code):
             number = request.form.get('number', '').strip()
             position = request.form.get('position', '').strip()
             if name:
-                conn.execute('INSERT INTO members VALUES (?,?,?,?,?,?)',
-                             (new_id(), team['id'], name, number, position, now_str()))
-                conn.commit()
-                msg = f'「{name}」を追加しました'
+                if can_add_team_member(team, conn):
+                    conn.execute('INSERT INTO members VALUES (?,?,?,?,?,?)',
+                                 (new_id(), team['id'], name, number, position, now_str()))
+                    conn.commit()
+                    msg = f'「{name}」を追加しました'
+                else:
+                    msg = f'Freeプランはメンバー{FREE_MEMBER_LIMIT}名までです。Proにアップグレードすると無制限になります。'
         elif action == 'delete':
             mid = request.form.get('member_id')
             conn.execute('DELETE FROM members WHERE id=? AND team_id=?', (mid, team['id']))
@@ -2849,18 +2879,22 @@ def admin_members(code):
           </div>
         </div>'''
 
-    body = f'''
-<div class="container" style="max-width:540px">
-  {f'<div class="msg-ok">{msg}</div>' if msg else ''}
-  <div class="card">
-    <div class="row" style="margin-bottom:16px">
-      <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
-      <span class="badge badge-blue" style="margin-left:auto">{len(members)}名</span>
-    </div>
-    {rows if members else '<div class="empty">まだメンバーがいません</div>'}
-  </div>
+    member_n = len(members)
+    at_limit = not is_pro(team) and member_n >= FREE_MEMBER_LIMIT
+    msg_cls = 'msg-ok' if msg and '追加しました' in msg else 'msg-err'
+    if at_limit:
+        add_section = f'''
+  <div class="card" style="border:2px solid #d97706">
+    <h2 style="margin-bottom:8px">メンバー上限に達しました</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">Freeプランは<strong>{FREE_MEMBER_LIMIT}名</strong>まで登録できます（現在 {member_n}名）。Proにアップグレードすると無制限になります。</p>
+    <a href="/t/{code}/upgrade" class="btn btn-blue btn-block">Proにアップグレード（¥980/月）</a>
+  </div>'''
+    else:
+        slots_left = '' if is_pro(team) else f'<p style="font-size:12px;color:#888;margin:-8px 0 12px">あと{FREE_MEMBER_LIMIT - member_n}名まで追加できます</p>'
+        add_section = f'''
   <div class="card">
     <h2>メンバーを追加</h2>
+    {slots_left}
     <form method="POST">
       <input type="hidden" name="action" value="add">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -2885,7 +2919,19 @@ def admin_members(code):
       </div>
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
     </form>
+  </div>'''
+
+    body = f'''
+<div class="container" style="max-width:540px">
+  {f'<div class="{msg_cls}">{msg}</div>' if msg else ''}
+  <div class="card">
+    <div class="row" style="margin-bottom:16px">
+      <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
+      <span class="badge badge-blue" style="margin-left:auto">{member_count_label(team, member_n)}</span>
+    </div>
+    {rows if members else '<div class="empty">まだメンバーがいません</div>'}
   </div>
+  {add_section}
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メンバー管理', body, code, active='admin')
@@ -2993,7 +3039,7 @@ def member_list(code):
         <span class="section-label">{_ICO_PEOPLE} メンバー</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
-        <span class="badge badge-blue">{len(members)}名</span>
+        <span class="badge badge-blue">{member_count_label(team, len(members))}</span>
         {edit_btn}
       </div>
     </div>

@@ -305,8 +305,8 @@ def pro_gate(code, team, active='admin'):
         {_CHK} メンバー無制限
       </div>
     </div>
-    <div style="font-size:28px;font-weight:900;color:#d97706;margin-bottom:4px">¥2,980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
-    <div style="font-size:12px;color:#888;margin-bottom:24px">年払い ¥29,800（2ヶ月分お得）</div>
+    <div style="font-size:28px;font-weight:900;color:#d97706;margin-bottom:4px">¥980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px">年払い ¥9,800（2ヶ月分お得）</div>
     <a href="/t/{code}/upgrade" class="btn btn-blue btn-block" style="margin-top:0">Proにアップグレード</a>
     <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
   </div>
@@ -1093,7 +1093,7 @@ footer a:hover{{color:#94a3b8}}
       <div class="plan-card dark">
         <div class="plan-rec">おすすめ</div>
         <div class="plan-name">Pro</div>
-        <div class="plan-price"><span class="num">¥2,980</span><span class="per">/月</span></div>
+        <div class="plan-price"><span class="num">¥980</span><span class="per">/月</span></div>
         <div class="plan-items">
           <div class="acc">＋ 集金・費用管理</div>
           <div class="acc">＋ 注文フォーム</div>
@@ -1854,7 +1854,7 @@ def admin_dash(code):
     if is_pro(team):
         plan_card = '<div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;opacity:.7">すべての機能をご利用中</div></div>'
     else:
-        plan_card = f'<div class="card" style="border:2px solid #d97706;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥2,980/月</a></div>'
+        plan_card = f'<div class="card" style="border:2px solid #d97706;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥980/月</a></div>'
 
     unpaid_badge = f'<span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">{len(unpaid_summary)}</span>' if unpaid_summary else ''
 
@@ -4241,7 +4241,7 @@ def upgrade_page(code):
     stripe_ready = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO)
     checkout_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout">
-      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">Proにアップグレード（¥2,980/月）</button>
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">Proにアップグレード（¥980/月）</button>
     </form>
     <div style="font-size:12px;color:#aaa;margin-top:8px">いつでもキャンセル可能。クレジットカード払い。</div>
     ''' if stripe_ready else '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
@@ -4250,8 +4250,8 @@ def upgrade_page(code):
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
     <div style="font-size:14px;color:#d97706;font-weight:700;margin-bottom:8px">RakPro</div>
-    <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:4px">¥2,980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
-    <div style="font-size:13px;color:#888;margin-bottom:28px">年払い ¥29,800（2ヶ月分お得）</div>
+    <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:4px">¥980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
+    <div style="font-size:13px;color:#888;margin-bottom:28px">年払い ¥9,800（2ヶ月分お得）</div>
     <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:28px;text-align:left">
       <div style="font-size:13px;color:#444;line-height:2.4">
         {_CHK} 集金・支払い管理<br>

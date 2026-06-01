@@ -3762,6 +3762,17 @@ def order_form_view(code, form_id):
         ).fetchall()
         my_values = {v['field_id']: v['value'] for v in vals}
 
+    # 各フィールドの既存回答値を取得（候補として表示するため）
+    existing_vals = {}
+    for field in fields:
+        rows = conn.execute(
+            '''SELECT DISTINCT orv.value FROM order_response_values orv
+               JOIN order_responses orr ON orv.response_id=orr.id
+               WHERE orv.field_id=? AND orv.value!='' ORDER BY orv.value''',
+            (field['id'],)
+        ).fetchall()
+        existing_vals[field['id']] = [r['value'] for r in rows]
+
     conn.close()
 
     field_inputs = ''
@@ -3776,9 +3787,18 @@ def order_form_view(code, form_id):
             )
             field_inputs += f'<label>{field["label"]}</label><select name="field_{field["id"]}">{options_html}</select>'
         else:
+            dl_id = f'dl_{field["id"]}'
+            datalist_html = ''
+            prev = existing_vals.get(field['id'], [])
+            if prev:
+                opts = ''.join(f'<option value="{o}">' for o in prev)
+                datalist_html = f'<datalist id="{dl_id}">{opts}</datalist>'
+            list_attr = f' list="{dl_id}"' if datalist_html else ''
             field_inputs += (
                 f'<label>{field["label"]}</label>'
-                f'<input type="text" name="field_{field["id"]}" value="{current_val}" placeholder="入力してください">'
+                f'{datalist_html}'
+                f'<input type="text" name="field_{field["id"]}" value="{current_val}"'
+                f' placeholder="入力してください"{list_attr}>'
             )
 
     submit_label = '更新する' if my_resp else '送信する'

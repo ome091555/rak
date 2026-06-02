@@ -1865,14 +1865,36 @@ def admin_login(code):
     if is_admin(code):
         return redirect(url_for('admin_dash', code=code))
 
+    lock_key = f'login_fail_{code}'
+    lock_until_key = f'login_lock_{code}'
+    import time
+    now_ts = time.time()
+
+    # ロック中チェック
+    lock_until = session.get(lock_until_key, 0)
+    if now_ts < lock_until:
+        remain = int(lock_until - now_ts)
+        body = f'''<div class="container" style="max-width:400px;padding-top:60px">
+  <div class="card"><div class="msg-err">ログインを{remain}秒間ブロックしています。しばらくお待ちください。</div></div></div>'''
+        return page('管理者ログイン', body, code)
+
     error = ''
     if request.method == 'POST':
         pw = request.form.get('password', '')
         if pw == team['admin_password']:
+            session.pop(lock_key, None)
+            session.pop(lock_until_key, None)
             session.permanent = True
             session[f'admin_{code}'] = True
             return redirect(url_for('admin_dash', code=code))
-        error = 'パスワードが違います'
+        fails = session.get(lock_key, 0) + 1
+        session[lock_key] = fails
+        if fails >= 10:
+            session[lock_until_key] = now_ts + 900  # 15分ロック
+            session[lock_key] = 0
+            error = 'ログイン試行回数が上限を超えました。15分後に再試行してください。'
+        else:
+            error = f'パスワードが違います（{fails}/10回）'
 
     body = f'''
 <div class="container" style="max-width:400px;padding-top:60px">

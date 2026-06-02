@@ -30,6 +30,8 @@ STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
 FREE_MEMBER_LIMIT = 20
+BASIC_AUTH_USER = os.environ.get('BASIC_AUTH_USER', '')
+BASIC_AUTH_PASS = os.environ.get('BASIC_AUTH_PASS', '')
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
@@ -58,6 +60,33 @@ def send_inquiry_email(team_name, name, email, subject, message):
         print(f'[RESEND] ステータス: {res.status_code} {res.text}')
     except Exception as e:
         print(f'[RESEND ERROR] {type(e).__name__}: {e}')
+
+# ── Basic Auth（管理画面の追加認証層） ───────────────────────────
+@app.before_request
+def basic_auth_admin():
+    if not request.path.startswith('/t/'):
+        return
+    parts = request.path.split('/')
+    if len(parts) < 4 or parts[3] != 'admin':
+        return
+    if not BASIC_AUTH_USER or not BASIC_AUTH_PASS:
+        return  # 環境変数未設定時はスキップ（開発環境用）
+    import base64
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Basic '):
+        try:
+            decoded = base64.b64decode(auth[6:]).decode('utf-8')
+            u, p = decoded.split(':', 1)
+            if u == BASIC_AUTH_USER and p == BASIC_AUTH_PASS:
+                return
+        except Exception:
+            pass
+    return Response(
+        'このページにアクセスするには認証が必要です。',
+        401,
+        {'WWW-Authenticate': 'Basic realm="Rak Admin"'}
+    )
+
 
 # ── DB ────────────────────────────────────────────────────────────
 

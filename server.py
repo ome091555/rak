@@ -816,8 +816,10 @@ def page(title, body, code=None, active=None):
     desktop_nav = ''
     bottom_nav = ''
     if code:
-        tabs = [
-            ('home',      'home',      'ホーム',  f'/t/{code}/home'),
+        tabs = []
+        if not (admin and not member):
+            tabs.append(('home', 'home', 'ホーム', f'/t/{code}/home'))
+        tabs += [
             ('schedule',  'schedule',  '予定',    f'/t/{code}/schedule'),
             ('notices',   'notices',   '連絡',    f'/t/{code}/notices'),
             ('members',   'members',   'メンバー', f'/t/{code}/members'),

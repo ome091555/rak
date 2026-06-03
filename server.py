@@ -4730,7 +4730,7 @@ def admin_uniforms(code):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('ユニフォーム管理', body, code, active='admin')
+    return page('ユニフォーム管理', body, code, active='uniforms')
 
 
 @app.route('/t/<code>/admin/uniforms/<uid>', methods=['GET', 'POST'])

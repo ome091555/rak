@@ -3324,26 +3324,47 @@ def admin_new_fee(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
     error = ''
+    conn = get_db()
+    all_members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY number,name', (team['id'],)).fetchall()
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         amount = request.form.get('amount', '0').strip().replace(',', '')
         due_date = request.form.get('due_date', '').strip()
         note = request.form.get('note', '').strip()
+        selected = request.form.getlist('members')
         if not title:
             error = 'タイトルを入力してください'
+        elif not selected:
+            error = '対象メンバーを1人以上選択してください'
         else:
-            conn = get_db()
             fee_id = new_id()
             conn.execute('INSERT INTO fees VALUES (?,?,?,?,?,?,?)',
                          (fee_id, team['id'], title, int(amount or 0), due_date, note, now_str()))
-            members = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
-            for m in members:
+            for name in selected:
                 conn.execute('INSERT OR IGNORE INTO fee_payments VALUES (?,?,?,0,?)',
-                             (new_id(), fee_id, m['name'], ''))
+                             (new_id(), fee_id, name, ''))
             conn.commit()
             conn.close()
             return redirect(url_for('admin_fee_detail', code=code, fee_id=fee_id))
+
+    conn.close()
+
+    member_checks = ''
+    for m in all_members:
+        num = f'<span style="font-size:11px;color:#aaa;margin-right:4px">#{m["number"]}</span>' if m['number'] else ''
+        member_checks += f'''
+<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;margin:0">
+  <input type="checkbox" name="members" value="{m['name']}" checked style="width:16px;height:16px;accent-color:#d97706;flex-shrink:0">
+  <span style="font-size:14px">{num}{m['name']}</span>
+</label>'''
+
+    all_check = f'''
+<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:2px solid #e5e7eb;cursor:pointer;margin:0;font-weight:600">
+  <input type="checkbox" id="chk-all" checked style="width:16px;height:16px;accent-color:#d97706;flex-shrink:0"
+    onchange="document.querySelectorAll('[name=members]').forEach(c=>c.checked=this.checked)">
+  <span style="font-size:13px;color:#6b7280">全員選択 / 全員解除</span>
+</label>''' if all_members else ''
 
     body = f'''
 <div class="container" style="max-width:480px">
@@ -3359,7 +3380,14 @@ def admin_new_fee(code):
       <input type="date" name="due_date">
       <label>備考</label>
       <textarea name="note" placeholder="振込先など" rows="3"></textarea>
-      <button class="btn btn-blue btn-block" type="submit">作成する</button>
+      <div style="margin-top:18px">
+        <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">対象メンバー（{len(all_members)}名）</div>
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:0 12px;max-height:260px;overflow-y:auto">
+          {all_check}
+          {member_checks if member_checks else '<p style="padding:12px 0;color:#aaa;font-size:13px">メンバーがいません</p>'}
+        </div>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit" style="margin-top:20px">作成する</button>
     </form>
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>

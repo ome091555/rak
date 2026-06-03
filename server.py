@@ -4868,8 +4868,11 @@ def member_uniforms(code):
     if not team:
         return redirect('/')
     member = get_member(code)
-    if not member:
+    admin = is_admin(code)
+    if not member and not admin:
         return redirect(url_for('team_portal', code=code))
+    if admin and not member:
+        return redirect(url_for('admin_uniforms', code=code))
 
     conn = get_db()
     uniforms = conn.execute('SELECT * FROM uniforms WHERE team_id=? ORDER BY created_at', (team['id'],)).fetchall()

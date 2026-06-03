@@ -818,13 +818,13 @@ def page(title, body, code=None, active=None):
     if code:
         home_dest = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
         tabs = [
-            ('home',      'home',      'ホーム',  home_dest),
-            ('schedule',  'schedule',  '予定',    f'/t/{code}/schedule'),
-            ('notices',   'notices',   '連絡',    f'/t/{code}/notices'),
-            ('members',   'members',   'メンバー', f'/t/{code}/members'),
-            ('fees',      'fees',      '集金',    f'/t/{code}/fees'),
-            ('orders',    'orders',    '注文',    f'/t/{code}/orders'),
-            ('uniforms',  'uniforms',  'ユニ',    f'/t/{code}/uniforms'),
+            ('home',      'home',      'ホーム',       home_dest),
+            ('schedule',  'schedule',  '予定',         f'/t/{code}/schedule'),
+            ('notices',   'notices',   'お知らせ',     f'/t/{code}/notices'),
+            ('members',   'members',   'メンバー',     f'/t/{code}/members'),
+            ('fees',      'fees',      '集金',         f'/t/{code}/fees'),
+            ('orders',    'orders',    '注文フォーム', f'/t/{code}/orders'),
+            ('uniforms',  'uniforms',  'ユニフォーム', f'/t/{code}/uniforms'),
         ]
 
         for key, icon_key, label, url in tabs:
@@ -837,7 +837,7 @@ def page(title, body, code=None, active=None):
 
         if admin:
             ai_cls = 'active' if active == 'ai' else ''
-            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}"><span class="nav-d-icon">{ICONS["ai"]}</span>AI</a>'
+            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}"><span class="nav-d-icon">{ICONS["ai"]}</span>AI文章</a>'
         elif member:
             desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">{_ICO_USER_SM} {member}</span>'
 

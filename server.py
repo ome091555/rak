@@ -2518,12 +2518,10 @@ def admin_new_event(code):
         else:
             conn = get_db()
             eid = new_id()
-            conn.execute('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?)',
-                         (eid, team['id'], title, date, time, location, note, now_str(), end_date))
-            try:
-                conn.execute('UPDATE events SET end_time=? WHERE id=?', (end_time, eid))
-            except Exception:
-                pass
+            conn.execute(
+                'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                (eid, team['id'], title, date, time, location, note, now_str(), end_date, end_time)
+            )
             conn.commit()
             conn.close()
             return redirect(url_for('schedule', code=code))
@@ -2685,13 +2683,9 @@ def admin_edit_event(code, event_id):
             error = 'タイトルと日付を入力してください'
         else:
             conn.execute(
-                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,location=?,note=? WHERE id=?',
-                (title, date, end_date, time, location, note, event_id)
+                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,end_time=?,location=?,note=? WHERE id=?',
+                (title, date, end_date, time, end_time, location, note, event_id)
             )
-            try:
-                conn.execute('UPDATE events SET end_time=? WHERE id=?', (end_time, event_id))
-            except Exception:
-                pass
             conn.commit()
             conn.close()
             return redirect(url_for('admin_event_detail', code=code, event_id=event_id))

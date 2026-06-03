@@ -340,7 +340,7 @@ def member_count_label(team, count):
         return f'{count}名'
     return f'{count}/{FREE_MEMBER_LIMIT}名'
 
-def pro_gate(code, team, active='admin'):
+def pro_gate(code, team, active='home'):  # noqa
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
@@ -816,10 +816,9 @@ def page(title, body, code=None, active=None):
     desktop_nav = ''
     bottom_nav = ''
     if code:
-        tabs = []
-        if not (admin and not member):
-            tabs.append(('home', 'home', 'ホーム', f'/t/{code}/home'))
-        tabs += [
+        home_dest = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
+        tabs = [
+            ('home',      'home',      'ホーム',  home_dest),
             ('schedule',  'schedule',  '予定',    f'/t/{code}/schedule'),
             ('notices',   'notices',   '連絡',    f'/t/{code}/notices'),
             ('members',   'members',   'メンバー', f'/t/{code}/members'),
@@ -827,8 +826,6 @@ def page(title, body, code=None, active=None):
             ('orders',    'orders',    '注文',    f'/t/{code}/orders'),
             ('uniforms',  'uniforms',  'ユニ',    f'/t/{code}/uniforms'),
         ]
-        if admin:
-            tabs.append(('admin', 'admin', '管理', f'/t/{code}/admin/dash'))
 
         for key, icon_key, label, url in tabs:
             cls = 'active' if active == key else ''
@@ -2235,7 +2232,7 @@ window.addEventListener('pageshow', function(e) {{
   }}
 }});
 </script>'''
-    return page('管理ダッシュボード', body, code, active='admin')
+    return page('管理ダッシュボード', body, code, active='home')
 
 
 # ── Admin: memo ───────────────────────────────────────────────────
@@ -2283,7 +2280,7 @@ def admin_memos(code):
   {rows}
   <div style="margin-top:12px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('メモ', body, code, active='admin')
+    return page('メモ', body, code, active='home')
 
 @app.route('/t/<code>/admin/memos/new', methods=['GET', 'POST'])
 def admin_memo_new(code):
@@ -2319,7 +2316,7 @@ def admin_memo_new(code):
   </div>
   <div><a href="/t/{code}/admin/memos" style="font-size:13px;color:#888">← メモ一覧に戻る</a></div>
 </div>'''
-    return page('新規メモ', body, code, active='admin')
+    return page('新規メモ', body, code, active='home')
 
 @app.route('/t/<code>/admin/memos/<memo_id>')
 def admin_memo_detail(code, memo_id):
@@ -2371,7 +2368,7 @@ def admin_memo_detail(code, memo_id):
     </form>
   </div>
 </div>'''
-    return page(memo['title'], body, code, active='admin')
+    return page(memo['title'], body, code, active='home')
 
 @app.route('/t/<code>/admin/memos/<memo_id>/edit', methods=['GET', 'POST'])
 def admin_memo_edit(code, memo_id):
@@ -2404,7 +2401,7 @@ def admin_memo_edit(code, memo_id):
   </div>
   <div><a href="/t/{code}/admin/memos/{memo_id}" style="font-size:13px;color:#888">← キャンセル</a></div>
 </div>'''
-    return page('メモ編集', body, code, active='admin')
+    return page('メモ編集', body, code, active='home')
 
 @app.route('/t/<code>/admin/memos/<memo_id>/delete', methods=['POST'])
 def admin_memo_delete(code, memo_id):
@@ -2527,7 +2524,7 @@ def team_help(code):
 
   <div style="margin-top:4px"><a href="/t/{code}/{'admin/dash' if admin else 'schedule'}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('使い方ガイド', body, code, active='admin' if admin else None)
+    return page('使い方ガイド', body, code, active='home' if admin else None)
 
 
 # ── Admin: events ─────────────────────────────────────────────────
@@ -2684,7 +2681,7 @@ def admin_event_detail(code, event_id):
   </div>
   <div style="text-align:center;margin-top:12px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュール</a></div>
 </div>'''
-    return page(ev['title'], body, code, active='admin')
+    return page(ev['title'], body, code, active='home')
 
 
 @app.route('/t/<code>/admin/events/<event_id>/edit', methods=['GET', 'POST'])
@@ -2884,7 +2881,7 @@ def admin_ai(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
     if not is_pro(team):
-        return pro_gate(code, team, active='admin')
+        return pro_gate(code, team, active='home')
 
     redirect_to = request.args.get('redirect', '')
     result_title = ''
@@ -3145,7 +3142,7 @@ def admin_members(code):
   {add_section}
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('メンバー管理', body, code, active='admin')
+    return page('メンバー管理', body, code, active='home')
 
 
 @app.route('/t/<code>/admin/members/<member_id>/edit', methods=['GET', 'POST'])
@@ -3209,7 +3206,7 @@ def admin_edit_member(code, member_id):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/members" style="font-size:13px;color:#888">← メンバー一覧</a></div>
 </div>'''
-    return page('メンバー編集', body, code, active='admin')
+    return page('メンバー編集', body, code, active='home')
 
 
 # ── Members (all users view) ──────────────────────────────────────
@@ -3242,6 +3239,7 @@ def member_list(code):
         </div>'''
 
     edit_btn = f'<a href="/t/{code}/admin/members" class="btn btn-sm btn-outline">編集</a>' if admin else ''
+    home_url = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
     body = f'''
 <div class="container" style="max-width:540px">
   <div class="card">
@@ -3256,6 +3254,7 @@ def member_list(code):
     </div>
     {rows if members else '<div class="empty">まだメンバーがいません</div>'}
   </div>
+  <div style="text-align:center"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メンバー', body, code, active='members')
 
@@ -3303,6 +3302,7 @@ def member_fees(code):
     conn.close()
 
     new_btn = f'<a href="/t/{code}/admin/fees/new" class="btn btn-blue btn-sm">＋ 集金項目を追加</a>' if admin else ''
+    home_url = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
@@ -3310,6 +3310,7 @@ def member_fees(code):
     {new_btn}
   </div>
   {cards if fees else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_COIN + '</div>集金項目はまだありません</div>'}
+  <div style="text-align:center;margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('集金', body, code, active='fees')
 
@@ -3351,7 +3352,7 @@ def admin_fees(code):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('集金管理', body, code, active='admin')
+    return page('集金管理', body, code, active='home')
 
 
 @app.route('/t/<code>/admin/fees/new', methods=['GET', 'POST'])
@@ -3428,7 +3429,7 @@ def admin_new_fee(code):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
 </div>'''
-    return page('集金項目を追加', body, code, active='admin')
+    return page('集金項目を追加', body, code, active='home')
 
 
 @app.route('/t/<code>/admin/fees/<fee_id>', methods=['GET', 'POST'])
@@ -3508,7 +3509,7 @@ def admin_fee_detail(code, fee_id):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
 </div>'''
-    return page(f['title'], body, code, active='admin')
+    return page(f['title'], body, code, active='home')
 
 
 @app.route('/t/<code>/admin/fees/<fee_id>/edit', methods=['GET', 'POST'])
@@ -3557,7 +3558,7 @@ def admin_edit_fee(code, fee_id):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/fees/{fee_id}" style="font-size:13px;color:#888">← 集金詳細に戻る</a></div>
 </div>'''
-    return page('集金項目を編集', body, code, active='admin')
+    return page('集金項目を編集', body, code, active='home')
 
 
 @app.route('/t/<code>/admin/fees/<fee_id>/delete', methods=['POST'])
@@ -3666,6 +3667,7 @@ def orders_list(code):
     conn.close()
 
     new_btn = f'<a href="/t/{code}/admin/orders/new" class="btn btn-blue btn-sm">＋ フォーム作成</a>' if admin else ''
+    home_url = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
@@ -3673,6 +3675,7 @@ def orders_list(code):
     {new_btn}
   </div>
   {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文フォームはまだありません</div>'}
+  <div style="text-align:center;margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('注文フォーム', body, code, active='orders')
 
@@ -4541,7 +4544,7 @@ def upgrade_page(code):
     <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a></div>
   </div>
 </div>'''
-        return page('プラン', body, code, active='admin')
+        return page('プラン', body, code, active='home')
 
     stripe_ready = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO)
     if stripe_ready:
@@ -4590,7 +4593,7 @@ def upgrade_page(code):
     <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
   </div>
 </div>'''
-    return page('Proプランへアップグレード', body, code, active='admin')
+    return page('Proプランへアップグレード', body, code, active='home')
 
 
 @app.route('/t/<code>/upgrade/checkout', methods=['POST'])
@@ -4639,7 +4642,7 @@ def upgrade_promo(code):
     <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a>
   </div>
 </div>'''
-        return page('アップグレード完了', body, code, active='admin')
+        return page('アップグレード完了', body, code, active='home')
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
@@ -4648,7 +4651,7 @@ def upgrade_promo(code):
     <a href="/t/{code}/upgrade" class="btn btn-outline btn-block" style="margin-top:0">← 戻る</a>
   </div>
 </div>'''
-    return page('コードエラー', body, code, active='admin')
+    return page('コードエラー', body, code, active='home')
 
 
 @app.route('/t/<code>/upgrade/success')
@@ -4663,7 +4666,7 @@ def upgrade_success(code):
     <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a>
   </div>
 </div>'''
-    return page('アップグレード完了', body, code, active='admin')
+    return page('アップグレード完了', body, code, active='home')
 
 
 # ── Admin: uniforms ───────────────────────────────────────────────
@@ -4846,7 +4849,7 @@ def admin_uniform_detail(code, uid):
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/uniforms" style="font-size:13px;color:#888">← 一覧に戻る</a></div>
 </div>'''
-    return page(u['name'], body, code, active='admin')
+    return page(u['name'], body, code, active='home')
 
 
 @app.route('/t/<code>/admin/uniforms/<uid>/delete', methods=['POST'])
@@ -5084,7 +5087,7 @@ function rakSetType(t){{
   ig.style.display='none';
 }})();
 </script>'''
-    return page('会計', body, code, active='admin')
+    return page('会計', body, code, active='home')
 
 
 @app.route('/stripe/webhook', methods=['POST'])

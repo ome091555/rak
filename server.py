@@ -1511,26 +1511,56 @@ def member_home(code):
         (team['id'], member)
     ).fetchone()[0]
 
-    # 直近の予定リスト（今月以降3件）
+    # 直近の予定リスト（今日以降4件）
     upcoming = conn.execute(
         'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date LIMIT 4',
         (team['id'], today_s)
     ).fetchall()
+
+    # 自分のRSVP状態を一括取得
+    upcoming_ids = [ev['id'] for ev in upcoming]
+    rsvp_map = {}
+    if upcoming_ids:
+        placeholders = ','.join('?' * len(upcoming_ids))
+        rows = conn.execute(
+            f'SELECT event_id, status FROM rsvps WHERE member_name=? AND event_id IN ({placeholders})',
+            [member] + upcoming_ids
+        ).fetchall()
+        rsvp_map = {r['event_id']: r['status'] for r in rows}
+
+    unanswered_rsvp = sum(1 for ev in upcoming if ev['id'] not in rsvp_map)
     conn.close()
 
     event_items = ''
     for ev in upcoming:
+        my_rsvp = rsvp_map.get(ev['id'], '')
+
+        rsvp_area = f'''
+      <form method="POST" action="/t/{code}/rsvp/{ev['id']}" style="display:flex;gap:6px;margin-top:8px">
+        <button name="status" value="attending" type="submit"
+          style="flex:1;padding:6px;border-radius:7px;font-size:12px;font-weight:600;border:1.5px solid {'#16a34a' if my_rsvp=='attending' else 'var(--rak-line)'};background:{'#f0fdf4' if my_rsvp=='attending' else '#fff'};color:{'#16a34a' if my_rsvp=='attending' else 'var(--rak-mute)'};cursor:pointer">
+          {'✓ ' if my_rsvp=='attending' else ''}出席
+        </button>
+        <button name="status" value="absent" type="submit"
+          style="flex:1;padding:6px;border-radius:7px;font-size:12px;font-weight:600;border:1.5px solid {'#dc2626' if my_rsvp=='absent' else 'var(--rak-line)'};background:{'#fef2f2' if my_rsvp=='absent' else '#fff'};color:{'#dc2626' if my_rsvp=='absent' else 'var(--rak-mute)'};cursor:pointer">
+          {'✓ ' if my_rsvp=='absent' else ''}欠席
+        </button>
+      </form>'''
+
+        unanswered_badge = '' if my_rsvp else '<span style="font-size:10px;background:#fef3c7;color:#d97706;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px">未回答</span>'
         event_items += f'''
-    <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rak-line-soft)">
-      <div style="min-width:40px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:5px 4px">
-        <div style="font-size:9px;color:var(--rak-mute)">{fmt_date(ev["event_date"])[:5]}</div>
-        <div style="font-size:17px;font-weight:600;font-family:var(--font-num);line-height:1.2">{int(ev["event_date"].split("-")[2])}</div>
+    <div style="padding:10px 0;border-bottom:1px solid var(--rak-line-soft)">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="min-width:40px;text-align:center;background:var(--rak-bg-soft);border-radius:8px;padding:5px 4px;flex-shrink:0">
+          <div style="font-size:9px;color:var(--rak-mute)">{fmt_date(ev["event_date"])[:5]}</div>
+          <div style="font-size:17px;font-weight:600;font-family:var(--font-num);line-height:1.2">{int(ev["event_date"].split("-")[2])}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;font-size:14px">{ev["title"]}{unanswered_badge}</div>
+          {f'<div style="font-size:12px;color:var(--rak-mute)">{ev["event_time"]}{("　" + ev["location"]) if ev["location"] else ""}</div>' if ev["event_time"] or ev["location"] else ''}
+          {rsvp_area}
+        </div>
       </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{ev["title"]}</div>
-        {f'<div style="font-size:12px;color:var(--rak-mute)">{ev["event_time"]}</div>' if ev["event_time"] else ''}
-      </div>
-      <a href="/t/{code}/schedule" style="font-size:12px;color:var(--rak-amber);flex-shrink:0">詳細</a>
     </div>'''
     if not event_items:
         event_items = '<div style="padding:14px 0;text-align:center;color:var(--rak-mute);font-size:13px">予定はありません</div>'
@@ -1549,6 +1579,10 @@ def member_home(code):
         {"" if not unread else f'<span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px">{unread}</span>'}
         <div style="font-size:18px;font-weight:600;color:{"var(--rak-amber)" if unread else "var(--rak-black)"}">{unread}</div>
         <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未読</div>
+      </a>
+      <a href="/t/{code}/schedule" style="display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
+        <div style="font-size:18px;font-weight:600;color:{"var(--rak-amber)" if unanswered_rsvp else "var(--rak-black)"}">{unanswered_rsvp}</div>
+        <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未回答</div>
       </a>
       <a href="/t/{code}/fees" style="display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
         <div style="font-size:18px;font-weight:600;color:{"var(--rak-danger)" if unpaid else "var(--rak-black)"}">{unpaid}</div>

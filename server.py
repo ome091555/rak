@@ -32,6 +32,7 @@ NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
 FREE_MEMBER_LIMIT = 20
 BASIC_AUTH_USER = os.environ.get('BASIC_AUTH_USER', '')
 BASIC_AUTH_PASS = os.environ.get('BASIC_AUTH_PASS', '')
+PROMO_CODES = [c.strip() for c in os.environ.get('PROMO_CODES', '').split(',') if c.strip()]
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
@@ -4521,6 +4522,13 @@ def upgrade_page(code):
       </div>
     </div>
     {checkout_btn}
+    <div style="margin-top:20px;border-top:1px solid #eee;padding-top:18px">
+      <p style="font-size:12px;color:#aaa;margin-bottom:10px">プロモコードをお持ちの方</p>
+      <form method="POST" action="/t/{code}/upgrade/promo" style="display:flex;gap:8px">
+        <input type="text" name="promo" placeholder="プロモコード" style="flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none">
+        <button type="submit" class="btn btn-outline" style="white-space:nowrap;padding:10px 16px">適用</button>
+      </form>
+    </div>
     <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
   </div>
 </div>'''
@@ -4550,6 +4558,39 @@ def upgrade_checkout(code):
         metadata={'team_code': code},
     )
     return redirect(checkout.url)
+
+
+@app.route('/t/<code>/upgrade/promo', methods=['POST'])
+def upgrade_promo(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    promo = request.form.get('promo', '').strip().upper()
+    valid_codes = [c.upper() for c in PROMO_CODES]
+    if promo and valid_codes and promo in valid_codes:
+        conn = get_db()
+        conn.execute("UPDATE teams SET plan='pro' WHERE id=?", (team['id'],))
+        conn.commit()
+        conn.close()
+        body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
+    <h1 style="font-size:22px;margin-bottom:8px">プロモコード適用完了！</h1>
+    <p style="color:#666;font-size:14px;margin-bottom:24px">Rak Proへようこそ。すべての機能が使えるようになりました。</p>
+    <a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a>
+  </div>
+</div>'''
+        return page('アップグレード完了', body, code, active='admin')
+    body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <h1 style="font-size:20px;margin-bottom:12px">コードが無効です</h1>
+    <p style="color:#666;font-size:14px;margin-bottom:24px">プロモコードが正しくないか、有効期限が切れています。</p>
+    <a href="/t/{code}/upgrade" class="btn btn-outline btn-block" style="margin-top:0">← 戻る</a>
+  </div>
+</div>'''
+    return page('コードエラー', body, code, active='admin')
 
 
 @app.route('/t/<code>/upgrade/success')

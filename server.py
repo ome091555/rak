@@ -2146,18 +2146,18 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}</summary>
-      <div class="atile-body">
-        <span style="font-size:12px;color:#888;white-space:nowrap">未払い {len(unpaid_summary)}件</span>
-        <a href="/t/{code}/admin/fees" class="btn btn-outline">管理</a>
-      </div>
-    </details>
-
-    <details class="atile">
       <summary><span class="atile-icon">{_ICO_PEOPLE}</span>メンバー</summary>
       <div class="atile-body">
         <span style="font-size:12px;color:#888;white-space:nowrap">{member_count_label(team, len(member_names))}</span>
         <a href="/t/{code}/admin/members" class="btn btn-outline">一覧・追加</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary><span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}</summary>
+      <div class="atile-body">
+        <span style="font-size:12px;color:#888;white-space:nowrap">未払い {len(unpaid_summary)}件</span>
+        <a href="/t/{code}/admin/fees" class="btn btn-outline">管理</a>
       </div>
     </details>
 
@@ -2169,16 +2169,16 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章</summary>
+      <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム</summary>
       <div class="atile-body">
-        <a href="/t/{code}/admin/ai" class="btn btn-outline">文章を作成</a>
+        <a href="/t/{code}/admin/uniforms" class="btn btn-outline">管理</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム</summary>
+      <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章</summary>
       <div class="atile-body">
-        <a href="/t/{code}/admin/uniforms" class="btn btn-outline">管理</a>
+        <a href="/t/{code}/admin/ai" class="btn btn-outline">文章を作成</a>
       </div>
     </details>
 

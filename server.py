@@ -1348,6 +1348,12 @@ def create_team():
         password = request.form.get('password', '').strip()
         if not name or not password:
             error = 'チーム名とパスワードを入力してください'
+        elif len(password) < 6:
+            error = 'パスワードは6文字以上で設定してください'
+        elif not any(c.isalpha() for c in password):
+            error = 'パスワードに英字（a〜z / A〜Z）を1文字以上含めてください'
+        elif not any(c.isdigit() for c in password):
+            error = 'パスワードに数字（0〜9）を1文字以上含めてください'
         else:
             team_id = new_id()
             code = new_id().upper()[:6]
@@ -1372,8 +1378,8 @@ def create_team():
       <label>チーム名・グループ名 *</label>
       <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
       <label>管理者パスワード *</label>
-      <input type="password" name="password" placeholder="管理者だけが知るパスワード" required>
-      <div style="font-size:12px;color:#888;margin-top:6px">※メンバーには共有しないでください</div>
+      <input type="password" name="password" placeholder="例：soccer2026" required>
+      <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む6文字以上　※メンバーには共有しないでください</div>
       <button class="btn btn-blue btn-block" type="submit">チームを作成してコードを発行 →</button>
     </form>
   </div>

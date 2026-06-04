@@ -639,6 +639,11 @@ ICONS = {
     'admin':    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg>',
     'ai':       '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l1.8 5 5.2 2-5.2 2-1.8 5-1.8-5-5.2-2 5.2-2z"/></svg>',
     'ask':      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12a2 2 0 01-2 2H6l-3 3V5a2 2 0 012-2h10a2 2 0 012 2v7z"/></svg>',
+    'ledger':   '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 7h6M7 10.5h6M7 14h4"/></svg>',
+    'memo':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16H4v-3L13.5 3.5z"/><path d="M11.5 5.5l3 3"/></svg>',
+    'contact':  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="10" rx="2"/><path d="M3 8l7 5 7-5"/></svg>',
+    'help':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M8 8c0-1.1.9-2 2-2s2 .9 2 2c0 1-1 1.5-2 2.5"/><circle cx="10" cy="14.5" r=".5" fill="currentColor"/></svg>',
+    'plan':     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l2.5-7 4.5 3.5L14 7l2.5 7H3z"/><path d="M3 14h14"/></svg>',
 }
 
 CSS = '''
@@ -836,8 +841,16 @@ def page(title, body, code=None, active=None):
             bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{ico}</span><span>{label}</span>{badge}</a>'
 
         if admin:
-            ai_cls = 'active' if active == 'ai' else ''
-            desktop_nav += f'<a href="/t/{code}/admin/ai" class="{ai_cls}"><span class="nav-d-icon">{ICONS["ai"]}</span>AI文章</a>'
+            for a_key, a_icon, a_label, a_url in [
+                ('ai',      'ai',      'AI文章',   f'/t/{code}/admin/ai'),
+                ('ledger',  'ledger',  '会計',     f'/t/{code}/admin/ledger'),
+                ('memo',    'memo',    'メモ',     f'/t/{code}/admin/memos'),
+                ('contact', 'contact', '問い合わせ', f'/feedback?from={code}'),
+                ('help',    'help',    '使い方',   f'/t/{code}/help'),
+                ('plan',    'plan',    'プラン',   f'/t/{code}/upgrade'),
+            ]:
+                cls = 'active' if active == a_key else ''
+                desktop_nav += f'<a href="{a_url}" class="{cls}"><span class="nav-d-icon">{ICONS[a_icon]}</span>{a_label}</a>'
         elif member:
             desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">{_ICO_USER_SM} {member}</span>'
 
@@ -1250,6 +1263,14 @@ footer a:hover{{color:#94a3b8}}
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">08</span><span class="fcard-ic">{IC_AI}</span></div>
         <div class="fcard-title">AI文章<br>生成</div>
+      </div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic">{IC_USERS}</span></div>
+        <div class="fcard-title">ユニフォーム<br>管理</div>
+      </div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">10</span><span class="fcard-ic">{IC_HOME}</span></div>
+        <div class="fcard-title">メンバー<br>無制限</div>
       </div>
     </div>
   </div>

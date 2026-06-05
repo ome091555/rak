@@ -2234,7 +2234,7 @@ def admin_settings(code):
 
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
-    return page('チーム設定', body, code, active='home')
+    return page('設定', body, code, active='home')
 
 
 @app.route('/t/<code>/admin/logout')
@@ -2373,7 +2373,7 @@ def admin_dash(code):
     </div>
     <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <div style="font-size:11px;opacity:.4;text-align:right;word-break:break-all;line-height:1.5;max-width:200px">{request.host_url}t/{code}</div>
-      <a href="/t/{code}/admin/settings" style="font-size:11px;color:#d97706;background:rgba(217,119,6,.15);padding:3px 10px;border-radius:6px;text-decoration:none">⚙ チーム設定</a>
+      <a href="/t/{code}/admin/settings" style="font-size:11px;color:#d97706;background:rgba(217,119,6,.15);padding:3px 10px;border-radius:6px;text-decoration:none">⚙ 設定</a>
     </div>
   </div>
 

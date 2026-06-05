@@ -322,6 +322,13 @@ def init_db():
             memo TEXT DEFAULT '',
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            used INTEGER DEFAULT 0
+        );
         CREATE TABLE IF NOT EXISTS push_subscriptions (
             id TEXT PRIMARY KEY,
             team_id TEXT NOT NULL,
@@ -355,6 +362,7 @@ def init_db():
         'ALTER TABLE app_feedback ADD COLUMN email TEXT DEFAULT ""',
         'ALTER TABLE app_feedback ADD COLUMN subject TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN admin_memo TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN admin_email TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -1491,8 +1499,9 @@ def create_team():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         password = request.form.get('password', '').strip()
-        if not name or not password:
-            error = 'チーム名とパスワードを入力してください'
+        email = request.form.get('email', '').strip()
+        if not name or not password or not email:
+            error = 'チーム名・メールアドレス・パスワードをすべて入力してください'
         elif len(password) < 6:
             error = 'パスワードは6文字以上で設定してください'
         elif not any(c.isalpha() for c in password):
@@ -1504,8 +1513,8 @@ def create_team():
             code = new_id().upper()[:6]
             conn = get_db()
             conn.execute(
-                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at) VALUES (?,?,?,?,?,?)',
-                (team_id, name, '', code, password, now_str())
+                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email) VALUES (?,?,?,?,?,?,?)',
+                (team_id, name, '', code, password, now_str(), email)
             )
             conn.commit()
             conn.close()
@@ -1522,6 +1531,9 @@ def create_team():
     <form method="POST">
       <label>チーム名・グループ名 *</label>
       <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
+      <label>管理者メールアドレス *</label>
+      <input type="email" name="email" placeholder="例：admin@example.com" required>
+      <div style="font-size:12px;color:#888;margin-top:4px;margin-bottom:4px">パスワードを忘れた際の再設定に使用します</div>
       <label>管理者パスワード *</label>
       <div style="position:relative">
         <input type="password" name="password" id="pw-input" placeholder="例：soccer2026" required style="padding-right:44px">
@@ -1534,6 +1546,120 @@ def create_team():
   <div style="text-align:center"><a href="/" style="font-size:13px;color:#888">← トップに戻る</a></div>
 </div>'''
     return page('チーム作成', body)
+
+
+# ── Password reset ────────────────────────────────────────────────
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    msg = ''
+    error = ''
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        conn = get_db()
+        team = conn.execute('SELECT * FROM teams WHERE LOWER(admin_email)=?', (email,)).fetchone()
+        if team:
+            import secrets
+            from datetime import datetime as _dt, timedelta as _td
+            token = secrets.token_urlsafe(32)
+            expires = (_dt.now(JST) + _td(hours=1)).strftime('%Y-%m-%d %H:%M')
+            conn.execute('INSERT INTO password_reset_tokens (id,team_id,token,expires_at) VALUES (?,?,?,?)',
+                         (new_id(), team['id'], token, expires))
+            conn.commit()
+            reset_url = f"{request.host_url}reset-password?token={token}"
+            if RESEND_API_KEY:
+                try:
+                    import requests as _req
+                    _req.post('https://api.resend.com/emails',
+                        headers={'Authorization': f'Bearer {RESEND_API_KEY}', 'Content-Type': 'application/json'},
+                        json={'from': 'Rak <send@runways.jp>', 'to': [email],
+                              'subject': '【Rak】パスワードリセットのご案内',
+                              'text': f'チーム「{team["name"]}」の管理者パスワードをリセットします。\n\n以下のURLから1時間以内に新しいパスワードを設定してください。\n\n{reset_url}\n\n※このメールに心当たりがない場合は無視してください。'},
+                        timeout=10)
+                except Exception:
+                    pass
+        conn.close()
+        msg = 'メールアドレスが登録されている場合、リセット用のメールを送信しました'
+
+    body = f'''
+<div class="container" style="max-width:440px;padding-top:48px">
+  <div class="card">
+    <h1 style="margin-bottom:8px">パスワードをお忘れの方</h1>
+    <p style="font-size:13px;color:#666;margin-bottom:20px">登録したメールアドレスを入力してください。パスワード再設定のリンクをお送りします。</p>
+    {f'<div class="msg-ok">{msg}</div>' if msg else ''}
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>メールアドレス</label>
+      <input type="email" name="email" placeholder="登録済みのメールアドレス" required autofocus>
+      <button class="btn btn-blue btn-block" type="submit">リセットメールを送る</button>
+    </form>
+  </div>
+  <div style="text-align:center;margin-top:12px"><a href="/" style="font-size:13px;color:#888">← トップに戻る</a></div>
+</div>'''
+    return page('パスワードリセット', body)
+
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    token = request.args.get('token', '') or request.form.get('token', '')
+    error = ''
+    conn = get_db()
+    now_s = datetime.now(JST).strftime('%Y-%m-%d %H:%M')
+    rec = conn.execute(
+        'SELECT * FROM password_reset_tokens WHERE token=? AND used=0 AND expires_at>=?',
+        (token, now_s)
+    ).fetchone()
+    conn.close()
+
+    if not rec:
+        body = '''<div class="container" style="max-width:440px;padding-top:48px">
+  <div class="card" style="text-align:center;padding:40px">
+    <h1 style="font-size:20px;margin-bottom:12px">リンクが無効です</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:24px">リンクの有効期限が切れているか、すでに使用済みです。</p>
+    <a href="/forgot-password" class="btn btn-blue">再度リセット申請する</a>
+  </div></div>'''
+        return page('リンク無効', body)
+
+    if request.method == 'POST':
+        new_pw = request.form.get('password', '').strip()
+        if len(new_pw) < 6:
+            error = 'パスワードは6文字以上にしてください'
+        elif not any(c.isalpha() for c in new_pw):
+            error = '英字を1文字以上含めてください'
+        elif not any(c.isdigit() for c in new_pw):
+            error = '数字を1文字以上含めてください'
+        else:
+            conn = get_db()
+            conn.execute('UPDATE teams SET admin_password=? WHERE id=?', (new_pw, rec['team_id']))
+            conn.execute('UPDATE password_reset_tokens SET used=1 WHERE id=?', (rec['id'],))
+            conn.commit()
+            conn.close()
+            body = '''<div class="container" style="max-width:440px;padding-top:48px">
+  <div class="card" style="text-align:center;padding:40px">
+    <h1 style="font-size:20px;margin-bottom:12px">パスワードを変更しました</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:24px">新しいパスワードでログインしてください。</p>
+    <a href="/" class="btn btn-blue">トップへ戻る</a>
+  </div></div>'''
+            return page('変更完了', body)
+
+    body = f'''
+<div class="container" style="max-width:440px;padding-top:48px">
+  <div class="card">
+    <h1 style="margin-bottom:8px">新しいパスワードを設定</h1>
+    <p style="font-size:13px;color:#666;margin-bottom:20px">英字・数字を含む6文字以上で設定してください。</p>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <input type="hidden" name="token" value="{token}">
+      <label>新しいパスワード</label>
+      <div style="position:relative">
+        <input type="password" name="password" id="reset-pw" placeholder="例：soccer2026" required style="padding-right:44px">
+        <button type="button" onclick="var i=document.getElementById('reset-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit">パスワードを変更する</button>
+    </form>
+  </div>
+</div>'''
+    return page('パスワード再設定', body)
 
 
 # ── Member portal ─────────────────────────────────────────────────
@@ -2157,6 +2283,9 @@ def admin_login(code):
       <input type="password" name="password" autofocus required>
       <button class="btn btn-blue btn-block" type="submit">ログイン</button>
     </form>
+    <div style="text-align:center;margin-top:14px">
+      <a href="/forgot-password" style="font-size:12px;color:#888">パスワードを忘れた方</a>
+    </div>
   </div>
 </div>'''
     return page('管理者ログイン', body, code)
@@ -2180,6 +2309,14 @@ def admin_settings(code):
                 conn.execute('UPDATE teams SET name=? WHERE id=?', (new_name, team['id']))
                 conn.commit()
                 msg = 'チーム名を変更しました'
+        elif action == 'email':
+            new_email = request.form.get('email', '').strip()
+            if not new_email:
+                error = 'メールアドレスを入力してください'
+            else:
+                conn.execute('UPDATE teams SET admin_email=? WHERE id=?', (new_email, team['id']))
+                conn.commit()
+                msg = 'メールアドレスを変更しました'
         elif action == 'password':
             current_pw = request.form.get('current_password', '')
             new_pw = request.form.get('new_password', '').strip()
@@ -2209,6 +2346,17 @@ def admin_settings(code):
       <input type="hidden" name="action" value="name">
       <label>チーム名</label>
       <input type="text" name="name" value="{team['name']}" required>
+      <button class="btn btn-blue btn-block" type="submit">変更する</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin-bottom:4px">メールアドレスの変更</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">パスワードリセットに使用するメールアドレス</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="email">
+      <label>メールアドレス</label>
+      <input type="email" name="email" value="{team['admin_email'] or ''}" placeholder="admin@example.com" required>
       <button class="btn btn-blue btn-block" type="submit">変更する</button>
     </form>
   </div>

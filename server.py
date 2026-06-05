@@ -39,27 +39,44 @@ VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:m.ome.091555@gmail.com
 
 # ── Web Push 通知 ────────────────────────────────────────────────────────
 
+def _vapid_headers(endpoint):
+    """VAPIDのAuthorizationヘッダーを生成する"""
+    try:
+        import time, base64
+        import jwt as pyjwt
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        aud = '/'.join(endpoint.split('/')[:3])
+        token = pyjwt.encode(
+            {'sub': VAPID_EMAIL, 'aud': aud, 'exp': int(time.time()) + 43200},
+            VAPID_PRIVATE_KEY,
+            algorithm='ES256'
+        )
+        return {
+            'Authorization': f'vapid t={token},k={VAPID_PUBLIC_KEY}',
+            'Content-Type': 'application/json',
+            'TTL': '86400'
+        }
+    except Exception:
+        return None
+
 def send_push_to_team(team_id, title, body, url='/'):
     """チームの全購読者にWeb Push通知を送る"""
     if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
         return
-    try:
-        from pywebpush import webpush, WebPushException
-    except ImportError:
-        return
     conn = get_db()
     subs = conn.execute('SELECT * FROM push_subscriptions WHERE team_id=?', (team_id,)).fetchall()
     conn.close()
+    import requests as _req
     for s in subs:
         try:
-            webpush(
-                subscription_info={
-                    'endpoint': s['endpoint'],
-                    'keys': {'p256dh': s['p256dh'], 'auth': s['auth']}
-                },
+            headers = _vapid_headers(s['endpoint'])
+            if not headers:
+                continue
+            _req.post(
+                s['endpoint'],
+                headers=headers,
                 data=json.dumps({'title': title, 'body': body, 'url': url}),
-                vapid_private_key=VAPID_PRIVATE_KEY,
-                vapid_claims={'sub': VAPID_EMAIL}
+                timeout=10
             )
         except Exception:
             pass

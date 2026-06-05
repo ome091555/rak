@@ -1523,7 +1523,10 @@ def create_team():
       <label>チーム名・グループ名 *</label>
       <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
       <label>管理者パスワード *</label>
-      <input type="password" name="password" placeholder="例：soccer2026" required>
+      <div style="position:relative">
+        <input type="password" name="password" id="pw-input" placeholder="例：soccer2026" required style="padding-right:44px">
+        <button type="button" onclick="var i=document.getElementById('pw-input');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
+      </div>
       <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む6文字以上　※メンバーには共有しないでください</div>
       <button class="btn btn-blue btn-block" type="submit">チームを作成してコードを発行 →</button>
     </form>
@@ -2158,6 +2161,82 @@ def admin_login(code):
 </div>'''
     return page('管理者ログイン', body, code)
 
+@app.route('/t/<code>/admin/settings', methods=['GET', 'POST'])
+def admin_settings(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    msg = ''
+    error = ''
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        conn = get_db()
+        if action == 'name':
+            new_name = request.form.get('name', '').strip()
+            if not new_name:
+                error = 'チーム名を入力してください'
+            else:
+                conn.execute('UPDATE teams SET name=? WHERE id=?', (new_name, team['id']))
+                conn.commit()
+                msg = 'チーム名を変更しました'
+        elif action == 'password':
+            current_pw = request.form.get('current_password', '')
+            new_pw = request.form.get('new_password', '').strip()
+            if current_pw != team['admin_password']:
+                error = '現在のパスワードが違います'
+            elif len(new_pw) < 6:
+                error = '新しいパスワードは6文字以上にしてください'
+            elif not any(c.isalpha() for c in new_pw):
+                error = '英字を1文字以上含めてください'
+            elif not any(c.isdigit() for c in new_pw):
+                error = '数字を1文字以上含めてください'
+            else:
+                conn.execute('UPDATE teams SET admin_password=? WHERE id=?', (new_pw, team['id']))
+                conn.commit()
+                msg = 'パスワードを変更しました'
+        conn.close()
+        team = get_team(code)
+
+    body = f'''
+<div class="container" style="max-width:480px">
+  {f'<div class="msg-ok">{_CHK} {msg}</div>' if msg else ''}
+  {f'<div class="msg-err">{error}</div>' if error else ''}
+
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin-bottom:16px">チーム名の変更</h2>
+    <form method="POST">
+      <input type="hidden" name="action" value="name">
+      <label>チーム名</label>
+      <input type="text" name="name" value="{team['name']}" required>
+      <button class="btn btn-blue btn-block" type="submit">変更する</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin-bottom:4px">管理者パスワードの確認・変更</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">現在のパスワードを入力して新しいパスワードに変更できます</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="password">
+      <label>現在のパスワード</label>
+      <div style="position:relative">
+        <input type="password" name="current_password" id="cur-pw" placeholder="現在のパスワード" required style="padding-right:44px">
+        <button type="button" onclick="var i=document.getElementById('cur-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
+      </div>
+      <label style="margin-top:14px">新しいパスワード</label>
+      <div style="position:relative">
+        <input type="password" name="new_password" id="new-pw" placeholder="英字・数字を含む6文字以上" required style="padding-right:44px">
+        <button type="button" onclick="var i=document.getElementById('new-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit">パスワードを変更する</button>
+    </form>
+  </div>
+
+  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+</div>'''
+    return page('チーム設定', body, code, active='home')
+
+
 @app.route('/t/<code>/admin/logout')
 def admin_logout(code):
     session.pop(f'admin_{code}', None)
@@ -2292,7 +2371,10 @@ def admin_dash(code):
       <div style="font-size:10px;opacity:.45;letter-spacing:.05em;margin-bottom:1px">チームコード</div>
       <div style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num)">{code}</div>
     </div>
-    <div style="margin-left:auto;font-size:11px;opacity:.4;text-align:right;word-break:break-all;line-height:1.5;max-width:55%">{request.host_url}t/{code}</div>
+    <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div style="font-size:11px;opacity:.4;text-align:right;word-break:break-all;line-height:1.5;max-width:200px">{request.host_url}t/{code}</div>
+      <a href="/t/{code}/admin/settings" style="font-size:11px;color:#d97706;background:rgba(217,119,6,.15);padding:3px 10px;border-radius:6px;text-decoration:none">⚙ チーム設定</a>
+    </div>
   </div>
 
   <style>

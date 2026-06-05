@@ -1211,6 +1211,8 @@ button{{font-family:inherit;cursor:pointer}}
 .fcard-ic svg{{width:27px;height:27px}}
 .fcard-title{{font-size:17px;font-weight:800;line-height:1.3;margin-top:10px}}
 .fcard-pro .fcard-title{{color:#fff}}
+.fcard-desc{{font-size:11px;color:#94a3b8;margin-top:5px;line-height:1.5}}
+.fcard-pro .fcard-desc{{color:#666}}
 
 /* Pricing */
 .pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}
@@ -1357,18 +1359,22 @@ footer a:hover{{color:#94a3b8}}
       <div class="fcard fcard-free">
         <div class="fcard-top"><span class="fcard-num">01</span><span class="fcard-ic">{IC_CAL}</span></div>
         <div class="fcard-title">スケジュール<br>管理</div>
+        <div class="fcard-desc">練習・試合の日程をチームで共有</div>
       </div>
       <div class="fcard fcard-free">
         <div class="fcard-top"><span class="fcard-num">02</span><span class="fcard-ic">{IC_MEGA}</span></div>
         <div class="fcard-title">連絡・<br>既読管理</div>
+        <div class="fcard-desc">お知らせを送って既読を確認</div>
       </div>
       <div class="fcard fcard-free">
         <div class="fcard-top"><span class="fcard-num">03</span><span class="fcard-ic">{IC_USERS}</span></div>
         <div class="fcard-title">メンバー<br>管理</div>
+        <div class="fcard-desc">メンバー情報を一元管理</div>
       </div>
       <div class="fcard fcard-free">
         <div class="fcard-top"><span class="fcard-num">04</span><span class="fcard-ic">{IC_LINK}</span></div>
         <div class="fcard-title">チームコード<br>招待</div>
+        <div class="fcard-desc">コードを共有するだけで参加完了</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -1379,26 +1385,32 @@ footer a:hover{{color:#94a3b8}}
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">05</span><span class="fcard-ic">{IC_YEN}</span></div>
         <div class="fcard-title">集金・<br>費用管理</div>
+        <div class="fcard-desc">会費や遠征費の集金を自動化</div>
       </div>
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">06</span><span class="fcard-ic">{IC_CLIP}</span></div>
         <div class="fcard-title">注文<br>フォーム</div>
+        <div class="fcard-desc">弁当・グッズの注文をまとめて管理</div>
       </div>
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">07</span><span class="fcard-ic">{IC_CHART}</span></div>
         <div class="fcard-title">会計・<br>収支記録</div>
+        <div class="fcard-desc">収支を記録して会計報告を楽に</div>
       </div>
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">08</span><span class="fcard-ic">{IC_AI}</span></div>
         <div class="fcard-title">AI文章<br>生成</div>
+        <div class="fcard-desc">お知らせ文をAIが自動で作成</div>
       </div>
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic">{IC_USERS}</span></div>
         <div class="fcard-title">ユニフォーム<br>管理</div>
+        <div class="fcard-desc">サイズ・枚数の注文を一括管理</div>
       </div>
       <div class="fcard fcard-pro">
         <div class="fcard-top"><span class="fcard-num">10</span><span class="fcard-ic">{IC_HOME}</span></div>
         <div class="fcard-title">メンバー<br>無制限</div>
+        <div class="fcard-desc">何名でも登録できる大規模対応</div>
       </div>
     </div>
   </div>

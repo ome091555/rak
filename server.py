@@ -2483,6 +2483,13 @@ def admin_dash(code):
       </div>
     </details>
 
+    <details class="atile">
+      <summary><span class="atile-icon">{ICONS['admin']}</span>設定</summary>
+      <div class="atile-body">
+        <a href="/t/{code}/admin/settings" class="btn btn-outline">チーム名・パスワード</a>
+      </div>
+    </details>
+
   </div>
 
   <div style="text-align:right;margin-top:16px">

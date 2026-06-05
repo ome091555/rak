@@ -1202,17 +1202,17 @@ button{{font-family:inherit;cursor:pointer}}
 .fcard:hover{{transform:translateY(-3px)}}
 .fcard-free{{background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03)}}
 .fcard-free:hover{{box-shadow:0 10px 24px rgba(0,0,0,.07)}}
-.fcard-pro{{background:linear-gradient(150deg,#1c1c1c,#000);color:#fff}}
+.fcard-pro{{background:linear-gradient(150deg,#252525,#151515);color:#fff}}
 .fcard-pro:hover{{box-shadow:0 12px 28px rgba(245,158,11,.25)}}
 .fcard-top{{display:flex;justify-content:space-between;align-items:flex-start}}
 .fcard-num{{font-family:var(--font-num);font-size:12px;font-weight:800;color:#cbd5e1}}
-.fcard-pro .fcard-num{{color:#555}}
+.fcard-pro .fcard-num{{color:#777}}
 .fcard-ic{{display:inline-flex;color:var(--rak-amber)}}
 .fcard-ic svg{{width:27px;height:27px}}
 .fcard-title{{font-size:17px;font-weight:800;line-height:1.3;margin-top:10px}}
 .fcard-pro .fcard-title{{color:#fff}}
 .fcard-desc{{font-size:11px;color:#94a3b8;margin-top:5px;line-height:1.5}}
-.fcard-pro .fcard-desc{{color:#666}}
+.fcard-pro .fcard-desc{{color:#aaa}}
 
 /* Pricing */
 .pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}

@@ -33,6 +33,36 @@ FREE_MEMBER_LIMIT = 20
 BASIC_AUTH_USER = os.environ.get('BASIC_AUTH_USER', '')
 BASIC_AUTH_PASS = os.environ.get('BASIC_AUTH_PASS', '')
 PROMO_CODES = [c.strip() for c in os.environ.get('PROMO_CODES', '').split(',') if c.strip()]
+VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:m.ome.091555@gmail.com')
+
+# ── Web Push 通知 ────────────────────────────────────────────────────────
+
+def send_push_to_team(team_id, title, body, url='/'):
+    """チームの全購読者にWeb Push通知を送る"""
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        return
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        return
+    conn = get_db()
+    subs = conn.execute('SELECT * FROM push_subscriptions WHERE team_id=?', (team_id,)).fetchall()
+    conn.close()
+    for s in subs:
+        try:
+            webpush(
+                subscription_info={
+                    'endpoint': s['endpoint'],
+                    'keys': {'p256dh': s['p256dh'], 'auth': s['auth']}
+                },
+                data=json.dumps({'title': title, 'body': body, 'url': url}),
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': VAPID_EMAIL}
+            )
+        except Exception:
+            pass
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
@@ -275,6 +305,16 @@ def init_db():
             memo TEXT DEFAULT '',
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(team_id, member_name, endpoint)
+        );
     ''')
     conn.commit()
     # migration: end_date column
@@ -460,7 +500,36 @@ FAVICON_LINK = (
     '<link rel="apple-touch-icon" href="/icon.svg">'
 )
 
-PWA_SW = '<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}</script>'
+PWA_SW = '''<script>
+if("serviceWorker"in navigator){
+  navigator.serviceWorker.register("/sw.js");
+}
+async function rakSubscribePush(code){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const res=await fetch("/push/vapid-public-key");
+    const {publicKey}=await res.json();
+    if(!publicKey)return;
+    const sub=await reg.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:publicKey
+    });
+    await fetch("/t/"+code+"/push/subscribe",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(sub.toJSON())
+    });
+    localStorage.setItem("rak_push_"+code,"1");
+  }catch(e){}
+}
+async function rakRequestPush(code){
+  if(!("Notification"in window)||!("serviceWorker"in navigator))return;
+  if(localStorage.getItem("rak_push_"+code)==="1")return;
+  if(Notification.permission==="granted"){rakSubscribePush(code);return;}
+  if(Notification.permission==="denied")return;
+  const banner=document.getElementById("rak-push-banner");
+  if(banner)banner.style.display="flex";
+}
+</script>'''
 
 # ── オリジナル SVG アイコン (Apple絵文字に依存しない) ────────────────────────
 # 空状態イラスト 64×64 (アンバー円 + アイコン)
@@ -887,6 +956,47 @@ _PWA_ICON_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 120"
 <path d="M 54 64 L 72 94 L 112 28" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>
 </svg>'''
 
+@app.route('/push/vapid-public-key')
+def push_vapid_key():
+    return jsonify({'publicKey': VAPID_PUBLIC_KEY})
+
+@app.route('/t/<code>/push/subscribe', methods=['POST'])
+def push_subscribe(code):
+    team = get_team(code)
+    if not team:
+        return jsonify(error='not found'), 404
+    member = get_member(code)
+    if not member:
+        return jsonify(error='not member'), 403
+    data = request.get_json() or {}
+    endpoint = data.get('endpoint', '')
+    p256dh   = data.get('keys', {}).get('p256dh', '')
+    auth     = data.get('keys', {}).get('auth', '')
+    if not endpoint or not p256dh or not auth:
+        return jsonify(error='invalid'), 400
+    conn = get_db()
+    conn.execute('''
+        INSERT INTO push_subscriptions (id,team_id,member_name,endpoint,p256dh,auth,created_at)
+        VALUES (?,?,?,?,?,?,?)
+        ON CONFLICT(team_id,member_name,endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth
+    ''', (new_id(), team['id'], member, endpoint, p256dh, auth, now_str()))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+@app.route('/t/<code>/push/unsubscribe', methods=['POST'])
+def push_unsubscribe(code):
+    team = get_team(code)
+    if not team:
+        return jsonify(error='not found'), 404
+    data = request.get_json() or {}
+    endpoint = data.get('endpoint', '')
+    conn = get_db()
+    conn.execute('DELETE FROM push_subscriptions WHERE team_id=? AND endpoint=?', (team['id'], endpoint))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
 @app.route('/manifest.json')
 def pwa_manifest():
     return jsonify({
@@ -908,7 +1018,7 @@ def pwa_icon():
 
 @app.route('/sw.js')
 def service_worker():
-    js = """const CACHE='rak-v1';
+    js = """const CACHE='rak-v2';
 self.addEventListener('install',e=>{self.skipWaiting();});
 self.addEventListener('activate',e=>{
   e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
@@ -917,6 +1027,24 @@ self.addEventListener('activate',e=>{
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+});
+self.addEventListener('push',e=>{
+  let d={title:'Rak',body:'新しいお知らせがあります',url:'/'};
+  try{d=Object.assign(d,e.data.json());}catch(err){}
+  e.waitUntil(self.registration.showNotification(d.title,{
+    body:d.body,
+    icon:'/icon.svg',
+    badge:'/icon.svg',
+    data:{url:d.url}
+  }));
+});
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  const url=e.notification.data&&e.notification.data.url||'/';
+  e.waitUntil(clients.matchAll({type:'window'}).then(cs=>{
+    for(const c of cs){if(c.url===url&&'focus'in c)return c.focus();}
+    if(clients.openWindow)return clients.openWindow(url);
+  }));
 });"""
     return Response(js, mimetype='application/javascript')
 
@@ -1636,6 +1764,17 @@ def member_home(code):
     {event_items}
     <a href="/t/{code}/schedule" style="display:block;text-align:center;font-size:13px;color:var(--rak-amber);margin-top:10px">すべて見る →</a>
   </div>
+
+  <div id="rak-push-banner" style="display:none;align-items:center;gap:12px;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:14px 16px;margin-top:12px">
+    <div style="flex:1;font-size:13px;color:var(--rak-ink)">
+      <div style="font-weight:600;margin-bottom:2px">お知らせ通知をオンにする</div>
+      <div style="font-size:12px;color:var(--rak-mute)">管理者が投稿したときにすぐ届きます</div>
+    </div>
+    <button onclick="Notification.requestPermission().then(p=>{{if(p==='granted'){{rakSubscribePush('{code}');document.getElementById('rak-push-banner').style.display='none';}}}})"
+      class="btn btn-amber btn-sm">通知をオン</button>
+    <button onclick="localStorage.setItem('rak_push_{code}','skip');this.closest('#rak-push-banner').style.display='none';"
+      style="background:none;border:none;color:var(--rak-mute);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+  </div>
 </div>
 <script>
 (function(){{
@@ -1643,6 +1782,7 @@ def member_home(code):
     var parts='{member}'.split(' ');
     localStorage.setItem('rak_m_{code}',JSON.stringify({{last:parts[0]||'',first:parts[1]||'',name:'{member}'}}));
   }}catch(e){{}}
+  rakRequestPush('{code}');
 }})();
 </script>'''
     return page('ホーム', body, code, active='home')
@@ -2850,6 +2990,7 @@ def admin_new_notice(code):
                          (new_id(), team['id'], title, body_text, now_str()))
             conn.commit()
             conn.close()
+            send_push_to_team(team['id'], f'📢 {team["name"]}', title, f'/t/{code}/notices')
             return redirect(url_for('notices', code=code, sent='1'))
 
     conn = get_db()

@@ -1283,7 +1283,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
       <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
-      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。練習に集中できる。</p>
+      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
       <div class="hero-btns">
         <a href="/create" class="btn-primary">14日間無料トライアルを始める →</a>
         <a href="#features" class="btn-ghost">機能を見る</a>

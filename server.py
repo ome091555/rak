@@ -5527,27 +5527,35 @@ def stripe_webhook():
     except Exception:
         return jsonify(error='invalid'), 400
 
-    if event['type'] == 'checkout.session.completed':
-        s = event['data']['object']
-        team_code = s.get('metadata', {}).get('team_code', '')
-        if team_code:
+    try:
+        if event['type'] == 'checkout.session.completed':
+            s = event['data']['object']
+            team_code = (s.get('metadata') or {}).get('team_code', '')
+            print(f'[WEBHOOK] checkout.session.completed team_code={team_code!r} customer={s.get("customer")} subscription={s.get("subscription")}')
+            if team_code:
+                conn = get_db()
+                conn.execute(
+                    'UPDATE teams SET plan="pro", stripe_customer_id=?, stripe_subscription_id=? WHERE team_code=?',
+                    (s.get('customer') or '', s.get('subscription') or '', team_code.upper())
+                )
+                conn.commit()
+                conn.close()
+                print(f'[WEBHOOK] plan updated to pro for team_code={team_code}')
+
+        elif event['type'] == 'customer.subscription.deleted':
+            sub = event['data']['object']
+            print(f'[WEBHOOK] subscription.deleted sub_id={sub["id"]}')
             conn = get_db()
             conn.execute(
-                'UPDATE teams SET plan="pro", stripe_customer_id=?, stripe_subscription_id=? WHERE team_code=?',
-                (s.get('customer', ''), s.get('subscription', ''), team_code.upper())
+                'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
+                (sub['id'],)
             )
             conn.commit()
             conn.close()
 
-    elif event['type'] == 'customer.subscription.deleted':
-        sub = event['data']['object']
-        conn = get_db()
-        conn.execute(
-            'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
-            (sub['id'],)
-        )
-        conn.commit()
-        conn.close()
+    except Exception as e:
+        print(f'[WEBHOOK ERROR] {type(e).__name__}: {e}')
+        return jsonify(error='server error'), 500
 
     return jsonify(ok=True)
 

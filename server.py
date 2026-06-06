@@ -5516,16 +5516,21 @@ function rakSetType(t){{
 
 @app.route('/stripe/webhook', methods=['POST'])
 def stripe_webhook():
-    if not STRIPE_SECRET_KEY:
-        return jsonify(ok=True)
-    import stripe
-    stripe.api_key = STRIPE_SECRET_KEY
-    payload = request.get_data()
-    sig = request.headers.get('Stripe-Signature', '')
     try:
-        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
-    except Exception:
-        return jsonify(error='invalid'), 400
+        if not STRIPE_SECRET_KEY:
+            return jsonify(ok=True)
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        payload = request.get_data()
+        sig = request.headers.get('Stripe-Signature', '')
+        try:
+            event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+        except Exception as e:
+            print(f'[WEBHOOK SIG ERROR] {type(e).__name__}: {e}')
+            return jsonify(error='invalid'), 400
+    except Exception as e:
+        print(f'[WEBHOOK INIT ERROR] {type(e).__name__}: {e}')
+        return jsonify(error='init error'), 500
 
     try:
         if event['type'] == 'checkout.session.completed':

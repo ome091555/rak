@@ -1274,7 +1274,6 @@ footer a:hover{{color:#94a3b8}}
   <div class="lp-nav-links">
     <a href="#features" class="hide-sp">機能</a>
     <a href="#pricing" class="hide-sp">料金</a>
-    <a href="/create" class="btn-nav">無料で始める</a>
   </div>
 </nav>
 

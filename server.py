@@ -1284,11 +1284,21 @@ footer a:hover{{color:#94a3b8}}
       <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
       <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
       <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
-      <div class="hero-btns">
-        <a href="/create" class="btn-primary">14日間無料トライアルを始める →</a>
-        <a href="#features" class="btn-ghost">機能を見る</a>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
+          <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
+          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">14日間無料トライアル</div>
+          <div style="font-size:11px;color:#888;margin-bottom:12px">その後 ¥980/月・いつでも解約可</div>
+          <a href="/create?intent=pro" class="btn-primary" style="display:block;font-size:13px;padding:10px 0">試してみる →</a>
+        </div>
+        <div style="flex:1;min-width:180px;background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px;text-align:center">
+          <div style="font-size:11px;font-weight:800;color:#64748b;margin-bottom:4px">FREE</div>
+          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">無料プラン</div>
+          <div style="font-size:11px;color:#888;margin-bottom:12px">クレカ不要・基本機能のみ</div>
+          <a href="/create" class="btn-ghost" style="display:block;font-size:13px;padding:10px 0">無料で始める</a>
+        </div>
       </div>
-      <p class="hero-note"><b>14日間無料</b>・クレカ登録後にトライアル開始・いつでも解約可</p>
+      <p class="hero-note"><b>登録1分</b>・今日から使える</p>
       <div class="code-wrap">
         <p class="lbl">すでにコードをお持ちの方</p>
         <form method="POST" action="/join" class="code-bar">
@@ -1483,6 +1493,7 @@ def join():
 @app.route('/create', methods=['GET', 'POST'])
 def create_team():
     error = ''
+    intent = request.args.get('intent', '') or request.form.get('intent', '')
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         password = request.form.get('password', '').strip()
@@ -1507,15 +1518,21 @@ def create_team():
             conn.close()
             session.permanent = True
             session[f'admin_{code}'] = True
+            if intent == 'pro':
+                return redirect(url_for('upgrade_page', code=code))
             return redirect(url_for('admin_dash', code=code, created='1'))
 
+    pro_badge = '<div style="background:var(--rak-amber);color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:10px">14日間無料トライアル</div>' if intent == 'pro' else ''
+    submit_label = 'チームを作成してProトライアルへ →' if intent == 'pro' else 'チームを作成してコードを発行 →'
     body = f'''
 <div class="container" style="max-width:480px">
   <div class="card">
+    {pro_badge}
     <h1>チームを作成</h1>
     <p style="color:#666;font-size:13px;margin-bottom:16px">作成後、メンバーに共有するチームコードが発行されます</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
+      <input type="hidden" name="intent" value="{intent}">
       <label>チーム名・グループ名 *</label>
       <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
       <label>管理者メールアドレス *</label>
@@ -1527,7 +1544,7 @@ def create_team():
         <button type="button" onclick="var i=document.getElementById('pw-input');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
       </div>
       <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む6文字以上　※メンバーには共有しないでください</div>
-      <button class="btn btn-blue btn-block" type="submit">チームを作成してコードを発行 →</button>
+      <button class="btn btn-blue btn-block" type="submit">{submit_label}</button>
     </form>
   </div>
   <div style="text-align:center"><a href="/" style="font-size:13px;color:#888">← トップに戻る</a></div>

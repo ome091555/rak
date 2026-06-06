@@ -357,8 +357,6 @@ def now_str():
     return datetime.now(JST).strftime('%Y-%m-%d %H:%M')
 
 def is_pro(team):
-    if not STRIPE_SECRET_KEY:
-        return True  # Stripe未設定時は全機能解放
     return team and team['plan'] in ('pro', 'league')
 
 def count_team_members(team_id, conn=None):

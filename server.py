@@ -1285,10 +1285,10 @@ footer a:hover{{color:#94a3b8}}
       <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
       <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。練習に集中できる。</p>
       <div class="hero-btns">
-        <a href="/create" class="btn-primary">無料でチームを作る →</a>
+        <a href="/create" class="btn-primary">14日間無料トライアルを始める →</a>
         <a href="#features" class="btn-ghost">機能を見る</a>
       </div>
-      <p class="hero-note"><b>登録不要</b>・<b>クレカ不要</b>・今日から使える</p>
+      <p class="hero-note"><b>14日間無料</b>・クレカ登録後にトライアル開始・いつでも解約可</p>
       <div class="code-wrap">
         <p class="lbl">すでにコードをお持ちの方</p>
         <form method="POST" action="/join" class="code-bar">

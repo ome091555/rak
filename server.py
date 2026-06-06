@@ -338,6 +338,7 @@ def init_db():
         'ALTER TABLE app_feedback ADD COLUMN subject TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN admin_memo TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN admin_email TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN trial_end TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -357,7 +358,35 @@ def now_str():
     return datetime.now(JST).strftime('%Y-%m-%d %H:%M')
 
 def is_pro(team):
-    return team and team['plan'] in ('pro', 'league')
+    if not team:
+        return False
+    if team['plan'] in ('pro', 'league'):
+        return True
+    # トライアル期間中かチェック
+    trial_end = team['trial_end'] if team['trial_end'] else ''
+    if trial_end:
+        try:
+            end_dt = datetime.strptime(trial_end, '%Y-%m-%d').replace(tzinfo=JST)
+            if datetime.now(JST) <= end_dt:
+                return True
+        except Exception:
+            pass
+    return False
+
+def get_trial_days_left(team):
+    """トライアル残り日数。トライアル中でなければNone。"""
+    if not team or not team['trial_end']:
+        return None
+    if team['plan'] in ('pro', 'league'):
+        return None  # 正規課金中はトライアル扱いしない
+    try:
+        end_dt = datetime.strptime(team['trial_end'], '%Y-%m-%d').replace(tzinfo=JST)
+        now = datetime.now(JST)
+        if now > end_dt:
+            return None
+        return max(0, (end_dt.date() - now.date()).days)
+    except Exception:
+        return None
 
 def count_team_members(team_id, conn=None):
     own = conn is None
@@ -1506,17 +1535,20 @@ def create_team():
         else:
             team_id = new_id()
             code = new_id().upper()[:6]
+            trial_end_val = ''
+            if intent == 'pro':
+                trial_end_val = (datetime.now(JST) + timedelta(days=14)).strftime('%Y-%m-%d')
             conn = get_db()
             conn.execute(
-                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email) VALUES (?,?,?,?,?,?,?)',
-                (team_id, name, '', code, password, now_str(), email)
+                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email,trial_end) VALUES (?,?,?,?,?,?,?,?)',
+                (team_id, name, '', code, password, now_str(), email, trial_end_val)
             )
             conn.commit()
             conn.close()
             session.permanent = True
             session[f'admin_{code}'] = True
             if intent == 'pro':
-                return redirect(url_for('upgrade_page', code=code))
+                return redirect(url_for('admin_dash', code=code, created='1'))
             return redirect(url_for('admin_dash', code=code, created='1'))
 
     pro_badge = '<div style="background:var(--rak-amber);color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:10px">14日間無料トライアル</div>' if intent == 'pro' else ''
@@ -2504,7 +2536,10 @@ def admin_dash(code):
       <a href="/t/{code}/notices/{n['id']}" class="btn btn-sm btn-outline">確認</a>
     </div>''' for n in notices) or '<div class="empty">お知らせなし</div>'
 
-    if is_pro(team):
+    trial_days = get_trial_days_left(team)
+    if trial_days is not None:
+        plan_card = f'<div class="card" style="background:linear-gradient(135deg,#1c1a00,#3d2e00);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:6px">Rak Pro ✦ トライアル中</div><div style="font-size:13px;color:#fbbf24;margin-bottom:10px">残り{trial_days}日</div><a href="/t/{code}/upgrade" style="font-size:12px;color:#fbbf24;text-decoration:underline">トライアル終了後に続けるには →</a></div>'
+    elif is_pro(team):
         plan_card = '<div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;opacity:.7">すべての機能をご利用中</div></div>'
     else:
         plan_card = f'<div class="card" style="border:2px solid #d97706;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥980/月</a></div>'
@@ -2625,7 +2660,7 @@ def admin_dash(code):
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_CROWN}</span>プラン</summary>
       <div class="atile-body">
-        {'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>'}
+        {f'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ トライアル中（残{trial_days}日）</span><br><a href="/t/{code}/upgrade" style="font-size:12px;color:#888">続けるには課金が必要です →</a>' if trial_days is not None else ('<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>')}
       </div>
     </details>
 
@@ -4954,8 +4989,10 @@ def upgrade_page(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
     already_pro = is_pro(team)
-    if already_pro and STRIPE_SECRET_KEY:
-        manage_btn = f'<div style="margin-top:12px"><a href="/t/{code}/billing-portal" style="font-size:13px;color:#888;text-decoration:underline">サブスクリプションを管理・解約</a></div>' if team['stripe_customer_id'] else ''
+    trial_days = get_trial_days_left(team)
+    # 正規課金のProかつStripe設定済み → 管理画面へ
+    if already_pro and not trial_days and STRIPE_SECRET_KEY and team['stripe_customer_id']:
+        manage_btn = f'<div style="margin-top:12px"><a href="/t/{code}/billing-portal" style="font-size:13px;color:#888;text-decoration:underline">サブスクリプションを管理・解約</a></div>'
         body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
@@ -4967,6 +5004,11 @@ def upgrade_page(code):
   </div>
 </div>'''
         return page('プラン', body, code, active='home')
+    # トライアル中 → 残り日数を表示してUpgrade促す
+    if trial_days is not None:
+        trial_banner = f'<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:16px;margin-bottom:24px;text-align:center"><div style="font-size:14px;font-weight:700;color:#d97706">トライアル中 — 残り{trial_days}日</div><div style="font-size:12px;color:#888;margin-top:4px">トライアル終了後、課金しないとFreeプランに戻ります</div></div>'
+    else:
+        trial_banner = ''
 
     stripe_ready = bool(STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PRO)
     if stripe_ready:
@@ -4989,6 +5031,7 @@ def upgrade_page(code):
 
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
+  {trial_banner}
   <div class="card" style="text-align:center;padding:40px 24px">
     <div style="font-size:14px;color:#d97706;font-weight:700;margin-bottom:8px">RakPro</div>
     <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:4px">¥980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>

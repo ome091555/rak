@@ -5041,6 +5041,7 @@ def upgrade_checkout(code):
         success_url=f'{base}/t/{code}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}',
         cancel_url=f'{base}/t/{code}/upgrade',
         metadata={'team_code': code},
+        customer_email=team['admin_email'] or None,
     )
     return redirect(checkout.url)
 

@@ -4941,6 +4941,7 @@ def upgrade_page(code):
     team = get_team(code)
     already_pro = is_pro(team)
     if already_pro and STRIPE_SECRET_KEY:
+        manage_btn = f'<div style="margin-top:12px"><a href="/t/{code}/billing-portal" style="font-size:13px;color:#888;text-decoration:underline">サブスクリプションを管理・解約</a></div>' if team['stripe_customer_id'] else ''
         body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
@@ -4948,6 +4949,7 @@ def upgrade_page(code):
     <h1 style="font-size:22px;margin-bottom:8px">Proプラン利用中</h1>
     <p style="color:#666;font-size:14px">すべての機能をご利用いただけます。</p>
     <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a></div>
+    {manage_btn}
   </div>
 </div>'''
         return page('プラン', body, code, active='home')
@@ -5000,6 +5002,22 @@ def upgrade_page(code):
   </div>
 </div>'''
     return page('Proプランへアップグレード', body, code, active='home')
+
+
+@app.route('/t/<code>/billing-portal')
+def billing_portal(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not STRIPE_SECRET_KEY or not team['stripe_customer_id']:
+        return redirect(url_for('upgrade_page', code=code))
+    import stripe
+    stripe.api_key = STRIPE_SECRET_KEY
+    portal = stripe.billing_portal.Session.create(
+        customer=team['stripe_customer_id'],
+        return_url=f"{request.host_url}t/{code}/upgrade"
+    )
+    return redirect(portal.url)
 
 
 @app.route('/t/<code>/upgrade/checkout', methods=['POST'])

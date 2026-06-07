@@ -5575,48 +5575,31 @@ function rakSetType(t){{
 
 @app.route('/stripe/webhook', methods=['POST'])
 def stripe_webhook():
+    import json as _json
+    if not STRIPE_SECRET_KEY:
+        return jsonify(ok=True)
+    payload = request.get_data()
+    sig = request.headers.get('Stripe-Signature', '')
+    # 署名検証
     try:
-        if not STRIPE_SECRET_KEY:
-            return jsonify(ok=True)
         import stripe
         stripe.api_key = STRIPE_SECRET_KEY
-        payload = request.get_data()
-        sig = request.headers.get('Stripe-Signature', '')
-        try:
-            event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
-        except Exception as e:
-            print(f'[WEBHOOK SIG ERROR] {type(e).__name__}: {e}')
-            return jsonify(error='invalid'), 400
+        stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
     except Exception as e:
-        print(f'[WEBHOOK INIT ERROR] {type(e).__name__}: {e}')
-        return jsonify(error='init error'), 500
-
-    def _stripe_val(obj, *keys):
-        """stripe objectまたはdictから値を安全に取得"""
-        for key in keys:
-            if obj is None:
-                return ''
-            if isinstance(obj, dict):
-                obj = obj.get(key)
-            else:
-                obj = getattr(obj, key, None)
-        if obj is None:
-            return ''
-        # stripe objectはIDを持つ場合がある
-        if hasattr(obj, 'id') and not isinstance(obj, str):
-            return str(obj.id)
-        return str(obj)
-
+        print(f'[WEBHOOK SIG ERROR] {type(e).__name__}: {e}')
+        return jsonify(error='invalid'), 400
+    # ペイロードはJSONとして直接扱う（stripe objectの型問題を回避）
     try:
-        event_type = _stripe_val(event, 'type')
+        ev = _json.loads(payload)
+        event_type = ev.get('type', '')
+        obj = ev.get('data', {}).get('object', {})
+        print(f'[WEBHOOK] type={event_type}')
+
         if event_type == 'checkout.session.completed':
-            s = event.data.object if hasattr(event, 'data') else event['data']['object']
-            team_code = _stripe_val(s, 'metadata', 'team_code') if hasattr(s, 'metadata') else ''
-            if not team_code and isinstance(s, dict):
-                team_code = ((s.get('metadata') or {})).get('team_code', '')
-            customer = _stripe_val(s, 'customer')
-            subscription = _stripe_val(s, 'subscription')
-            print(f'[WEBHOOK] checkout.session.completed team_code={team_code!r} customer={customer} subscription={subscription}')
+            team_code = str((obj.get('metadata') or {}).get('team_code', ''))
+            customer = str(obj.get('customer') or '')
+            subscription = str(obj.get('subscription') or '')
+            print(f'[WEBHOOK] team_code={team_code!r} customer={customer} subscription={subscription}')
             if team_code:
                 conn = get_db()
                 conn.execute(
@@ -5625,19 +5608,19 @@ def stripe_webhook():
                 )
                 conn.commit()
                 conn.close()
-                print(f'[WEBHOOK] plan updated to pro for team_code={team_code}')
+                print(f'[WEBHOOK] plan→pro team_code={team_code}')
 
         elif event_type == 'customer.subscription.deleted':
-            sub = event.data.object if hasattr(event, 'data') else event['data']['object']
-            sub_id = _stripe_val(sub, 'id')
+            sub_id = str(obj.get('id') or '')
             print(f'[WEBHOOK] subscription.deleted sub_id={sub_id}')
-            conn = get_db()
-            conn.execute(
-                'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
-                (sub_id,)
-            )
-            conn.commit()
-            conn.close()
+            if sub_id:
+                conn = get_db()
+                conn.execute(
+                    'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
+                    (sub_id,)
+                )
+                conn.commit()
+                conn.close()
 
     except Exception as e:
         print(f'[WEBHOOK ERROR] {type(e).__name__}: {e}')

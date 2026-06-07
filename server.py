@@ -5591,19 +5591,31 @@ def stripe_webhook():
         print(f'[WEBHOOK INIT ERROR] {type(e).__name__}: {e}')
         return jsonify(error='init error'), 500
 
+    def _stripe_val(obj, *keys):
+        """stripe objectまたはdictから値を安全に取得"""
+        for key in keys:
+            if obj is None:
+                return ''
+            if isinstance(obj, dict):
+                obj = obj.get(key)
+            else:
+                obj = getattr(obj, key, None)
+        if obj is None:
+            return ''
+        # stripe objectはIDを持つ場合がある
+        if hasattr(obj, 'id') and not isinstance(obj, str):
+            return str(obj.id)
+        return str(obj)
+
     try:
-        event_type = event.get('type') if isinstance(event, dict) else event.type
+        event_type = _stripe_val(event, 'type')
         if event_type == 'checkout.session.completed':
-            s = event['data']['object'] if isinstance(event, dict) else event.data.object
-            metadata = s.get('metadata') if hasattr(s, 'get') else getattr(s, 'metadata', {})
-            team_code = (metadata or {}).get('team_code', '')
-            customer = s.get('customer') if hasattr(s, 'get') else getattr(s, 'customer', '')
-            subscription = s.get('subscription') if hasattr(s, 'get') else getattr(s, 'subscription', '')
-            # stripe objectの場合はIDのみ抽出
-            if hasattr(customer, 'id'): customer = customer.id
-            if hasattr(subscription, 'id'): subscription = subscription.id
-            customer = str(customer or '')
-            subscription = str(subscription or '')
+            s = event.data.object if hasattr(event, 'data') else event['data']['object']
+            team_code = _stripe_val(s, 'metadata', 'team_code') if hasattr(s, 'metadata') else ''
+            if not team_code and isinstance(s, dict):
+                team_code = ((s.get('metadata') or {})).get('team_code', '')
+            customer = _stripe_val(s, 'customer')
+            subscription = _stripe_val(s, 'subscription')
             print(f'[WEBHOOK] checkout.session.completed team_code={team_code!r} customer={customer} subscription={subscription}')
             if team_code:
                 conn = get_db()
@@ -5616,9 +5628,8 @@ def stripe_webhook():
                 print(f'[WEBHOOK] plan updated to pro for team_code={team_code}')
 
         elif event_type == 'customer.subscription.deleted':
-            sub = event['data']['object'] if isinstance(event, dict) else event.data.object
-            sub_id = sub.get('id') if hasattr(sub, 'get') else getattr(sub, 'id', '')
-            sub_id = str(sub_id or '')
+            sub = event.data.object if hasattr(event, 'data') else event['data']['object']
+            sub_id = _stripe_val(sub, 'id')
             print(f'[WEBHOOK] subscription.deleted sub_id={sub_id}')
             conn = get_db()
             conn.execute(

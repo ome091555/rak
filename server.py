@@ -5592,27 +5592,38 @@ def stripe_webhook():
         return jsonify(error='init error'), 500
 
     try:
-        if event['type'] == 'checkout.session.completed':
-            s = event['data']['object']
-            team_code = (s.get('metadata') or {}).get('team_code', '')
-            print(f'[WEBHOOK] checkout.session.completed team_code={team_code!r} customer={s.get("customer")} subscription={s.get("subscription")}')
+        event_type = event.get('type') if isinstance(event, dict) else event.type
+        if event_type == 'checkout.session.completed':
+            s = event['data']['object'] if isinstance(event, dict) else event.data.object
+            metadata = s.get('metadata') if hasattr(s, 'get') else getattr(s, 'metadata', {})
+            team_code = (metadata or {}).get('team_code', '')
+            customer = s.get('customer') if hasattr(s, 'get') else getattr(s, 'customer', '')
+            subscription = s.get('subscription') if hasattr(s, 'get') else getattr(s, 'subscription', '')
+            # stripe objectの場合はIDのみ抽出
+            if hasattr(customer, 'id'): customer = customer.id
+            if hasattr(subscription, 'id'): subscription = subscription.id
+            customer = str(customer or '')
+            subscription = str(subscription or '')
+            print(f'[WEBHOOK] checkout.session.completed team_code={team_code!r} customer={customer} subscription={subscription}')
             if team_code:
                 conn = get_db()
                 conn.execute(
                     'UPDATE teams SET plan="pro", stripe_customer_id=?, stripe_subscription_id=? WHERE team_code=?',
-                    (s.get('customer') or '', s.get('subscription') or '', team_code.upper())
+                    (customer, subscription, team_code.upper())
                 )
                 conn.commit()
                 conn.close()
                 print(f'[WEBHOOK] plan updated to pro for team_code={team_code}')
 
-        elif event['type'] == 'customer.subscription.deleted':
-            sub = event['data']['object']
-            print(f'[WEBHOOK] subscription.deleted sub_id={sub["id"]}')
+        elif event_type == 'customer.subscription.deleted':
+            sub = event['data']['object'] if isinstance(event, dict) else event.data.object
+            sub_id = sub.get('id') if hasattr(sub, 'get') else getattr(sub, 'id', '')
+            sub_id = str(sub_id or '')
+            print(f'[WEBHOOK] subscription.deleted sub_id={sub_id}')
             conn = get_db()
             conn.execute(
                 'UPDATE teams SET plan="free", stripe_subscription_id="" WHERE stripe_subscription_id=?',
-                (sub['id'],)
+                (sub_id,)
             )
             conn.commit()
             conn.close()

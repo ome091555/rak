@@ -1593,7 +1593,7 @@ footer a:hover{{color:#94a3b8}}
         </table>
       </div>
       <div style="margin-top:16px;padding:14px 18px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;font-size:13px;color:#92400e;line-height:1.7">
-        <strong>集金・AI・ユニフォーム管理をまとめて</strong>、料金は他社Aの3分の1。チームの事務作業をひとつのアプリで完結できるのはRakだけです。
+        <strong>集金・AI・ユニフォーム管理をまとめて</strong>、料金は他社Aの3分の1。チームの事務作業をひとつのアプリで完結できるのは<span style="white-space:nowrap">Rakだけです。</span>
       </div>
     </div>
 

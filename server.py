@@ -1228,11 +1228,10 @@ button{{font-family:inherit;cursor:pointer}}
 .feat-grid{{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
 .fcard{{border-radius:16px;padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03);transition:transform .14s,box-shadow .14s}}
 .fcard:hover{{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.08)}}
-.fcard-pro{{background:linear-gradient(145deg,#1c1208,#0f0a00);border:1px solid rgba(245,158,11,.35);box-shadow:0 4px 18px rgba(245,158,11,.08)}}
-.fcard-pro:hover{{box-shadow:0 12px 30px rgba(245,158,11,.22);transform:translateY(-3px)}}
-.fcard-pro .fcard-ic{{background:rgba(245,158,11,.15)}}
-.fcard-pro .fcard-title{{color:#fff}}
-.fcard-pro .fcard-desc{{color:#a8a29e}}
+.fcard-pro{{background:#fffdf8;border:1px solid rgba(245,158,11,.3);border-top:3px solid var(--rak-amber);box-shadow:0 4px 16px rgba(245,158,11,.08)}}
+.fcard-pro:hover{{box-shadow:0 10px 28px rgba(245,158,11,.18);transform:translateY(-3px)}}
+.fcard-pro .fcard-title{{color:#0f172a}}
+.fcard-pro .fcard-desc{{color:#525252}}
 .fcard-ic{{display:inline-flex;color:var(--rak-amber);background:var(--rak-amber-tint);border-radius:14px;padding:12px}}
 .fcard-ic svg{{width:28px;height:28px}}
 .fcard-title{{font-size:14px;font-weight:800;line-height:1.4;color:#0f172a}}

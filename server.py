@@ -2905,7 +2905,7 @@ def admin_dash(code):
         {timeline_rows}
         <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6;flex-wrap:wrap">
           <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">＋ 予定追加</a>
-          {f'<a href="/t/{code}/admin/ai-schedule" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#d97706;color:#fff">✦ AI作成</a>' if is_pro(team) else ''}
+          {'<a href="/t/' + code + '/admin/ai-schedule" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#d97706;color:#fff">✦ AI作成</a>' if is_pro(team) else '<a href="/t/' + code + '/upgrade" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#fff;color:#d97706;border:1.5px solid #d97706">✦ AI作成</a>'}
           <a href="/t/{code}/schedule" class="btn btn-outline" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">カレンダー</a>
         </div>
       </div>

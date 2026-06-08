@@ -4597,7 +4597,6 @@ def order_form_view(code, form_id):
     {deadline_html}
     <div style="margin-top:12px">
       <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
-      <a href="/t/{code}/admin/orders/{form_id}/csv?fmt=csv" class="btn btn-gray btn-sm">📄 CSV</a>
     </div>
   </div>
 

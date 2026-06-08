@@ -1438,8 +1438,8 @@ footer a:hover{{color:#94a3b8}}
         <div class="fcard-title">AI文章<br>生成</div>
         <div class="fcard-desc">お知らせ・報告書・保護者連絡などをAIが自動で作成</div>
       </div>
-      <div class="fcard fcard-pro" style="border:1.5px solid #7c3aed">
-        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic" style="color:#a78bfa">{IC_CAL}</span></div>
+      <div class="fcard fcard-pro">
+        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic">{IC_CAL}</span></div>
         <div class="fcard-title">AIスケジュール<br>自動生成</div>
         <div class="fcard-desc">制約を入力するとAIが仮予定を自動作成</div>
       </div>
@@ -1484,7 +1484,7 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ ユニフォーム管理</div>
           <div class="acc">＋ 会計・収支記録</div>
           <div class="acc">＋ AI文章生成（お知らせ・報告書・保護者連絡）</div>
-          <div class="acc" style="color:#a78bfa">＋ AIスケジュール自動生成</div>
+          <div class="acc">＋ AIスケジュール自動生成</div>
           <div style="color:#aaa;margin-top:6px">＋ メンバー無制限</div>
           <div style="color:#aaa">＋ Excelエクスポート</div>
         </div>

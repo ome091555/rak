@@ -1097,6 +1097,24 @@ def legal_tokushoho():
     return tokushoho_html()
 
 
+# ── SEO ───────────────────────────────────────────────────────────
+
+@app.route('/robots.txt')
+def robots_txt():
+    return app.response_class(
+        'User-agent: *\nAllow: /\nDisallow: /t/\nSitemap: https://www.rakapp.jp/sitemap.xml\n',
+        mimetype='text/plain'
+    )
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.rakapp.jp/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.rakapp.jp/create</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+</urlset>'''
+    return app.response_class(xml, mimetype='application/xml')
+
 # ── Home / Create ─────────────────────────────────────────────────
 
 @app.route('/')
@@ -1122,7 +1140,21 @@ def home():
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 {FAVICON_LINK}
-<title>Rak — チーム運営の"めんどくさい"を、ぜんぶラクに。</title>
+<title>Rak — チーム運営をラクにするアプリ | スケジュール・出欠・集金をひとつに</title>
+<meta name="description" content="Rakはスポーツチーム・部活・サークルの運営をまるごと効率化するチーム管理アプリです。スケジュール共有・出欠確認・集金管理・AI文章作成をひとつにまとめて、事務作業をゼロに近づけます。無料から始められます。">
+<meta name="keywords" content="チーム管理アプリ,スポーツチーム,スケジュール管理,出欠確認,集金管理,部活管理,少年野球,ソフトボール,サッカー,バスケ">
+<link rel="canonical" href="https://www.rakapp.jp/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.rakapp.jp/">
+<meta property="og:title" content="Rak — チーム運営をラクにするアプリ">
+<meta property="og:description" content="スケジュール・出欠・集金・AIをひとつに。スポーツチーム・部活・サークルの事務作業をまるごと効率化。無料から始められます。">
+<meta property="og:image" content="https://www.rakapp.jp/static/ogp.png">
+<meta property="og:site_name" content="Rak">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rak — チーム運営をラクにするアプリ">
+<meta name="twitter:description" content="スケジュール・出欠・集金・AIをひとつに。無料から始められます。">
+<meta name="twitter:image" content="https://www.rakapp.jp/static/ogp.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">

@@ -1501,39 +1501,39 @@ footer a:hover{{color:#94a3b8}}
           <tr>
             <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:40%"></th>
             <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">従来の方法</th>
-            <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#111;border-bottom:2px solid #111;border-radius:10px 10px 0 0">Rak</th>
+            <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#d97706;border-bottom:2px solid #d97706;border-radius:10px 10px 0 0">Rak</th>
           </tr>
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール共有</td>
             <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">投稿が流れて埋もれる</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
             <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">リアクション集計・手入力</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">集金・費用管理</td>
             <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">表計算で手入力・追いかけ</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">お知らせ文章作成</td>
             <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">毎回一から手書き</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓ <span style="font-size:10px;font-weight:700">AI</span></td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール自動作成</td>
             <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓ <span style="font-size:10px;font-weight:700">AI</span></td>
           </tr>
           <tr>
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">すべてひとつで完結</td>
             <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
-            <td style="padding:14px 16px;text-align:center;background:#fafafa;border-radius:0 0 10px 10px;font-size:18px">✓</td>
+            <td style="padding:14px 16px;text-align:center;background:#fffbeb;border-radius:0 0 10px 10px;font-size:18px;color:#d97706">✓</td>
           </tr>
         </tbody>
       </table>
@@ -1550,44 +1550,44 @@ footer a:hover{{color:#94a3b8}}
             <tr>
               <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:44%"></th>
               <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">他社A</th>
-              <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#111;border-bottom:2px solid #111;border-radius:10px 10px 0 0">Rak</th>
+              <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#d97706;border-bottom:2px solid #d97706;border-radius:10px 10px 0 0">Rak</th>
             </tr>
           </thead>
           <tbody>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール共有</td>
               <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
               <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">集金・費用管理</td>
               <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">ユニフォーム・備品管理</td>
               <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">AI文章・スケジュール自動生成</td>
               <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓ <span style="font-size:10px;font-weight:700">AI</span></td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">アプリ内広告</td>
               <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:600">あり</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:13px;color:#22c55e;font-weight:600">なし</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:13px;color:#22c55e;font-weight:600">なし</td>
             </tr>
             <tr>
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">Proプラン料金</td>
               <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:700">¥2,980/月</td>
-              <td style="padding:14px 16px;text-align:center;background:#fafafa;border-radius:0 0 10px 10px;font-size:13px;color:#111;font-weight:800">¥980/月</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;border-radius:0 0 10px 10px;font-size:13px;color:#d97706;font-weight:800">¥980/月</td>
             </tr>
           </tbody>
         </table>

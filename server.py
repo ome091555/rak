@@ -2119,13 +2119,16 @@ def schedule(code):
     is_this_month = (vy == now.year and vm == now.month)
     today_btn = '' if is_this_month else f'<a href="/t/{code}/schedule" style="font-size:12px;color:#d97706;padding:3px 10px;border:1.5px solid #d97706;border-radius:8px;text-decoration:none">今月</a>'
     new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 追加</a>' if admin else ''
+    ai_btn = ''
+    if admin and is_pro(team):
+        ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#7c3aed;color:#fff">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
     <div><span class="section-label">スケジュール</span></div>
-    {new_btn}
+    <div style="display:flex;gap:8px">{ai_btn}{new_btn}</div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -2148,6 +2151,219 @@ function scrollToDate(date) {{
 }}
 </script>'''
     return page('スケジュール', body, code, active='schedule')
+
+@app.route('/t/<code>/admin/ai-schedule', methods=['GET', 'POST'])
+def admin_ai_schedule(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='schedule')
+
+    import json as _json
+    sess_key = f'ai_sched_{code}'
+    now = datetime.now(JST)
+    default_ym = f'{now.year}-{now.month + 1:02d}' if now.month < 12 else f'{now.year + 1}-01'
+
+    error = ''
+    success_msg = ''
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+
+        if action == 'generate':
+            constraints = request.form.get('constraints', '').strip()
+            target_ym = request.form.get('target_ym', default_ym).strip()
+            if not constraints:
+                error = '制約・要望を入力してください'
+            elif not ANTHROPIC_API_KEY:
+                error = 'ANTHROPIC_API_KEYが設定されていません'
+            elif not HAS_ANTHROPIC:
+                error = 'anthropicライブラリがインストールされていません'
+            else:
+                try:
+                    ty, tm = int(target_ym[:4]), int(target_ym[5:7])
+                    target_label = f'{ty}年{tm}月'
+                    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+                    message = client.messages.create(
+                        model='claude-haiku-4-5-20251001',
+                        max_tokens=1500,
+                        messages=[{
+                            'role': 'user',
+                            'content': f'''あなたはスポーツチームのスケジュール管理AIです。
+以下の制約・要望をもとに、{target_label}の練習・試合スケジュールを提案してください。
+
+制約・要望：
+{constraints}
+
+以下のJSON配列形式で返してください（6〜12件程度）：
+[
+  {{"title": "...", "date": "YYYY-MM-DD", "time": "HH:MM", "end_time": "HH:MM", "location": "...", "note": "..."}},
+  ...
+]
+
+ルール：
+- dateは{target_label}内（{ty}-{tm:02d}-01〜{ty}-{tm:02d}-28以降最終日）に収める
+- timeとend_timeは不明なら空文字列
+- locationは不明なら空文字列
+- noteには参加対象（男子・女子・全体など）や特記事項を簡潔に書く
+- JSONのみ返す。説明・マークダウン不要。'''
+                        }]
+                    )
+                    text = message.content[0].text.strip()
+                    if text.startswith('```'):
+                        text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
+                    events = _json.loads(text)
+                    if not isinstance(events, list):
+                        raise ValueError('not a list')
+                    session[sess_key] = {
+                        'events': events,
+                        'constraints': constraints,
+                        'target_ym': target_ym
+                    }
+                    return redirect(url_for('admin_ai_schedule', code=code))
+                except Exception as e:
+                    error = f'AI生成に失敗しました: {str(e)}'
+
+        elif action == 'register_one':
+            idx = request.form.get('idx', '')
+            sess = session.get(sess_key, {})
+            events = sess.get('events', [])
+            try:
+                idx = int(idx)
+                if 0 <= idx < len(events):
+                    ev = events[idx]
+                    title = str(ev.get('title', '')).strip()
+                    date = str(ev.get('date', '')).strip()
+                    time = str(ev.get('time', '')).strip()
+                    end_time = str(ev.get('end_time', '')).strip()
+                    location = str(ev.get('location', '')).strip()
+                    note = str(ev.get('note', '')).strip()
+                    if title and date:
+                        conn = get_db()
+                        conn.execute(
+                            'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                            (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time)
+                        )
+                        conn.commit()
+                        conn.close()
+                        events.pop(idx)
+                        sess['events'] = events
+                        session[sess_key] = sess
+            except Exception:
+                pass
+            return redirect(url_for('admin_ai_schedule', code=code))
+
+        elif action == 'register_all':
+            sess = session.get(sess_key, {})
+            for ev in sess.get('events', []):
+                title = str(ev.get('title', '')).strip()
+                date = str(ev.get('date', '')).strip()
+                time = str(ev.get('time', '')).strip()
+                end_time = str(ev.get('end_time', '')).strip()
+                location = str(ev.get('location', '')).strip()
+                note = str(ev.get('note', '')).strip()
+                if title and date:
+                    conn = get_db()
+                    conn.execute(
+                        'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                        (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time)
+                    )
+                    conn.commit()
+                    conn.close()
+            session.pop(sess_key, None)
+            return redirect(url_for('schedule', code=code))
+
+        elif action == 'clear':
+            session.pop(sess_key, None)
+            return redirect(url_for('admin_ai_schedule', code=code))
+
+    sess = session.get(sess_key, {})
+    pending_events = sess.get('events', [])
+    saved_constraints = sess.get('constraints', '')
+    saved_ym = sess.get('target_ym', default_ym)
+
+    event_cards = ''
+    for i, ev in enumerate(pending_events):
+        title = str(ev.get('title', ''))
+        date = str(ev.get('date', ''))
+        time = str(ev.get('time', ''))
+        end_time = str(ev.get('end_time', ''))
+        location = str(ev.get('location', ''))
+        note = str(ev.get('note', ''))
+        time_str = ''
+        if time:
+            time_str = f'　{time}〜{end_time}' if end_time else f'　{time}'
+        detail = ''
+        if location:
+            detail += f'<div style="font-size:13px;color:#666;margin-top:2px">📍 {location}</div>'
+        if note:
+            detail += f'<div style="font-size:13px;color:#666;margin-top:2px">{note}</div>'
+        event_cards += f'''
+        <div class="card-sm" style="border-left:3px solid #7c3aed">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:16px">{title}</div>
+              <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date(date)}{time_str}</div>
+              {detail}
+            </div>
+            <form method="POST" style="flex-shrink:0">
+              <input type="hidden" name="action" value="register_one">
+              <input type="hidden" name="idx" value="{i}">
+              <button class="btn btn-sm btn-blue" type="submit">登録</button>
+            </form>
+          </div>
+        </div>'''
+
+    gen_section = ''
+    if pending_events:
+        gen_section = f'''
+        <div class="card" style="margin-top:16px;border:2px solid #7c3aed">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700;color:#7c3aed">✦ AI生成スケジュール（{len(pending_events)}件）</div>
+            <form method="POST" style="margin:0">
+              <input type="hidden" name="action" value="clear">
+              <button class="btn btn-sm btn-gray" type="submit" style="font-size:12px">クリア</button>
+            </form>
+          </div>
+          <div style="font-size:12px;color:#888;margin-bottom:12px">各予定の「登録」ボタンで個別登録、または下の「全て登録」で一括登録できます。</div>
+          {event_cards}
+          <form method="POST" style="margin-top:16px">
+            <input type="hidden" name="action" value="register_all">
+            <button class="btn btn-blue btn-block" type="submit">全て登録してスケジュールへ →</button>
+          </form>
+        </div>'''
+
+    body = f'''
+<div class="container" style="max-width:560px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <span class="section-label" style="color:#7c3aed">✦ AI予定作成</span>
+    <span style="font-size:11px;background:#f3e8ff;color:#7c3aed;padding:3px 8px;border-radius:20px">Pro機能</span>
+  </div>
+  {f'<div class="msg-err">{error}</div>' if error else ''}
+  <div class="card">
+    <form method="POST">
+      <input type="hidden" name="action" value="generate">
+      <label>対象月</label>
+      <input type="month" name="target_ym" value="{saved_ym}" required style="font-size:16px">
+      <label style="margin-top:12px">制約・要望 *</label>
+      <textarea name="constraints" rows="6" placeholder="例：
+・体育館は土日のみ使用可（第2日曜は使用不可）
+・7月15日は外部コーチ不在
+・男子チームは7月下旬に練習試合希望
+・女子チームは毎週水曜放課後に自主練習あり
+・月4回の全体練習を組み込む" style="font-size:13px">{saved_constraints}</textarea>
+      <button class="btn btn-block" type="submit" style="background:#7c3aed;color:#fff;margin-top:8px">✦ AIでスケジュール生成</button>
+    </form>
+  </div>
+  {gen_section}
+  <div style="display:flex;justify-content:space-between;margin-top:12px">
+    <a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュールに戻る</a>
+    <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
+  </div>
+</div>'''
+    return page('AI予定作成', body, code, active='schedule')
+
 
 @app.route('/t/<code>/rsvp/<event_id>', methods=['POST'])
 def rsvp(code, event_id):

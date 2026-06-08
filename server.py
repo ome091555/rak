@@ -1974,26 +1974,25 @@ def member_home(code):
 # ── Schedule ──────────────────────────────────────────────────────
 
 EVENT_COLORS = [
-    ('#3b82f6', '青', '男子・練習'),
-    ('#ef4444', '赤', '女子・試合'),
-    ('#f97316', '橙', '練習試合'),
-    ('#22c55e', '緑', '遠征・イベント'),
-    ('#a855f7', '紫', '記念・特別'),
-    ('#6b7280', 'グレー', 'その他'),
+    ('#3b82f6', '青'),
+    ('#ef4444', '赤'),
+    ('#f97316', '橙'),
+    ('#22c55e', '緑'),
+    ('#a855f7', '紫'),
+    ('#6b7280', 'グレー'),
 ]
 
 def color_picker_html(selected=''):
     items = ''
-    for hex_color, label, desc in EVENT_COLORS:
+    for hex_color, label in EVENT_COLORS:
         checked = 'checked' if selected == hex_color else ''
         ring = f'box-shadow:0 0 0 3px #fff,0 0 0 5px {hex_color}' if selected == hex_color else ''
-        items += f'''<label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+        items += f'''<label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;margin:0">
           <input type="radio" name="event_color" value="{hex_color}" {checked} style="display:none" onchange="document.querySelectorAll('.cpick-dot').forEach(d=>d.style.boxShadow='');this.nextElementSibling.style.boxShadow='0 0 0 3px #fff,0 0 0 5px '+this.value">
-          <div class="cpick-dot" style="width:28px;height:28px;border-radius:50%;background:{hex_color};cursor:pointer;{ring};transition:box-shadow .15s"></div>
-          <span style="font-size:10px;color:#666;white-space:nowrap">{label}</span>
+          <div class="cpick-dot" style="width:28px;height:28px;border-radius:50%;background:{hex_color};cursor:pointer;{ring};transition:box-shadow .15s;flex-shrink:0"></div>
+          <span style="font-size:10px;color:#666;white-space:nowrap;line-height:1">{label}</span>
         </label>'''
-    return f'''<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px">{items}</div>
-<div style="font-size:11px;color:#aaa;margin-bottom:12px">青=男子/練習　赤=女子/試合　橙=練習試合　緑=遠征</div>'''
+    return f'<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">{items}</div>'
 
 def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
     import calendar as _cal
@@ -2297,13 +2296,12 @@ def admin_ai_schedule(code):
 ]
 
 カラー選定ルール（colorフィールドに6桁HEXで設定）：
-- 男子の練習・活動：#3b82f6（青）
-- 女子の練習・活動：#ef4444（赤）
+- 通常練習・レギュラー活動：#3b82f6（青）
 - 試合・公式戦：#ef4444（赤）
-- 練習試合：#f97316（橙）
-- 遠征・合宿・イベント：#22c55e（緑）
+- 練習試合・オープン戦：#f97316（橙）
+- 遠征・合宿・特別イベント：#22c55e（緑）
+- 記念行事・特別な活動：#a855f7（紫）
 - その他・判断できない場合：#6b7280（グレー）
-- 男女混合/全体の練習：#3b82f6（青）
 
 その他ルール：
 - dateは{target_label}内（{ty}-{tm:02d}-01〜{ty}-{tm:02d}-28以降最終日）に収める

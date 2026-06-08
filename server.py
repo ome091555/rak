@@ -2124,7 +2124,7 @@ def schedule(code):
     new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 追加</a>' if admin else ''
     ai_btn = ''
     if admin and is_pro(team):
-        ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#7c3aed;color:#fff">✦ AI予定作成</a>'
+        ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
     body = f'''
@@ -2303,7 +2303,7 @@ def admin_ai_schedule(code):
         if note:
             detail += f'<div style="font-size:13px;color:#666;margin-top:2px">{note}</div>'
         event_cards += f'''
-        <div class="card-sm" style="border-left:3px solid #7c3aed">
+        <div class="card-sm" style="border-left:3px solid #d97706">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{title}</div>
@@ -2321,9 +2321,9 @@ def admin_ai_schedule(code):
     gen_section = ''
     if pending_events:
         gen_section = f'''
-        <div class="card" style="margin-top:16px;border:2px solid #7c3aed">
+        <div class="card" style="margin-top:16px;border:2px solid #d97706">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-weight:700;color:#7c3aed">✦ AI生成スケジュール（{len(pending_events)}件）</div>
+            <div style="font-weight:700;color:#d97706">✦ AI生成スケジュール（{len(pending_events)}件）</div>
             <form method="POST" style="margin:0">
               <input type="hidden" name="action" value="clear">
               <button class="btn btn-sm btn-gray" type="submit" style="font-size:12px">クリア</button>
@@ -2340,8 +2340,8 @@ def admin_ai_schedule(code):
     body = f'''
 <div class="container" style="max-width:560px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <span class="section-label" style="color:#7c3aed">✦ AI予定作成</span>
-    <span style="font-size:11px;background:#f3e8ff;color:#7c3aed;padding:3px 8px;border-radius:20px">Pro機能</span>
+    <span class="section-label" style="color:#d97706">✦ AI予定作成</span>
+    <span style="font-size:11px;background:#fef3c7;color:#d97706;padding:3px 8px;border-radius:20px">Pro機能</span>
   </div>
   {f'<div class="msg-err">{error}</div>' if error else ''}
   <div class="card">
@@ -2356,7 +2356,7 @@ def admin_ai_schedule(code):
 ・男子チームは7月下旬に練習試合希望
 ・女子チームは毎週水曜放課後に自主練習あり
 ・月4回の全体練習を組み込む" style="font-size:13px">{saved_constraints}</textarea>
-      <button class="btn btn-block" type="submit" style="background:#7c3aed;color:#fff;margin-top:8px">✦ AIでスケジュール生成</button>
+      <button class="btn btn-block" type="submit" style="background:#d97706;color:#fff;margin-top:8px">✦ AIでスケジュール生成</button>
     </form>
   </div>
   {gen_section}

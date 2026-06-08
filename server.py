@@ -1455,6 +1455,79 @@ footer a:hover{{color:#94a3b8}}
   </div>
 </section>
 
+<section style="padding:72px 24px;background:#fff">
+  <div style="max-width:780px;margin:0 auto">
+    <span class="sec-label">WHY RAK</span>
+    <div class="sec-title">LINEとExcelを<br>卒業する理由。</div>
+    <div class="sec-sub" style="margin-bottom:40px">「とりあえずLINE」では、情報が流れる。「とりあえずExcel」では、手間が増える。</div>
+
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;border-collapse:collapse;min-width:480px">
+        <thead>
+          <tr>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:40%"></th>
+            <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">LINE＋Excel</th>
+            <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#111;border-bottom:2px solid #111;border-radius:10px 10px 0 0">Rak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール共有</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">投稿が流れて埋もれる</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">スタンプ集計・手入力</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">集金・費用管理</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">Excelで手入力・追いかけ</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">お知らせ文章作成</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">毎回一から手書き</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール自動作成</td>
+            <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+          </tr>
+          <tr>
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">すべてひとつで完結</td>
+            <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
+            <td style="padding:14px 16px;text-align:center;background:#fafafa;border-radius:0 0 10px 10px;font-size:18px">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:32px;background:#f8f9fb;border-radius:14px;padding:24px 28px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:6px">Rakだけができること</div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.9">
+          AIが予定を自動生成<br>
+          AIが連絡文を自動作成<br>
+          集金・注文・会計をアプリ内で完結<br>
+          カラーコードで活動を視覚管理
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:6px">こんな人に選ばれています</div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.9">
+          集金のたびにLINEを送るのが辛い<br>
+          Excelの管理が追いつかない<br>
+          コーチ業より事務作業が多い<br>
+          メンバーへの連絡が面倒
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="pricing" id="pricing">
   <div style="max-width:780px;margin:0 auto">
     <span class="sec-label">PRICING</span>

@@ -1542,7 +1542,7 @@ footer a:hover{{color:#94a3b8}}
     <!-- 他社A vs Rak -->
     <div style="margin-top:48px">
       <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#9ca3af;text-transform:uppercase;margin-bottom:8px">VS 他社A</div>
-      <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:6px">スポーツアプリ専門と<br>何が違うのか？</div>
+      <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:6px">スポーツアプリ専門と何が違うのか？</div>
       <div style="font-size:14px;color:#6b7280;margin-bottom:24px">機能は同じでも、料金は<strong style="color:#111">3分の1</strong>。しかも他社Aにない機能がある。</div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table style="width:100%;border-collapse:collapse;min-width:460px">

@@ -1438,13 +1438,18 @@ footer a:hover{{color:#94a3b8}}
         <div class="fcard-title">AI文章<br>生成</div>
         <div class="fcard-desc">お知らせ文をAIが自動で作成</div>
       </div>
+      <div class="fcard fcard-pro" style="border:1.5px solid #7c3aed">
+        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic" style="color:#a78bfa">{IC_CAL}</span></div>
+        <div class="fcard-title">AIスケジュール<br>自動生成</div>
+        <div class="fcard-desc">制約を入力するとAIが仮予定を自動作成</div>
+      </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic">{IC_USERS}</span></div>
+        <div class="fcard-top"><span class="fcard-num">10</span><span class="fcard-ic">{IC_USERS}</span></div>
         <div class="fcard-title">ユニフォーム<br>管理</div>
         <div class="fcard-desc">サイズ・枚数の注文を一括管理</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">10</span><span class="fcard-ic">{IC_HOME}</span></div>
+        <div class="fcard-top"><span class="fcard-num">11</span><span class="fcard-ic">{IC_HOME}</span></div>
         <div class="fcard-title">メンバー<br>無制限</div>
         <div class="fcard-desc">何名でも登録できる大規模対応</div>
       </div>
@@ -1479,6 +1484,7 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ ユニフォーム管理</div>
           <div class="acc">＋ 会計・収支記録</div>
           <div class="acc">＋ AI文章生成</div>
+          <div class="acc" style="color:#a78bfa">＋ AIスケジュール自動生成</div>
           <div style="color:#aaa;margin-top:6px">＋ メンバー無制限</div>
           <div style="color:#aaa">＋ Excelエクスポート</div>
         </div>

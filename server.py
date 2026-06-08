@@ -5394,14 +5394,13 @@ def upgrade_page(code):
             yearly_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout" style="margin-top:10px">
       <input type="hidden" name="plan" value="yearly">
-      <button class="btn btn-block" type="submit" style="font-size:16px;padding:15px;background:#fff;color:#d97706;border:1.5px solid #f59e0b">年額プラン ¥9,800/年（2ヶ月分お得）</button>
+      <button class="btn btn-block" type="submit" style="font-size:15px;padding:15px;background:#fff;color:#d97706;border:1.5px solid #f59e0b">14日間無料で試す（年額 ¥9,800）</button>
     </form>'''
         checkout_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout">
       <input type="hidden" name="plan" value="monthly">
-      <button class="btn btn-blue btn-block" type="submit" style="font-size:18px;padding:16px">月額プラン ¥980/月</button>
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:17px;padding:16px;font-weight:800">14日間無料で試す → ¥980/月</button>
     </form>{yearly_btn}
-    <div style="font-size:12px;color:#aaa;margin-top:8px">いつでもキャンセル可能。クレジットカード払い。</div>
     '''
     else:
         checkout_btn = '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
@@ -5409,11 +5408,18 @@ def upgrade_page(code):
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   {trial_banner}
-  <div class="card" style="text-align:center;padding:40px 24px">
-    <div style="font-size:14px;color:#d97706;font-weight:700;margin-bottom:8px">RakPro</div>
-    <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:4px">¥980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
-    <div style="font-size:13px;color:#888;margin-bottom:28px">年払い ¥9,800（2ヶ月分お得）</div>
-    <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:28px;text-align:left">
+  <div class="card" style="text-align:center;padding:32px 24px 28px">
+
+    <div style="display:inline-block;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;font-size:13px;font-weight:800;padding:6px 18px;border-radius:999px;margin-bottom:16px;letter-spacing:.04em">
+      🎁 まず14日間、無料でお試し
+    </div>
+
+    <div style="font-size:13px;color:#d97706;font-weight:700;margin-bottom:6px">RakPro</div>
+    <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:2px">¥980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
+    <div style="font-size:12px;color:#888;margin-bottom:6px">年払い ¥9,800（2ヶ月分お得）</div>
+    <div style="font-size:12px;color:#10b981;font-weight:600;margin-bottom:24px">14日間は完全無料 — 課金は試用後から</div>
+
+    <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left">
       <div style="font-size:13px;color:#444;line-height:2.4">
         {_CHK} 集金・支払い管理<br>
         {_CHK} 注文フォーム<br>
@@ -5425,7 +5431,15 @@ def upgrade_page(code):
         {_CHK} 優先サポート
       </div>
     </div>
+
     {checkout_btn}
+
+    <div style="background:#f0fdf4;border-radius:10px;padding:12px 16px;margin-top:16px;font-size:12px;color:#065f46;line-height:1.8">
+      ✅ 14日間の無料トライアル付き<br>
+      ✅ いつでもキャンセル可能<br>
+      ✅ クレジットカード払い
+    </div>
+
     <div style="margin-top:20px;border-top:1px solid #eee;padding-top:18px">
       <p style="font-size:12px;color:#aaa;margin-bottom:10px">プロモコードをお持ちの方</p>
       <form method="POST" action="/t/{code}/upgrade/promo" style="display:flex;gap:8px">

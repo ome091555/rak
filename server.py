@@ -2158,9 +2158,12 @@ def schedule(code):
     new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 追加</a>' if admin else ''
     ai_btn = ''
     excel_btn = ''
-    if admin and is_pro(team):
-        ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
-        excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">📥 Excel</a>'
+    if admin:
+        if is_pro(team):
+            ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
+            excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">📥 Excel</a>'
+        else:
+            ai_btn = f'<a href="/t/{code}/upgrade" class="btn btn-sm" style="background:#f5f5f5;color:#d97706;border:1px solid #d97706">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
     body = f'''
@@ -2900,9 +2903,10 @@ def admin_dash(code):
       <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定・締切</summary>
       <div class="atile-body" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
         {timeline_rows}
-        <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6">
-          <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px">＋ 予定追加</a>
-          <a href="/t/{code}/schedule" class="btn btn-outline" style="flex:1;font-size:13px;padding:9px 10px">カレンダー</a>
+        <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6;flex-wrap:wrap">
+          <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">＋ 予定追加</a>
+          {f'<a href="/t/{code}/admin/ai-schedule" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#d97706;color:#fff">✦ AI作成</a>' if is_pro(team) else ''}
+          <a href="/t/{code}/schedule" class="btn btn-outline" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">カレンダー</a>
         </div>
       </div>
     </details>

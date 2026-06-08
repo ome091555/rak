@@ -340,12 +340,21 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN admin_email TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN trial_end TEXT DEFAULT ""',
         'ALTER TABLE events ADD COLUMN event_color TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN viewer_token TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
             conn.commit()
         except Exception:
             pass
+    # 既存チームに viewer_token が未設定のものへ自動付与
+    import secrets as _secrets
+    rows = conn.execute("SELECT id FROM teams WHERE viewer_token='' OR viewer_token IS NULL").fetchall()
+    for row in rows:
+        token = _secrets.token_urlsafe(16)
+        conn.execute("UPDATE teams SET viewer_token=? WHERE id=?", (token, row['id']))
+    if rows:
+        conn.commit()
     conn.close()
 
 init_db()
@@ -1665,10 +1674,12 @@ def create_team():
             trial_end_val = ''
             if intent == 'pro':
                 trial_end_val = (datetime.now(JST) + timedelta(days=14)).strftime('%Y-%m-%d')
+            import secrets as _secrets
+            viewer_token = _secrets.token_urlsafe(16)
             conn = get_db()
             conn.execute(
-                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email,trial_end) VALUES (?,?,?,?,?,?,?,?)',
-                (team_id, name, '', code, password, now_str(), email, trial_end_val)
+                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email,trial_end,viewer_token) VALUES (?,?,?,?,?,?,?,?,?)',
+                (team_id, name, '', code, password, now_str(), email, trial_end_val, viewer_token)
             )
             conn.commit()
             conn.close()
@@ -2155,6 +2166,136 @@ def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
                 dot_row = f'<div style="display:flex;justify-content:center;min-height:7px;margin-top:2px">{dots}</div>'
                 rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw}">{day}</div>{dot_row}</div>'
     return f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">{header}{rows}</div>'
+
+# ── 保護者用 閲覧専用ページ ───────────────────────────────────────────────
+@app.route('/t/<code>/view/<token>')
+def viewer_page(code, token):
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return render_template_string('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rak</title></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px;color:#888"><p>リンクが無効または期限切れです。</p><a href="/" style="color:#d97706">トップへ戻る</a></body></html>'), 404
+
+    now = datetime.now(JST)
+    today = now.strftime('%Y-%m-%d')
+
+    try:
+        vy = int(request.args.get('y', now.year))
+        vm = int(request.args.get('m', now.month))
+        vm = max(1, min(12, vm))
+    except Exception:
+        vy, vm = now.year, now.month
+
+    month_start = f'{vy}-{vm:02d}-01'
+    ny, nm = (vy + 1, 1) if vm == 12 else (vy, vm + 1)
+    month_end = f'{ny}-{nm:02d}-01'
+    py, pm = (vy - 1, 12) if vm == 1 else (vy, vm - 1)
+
+    conn = get_db()
+    all_events = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? AND event_date<? ORDER BY event_date,event_time',
+        (team['id'], month_start, month_end)
+    ).fetchall()
+    upcoming = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date,event_time LIMIT 10',
+        (team['id'], today)
+    ).fetchall()
+    notices = conn.execute(
+        'SELECT * FROM notices WHERE team_id=? ORDER BY created_at DESC LIMIT 5',
+        (team['id'],)
+    ).fetchall()
+    conn.close()
+
+    ev_color_map = {}
+    for ev in all_events:
+        c = ev['event_color'] or '#6b7280'
+        cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
+        end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
+        while cur <= end_d:
+            ds = cur.strftime('%Y-%m-%d')
+            ev_color_map.setdefault(ds, [])
+            if c not in ev_color_map[ds]:
+                ev_color_map[ds].append(c)
+            cur += timedelta(days=1)
+    calendar_html = build_calendar(vy, vm, ev_color_map)
+
+    wd_jp = ['月','火','水','木','金','土','日']
+    def dl(d):
+        try:
+            from datetime import date as _d
+            dt = _d.fromisoformat(d)
+            return f'{dt.month}/{dt.day}({wd_jp[dt.weekday()]})'
+        except Exception:
+            return d
+
+    event_rows = ''
+    for ev in upcoming:
+        border = ev['event_color'] or '#e5e7eb'
+        loc = f'<span style="font-size:11px;color:#9ca3af;margin-left:6px">📍{ev["location"]}</span>' if ev['location'] else ''
+        time_s = f'<span style="font-size:11px;color:#9ca3af;margin-left:4px">{ev["event_time"]}</span>' if ev['event_time'] else ''
+        event_rows += f'''
+        <div style="border-left:4px solid {border};padding:10px 12px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:2px">{dl(ev["event_date"])}{time_s}</div>
+          <div style="font-size:14px;font-weight:600;color:#111">{ev["title"]}{loc}</div>
+          {f'<div style="font-size:12px;color:#6b7280;margin-top:4px">{ev["note"]}</div>' if ev["note"] else ''}
+        </div>'''
+
+    notice_rows = ''
+    for n in notices:
+        notice_rows += f'''
+        <div style="padding:12px 14px;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+          <div style="font-weight:600;color:#111;font-size:14px">{n["title"]}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">{fmt_datetime(n["created_at"])}</div>
+          <div style="font-size:13px;color:#374151;margin-top:6px;white-space:pre-wrap;line-height:1.6">{n["body"][:200]}{"..." if len(n["body"])>200 else ""}</div>
+        </div>'''
+
+    prev_link = f'/t/{code}/view/{token}?y={py}&m={pm:02d}'
+    next_link = f'/t/{code}/view/{token}?y={ny}&m={nm:02d}'
+
+    html = f'''<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+{FAVICON_LINK}
+{FONT}
+<title>{team["name"]} | Rak 閲覧</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#f5f5f7;color:#1a1a1a;min-height:100vh}}
+.hdr{{background:#0a0a0a;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}}
+.hdr-logo{{font-weight:900;font-size:18px;letter-spacing:-.02em}}
+.hdr-name{{font-size:14px;opacity:.7}}
+.badge{{background:#d97706;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:8px}}
+.wrap{{max-width:520px;margin:0 auto;padding:16px 14px 40px}}
+.sec-hd{{font-size:12px;font-weight:700;color:#9ca3af;letter-spacing:.06em;text-transform:uppercase;margin:20px 0 10px}}
+.cal-nav{{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}}
+.cal-nav a{{color:#d97706;font-size:22px;text-decoration:none;padding:4px 10px}}
+.cal-nav span{{font-weight:700;font-size:15px}}
+.footer{{text-align:center;padding:20px;font-size:11px;color:#bbb}}
+</style>
+</head><body>
+<div class="hdr">
+  <div class="hdr-logo">Rak</div>
+  <div style="flex:1">
+    <div class="hdr-name">{team["name"]}</div>
+  </div>
+  <span class="badge">閲覧専用</span>
+</div>
+<div class="wrap">
+  <div class="sec-hd">カレンダー</div>
+  <div class="cal-nav">
+    <a href="{prev_link}">‹</a>
+    <span>{vy}年{vm}月</span>
+    <a href="{next_link}">›</a>
+  </div>
+  {calendar_html}
+
+  <div class="sec-hd" style="margin-top:24px">直近の予定</div>
+  {event_rows if upcoming else '<div style="color:#9ca3af;font-size:13px;padding:12px 0">直近の予定はありません</div>'}
+
+  <div class="sec-hd" style="margin-top:24px">お知らせ</div>
+  {notice_rows if notices else '<div style="color:#9ca3af;font-size:13px;padding:12px 0">お知らせはありません</div>'}
+</div>
+<div class="footer">Powered by Rak — 閲覧専用ページ</div>
+</body></html>'''
+    return html
 
 @app.route('/t/<code>/schedule')
 def schedule(code):
@@ -3138,6 +3279,15 @@ def admin_dash(code):
       <summary><span class="atile-icon">{_ICO_MAIL}</span>問い合わせ</summary>
       <div class="atile-body">
         <a href="/feedback?from={code}" class="btn btn-outline">送る</a>
+      </div>
+    </details>
+
+    <details class="atile">
+      <summary><span class="atile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>保護者用リンク</summary>
+      <div style="padding:12px 14px;font-size:13px">
+        <div style="color:#6b7280;margin-bottom:8px;line-height:1.5">登録不要でスケジュール・お知らせが閲覧できるリンクです。保護者やスタッフに共有できます。</div>
+        <div style="background:#f3f4f6;border-radius:6px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;margin-bottom:8px;font-family:monospace" id="viewer-url">{request.host_url}t/{code}/view/{team['viewer_token']}</div>
+        <button onclick="var u=document.getElementById('viewer-url').textContent;navigator.clipboard.writeText(u).then(function(){{var b=document.getElementById('viewer-copy-btn');b.textContent='コピーしました ✓';b.style.background='#22c55e';b.style.color='#fff';setTimeout(function(){{b.textContent='リンクをコピー';b.style.background='';b.style.color=''}},2000)}})" id="viewer-copy-btn" class="btn btn-outline" style="width:100%;font-size:13px">リンクをコピー</button>
       </div>
     </details>
 

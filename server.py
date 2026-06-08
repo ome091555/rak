@@ -2797,6 +2797,29 @@ def admin_dash(code):
         answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
         return [n for n in member_names if n not in answered]
 
+    # 今月のカレンダー用データ
+    now_dt = datetime.now(JST)
+    cy, cm = now_dt.year, now_dt.month
+    cm_start = f'{cy}-{cm:02d}-01'
+    cn_y, cn_m = (cy + 1, 1) if cm == 12 else (cy, cm + 1)
+    cm_end = f'{cn_y}-{cn_m:02d}-01'
+    cal_events = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? AND event_date<?',
+        (team['id'], cm_start, cm_end)
+    ).fetchall()
+    dash_ev_color_map = {}
+    for ev in cal_events:
+        c = ev['event_color'] or '#6b7280'
+        cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
+        end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
+        while cur <= end_d:
+            ds = cur.strftime('%Y-%m-%d')
+            dash_ev_color_map.setdefault(ds, [])
+            if c not in dash_ev_color_map[ds]:
+                dash_ev_color_map[ds].append(c)
+            cur += timedelta(days=1)
+    dash_calendar_html = build_calendar(cy, cm, dash_ev_color_map)
+
     # 統合タイムライン（予定 + 集金締切 + 注文締切）
     wd_jp = ['月','火','水','木','金','土','日']
     def date_label(d):
@@ -2902,14 +2925,32 @@ def admin_dash(code):
     <details class="atile" open data-default-open>
       <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定・締切</summary>
       <div class="atile-body" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
-        {timeline_rows}
+        <div id="dash-list-view">
+          {timeline_rows}
+        </div>
+        <div id="dash-cal-view" style="display:none;padding:12px 10px 4px">
+          {dash_calendar_html}
+        </div>
         <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6;flex-wrap:wrap">
           <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">＋ 予定追加</a>
           {'<a href="/t/' + code + '/admin/ai-schedule" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#d97706;color:#fff">✦ AI作成</a>' if is_pro(team) else '<a href="/t/' + code + '/upgrade" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#fff;color:#d97706;border:1.5px solid #d97706">✦ AI作成</a>'}
-          <a href="/t/{code}/schedule" class="btn btn-outline" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">カレンダー</a>
+          <button onclick="dashToggleCal(this)" class="btn btn-outline" id="dash-cal-btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">カレンダー</button>
         </div>
       </div>
     </details>
+    <script>
+    function dashToggleCal(btn){{
+      var lv=document.getElementById('dash-list-view');
+      var cv=document.getElementById('dash-cal-view');
+      if(cv.style.display==='none'){{
+        cv.style.display='block';lv.style.display='none';
+        btn.textContent='リスト';btn.style.background='#f9fafb';
+      }}else{{
+        cv.style.display='none';lv.style.display='block';
+        btn.textContent='カレンダー';btn.style.background='';
+      }}
+    }}
+    </script>
 
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_BELL_SM}</span>お知らせ</summary>

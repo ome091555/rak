@@ -1224,22 +1224,14 @@ button{{font-family:inherit;cursor:pointer}}
 .sec-label{{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--rak-amber);margin-bottom:12px;display:block}}
 .sec-title{{font-size:clamp(24px,4.2vw,32px);font-weight:900;letter-spacing:-0.025em;line-height:1.22;margin-bottom:8px;color:#0f172a}}
 .sec-sub{{font-size:14.5px;color:#64748b;margin-bottom:40px}}
-.feat-grid{{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:13px}}
-.fcard{{border-radius:16px;padding:18px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:124px;transition:transform .14s,box-shadow .14s}}
-.fcard:hover{{transform:translateY(-3px)}}
-.fcard-free{{background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03)}}
-.fcard-free:hover{{box-shadow:0 10px 24px rgba(0,0,0,.07)}}
-.fcard-pro{{background:linear-gradient(150deg,#252525,#151515);color:#fff}}
-.fcard-pro:hover{{box-shadow:0 12px 28px rgba(245,158,11,.25)}}
-.fcard-top{{display:flex;justify-content:space-between;align-items:flex-start}}
-.fcard-num{{font-family:var(--font-num);font-size:12px;font-weight:800;color:#cbd5e1}}
-.fcard-pro .fcard-num{{color:#777}}
-.fcard-ic{{display:inline-flex;color:var(--rak-amber)}}
-.fcard-ic svg{{width:27px;height:27px}}
-.fcard-title{{font-size:17px;font-weight:800;line-height:1.3;margin-top:10px}}
-.fcard-pro .fcard-title{{color:#fff}}
-.fcard-desc{{font-size:11px;color:#94a3b8;margin-top:5px;line-height:1.5}}
-.fcard-pro .fcard-desc{{color:#aaa}}
+.feat-grid{{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
+.fcard{{border-radius:16px;padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03);transition:transform .14s,box-shadow .14s}}
+.fcard:hover{{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.08)}}
+.fcard-pro{{border-color:var(--rak-amber);border-width:1.5px}}
+.fcard-ic{{display:inline-flex;color:var(--rak-amber);background:var(--rak-amber-tint);border-radius:14px;padding:12px}}
+.fcard-ic svg{{width:28px;height:28px}}
+.fcard-title{{font-size:14px;font-weight:800;line-height:1.4;color:#0f172a}}
+.fcard-desc{{font-size:11.5px;color:#64748b;line-height:1.6}}
 
 /* Pricing */
 .pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}
@@ -1290,6 +1282,7 @@ footer a:hover{{color:#94a3b8}}
   .features,.pricing{{padding:56px 20px}}
   .cta-sec{{padding:60px 20px}}
   .lp-nav-links .hide-sp{{display:none}}
+  .feat-grid{{grid-template-columns:repeat(2,1fr)}}
 }}
 </style>
 </head><body>
@@ -1383,7 +1376,7 @@ footer a:hover{{color:#94a3b8}}
 </section>
 
 <section class="features" id="features">
-  <div style="max-width:720px;margin:0 auto">
+  <div style="max-width:900px;margin:0 auto">
     <span class="sec-label">FEATURES</span>
     <div class="sec-title">チーム運営に<br>必要なものぜんぶ。</div>
     <div class="sec-sub">練習の時間を増やすために、管理の時間を減らす。</div>
@@ -1392,24 +1385,24 @@ footer a:hover{{color:#94a3b8}}
       <div style="flex:1;height:1px;background:#bbf7d0"></div>
     </div>
     <div class="feat-grid" style="margin-bottom:32px">
-      <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">01</span><span class="fcard-ic">{IC_CAL}</span></div>
-        <div class="fcard-title">スケジュール<br>管理</div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_CAL}</span>
+        <div class="fcard-title">スケジュール管理</div>
         <div class="fcard-desc">練習・試合の日程をチームで共有</div>
       </div>
-      <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">02</span><span class="fcard-ic">{IC_MEGA}</span></div>
-        <div class="fcard-title">連絡・<br>既読管理</div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_MEGA}</span>
+        <div class="fcard-title">連絡・既読管理</div>
         <div class="fcard-desc">お知らせを送って既読を確認</div>
       </div>
-      <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">03</span><span class="fcard-ic">{IC_USERS}</span></div>
-        <div class="fcard-title">メンバー<br>管理</div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_USERS}</span>
+        <div class="fcard-title">メンバー管理</div>
         <div class="fcard-desc">メンバー情報を一元管理</div>
       </div>
-      <div class="fcard fcard-free">
-        <div class="fcard-top"><span class="fcard-num">04</span><span class="fcard-ic">{IC_LINK}</span></div>
-        <div class="fcard-title">チームコード<br>招待</div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_LINK}</span>
+        <div class="fcard-title">チームコード招待</div>
         <div class="fcard-desc">コードを共有するだけで参加完了</div>
       </div>
     </div>
@@ -1419,38 +1412,38 @@ footer a:hover{{color:#94a3b8}}
     </div>
     <div class="feat-grid">
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">05</span><span class="fcard-ic">{IC_YEN}</span></div>
-        <div class="fcard-title">集金・<br>費用管理</div>
+        <span class="fcard-ic">{IC_YEN}</span>
+        <div class="fcard-title">集金・費用管理</div>
         <div class="fcard-desc">会費や遠征費の集金を自動化</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">06</span><span class="fcard-ic">{IC_CLIP}</span></div>
-        <div class="fcard-title">注文<br>フォーム</div>
+        <span class="fcard-ic">{IC_CLIP}</span>
+        <div class="fcard-title">注文フォーム</div>
         <div class="fcard-desc">弁当・グッズの注文をまとめて管理</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">07</span><span class="fcard-ic">{IC_CHART}</span></div>
-        <div class="fcard-title">会計・<br>収支記録</div>
+        <span class="fcard-ic">{IC_CHART}</span>
+        <div class="fcard-title">会計・収支記録</div>
         <div class="fcard-desc">収支を記録して会計報告を楽に</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">08</span><span class="fcard-ic">{IC_AI}</span></div>
-        <div class="fcard-title">AI文章<br>生成</div>
+        <span class="fcard-ic">{IC_AI}</span>
+        <div class="fcard-title">AI文章生成</div>
         <div class="fcard-desc">お知らせ・報告書・保護者連絡などをAIが自動で作成</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">09</span><span class="fcard-ic">{IC_CAL}</span></div>
-        <div class="fcard-title">AIスケジュール<br>自動生成</div>
+        <span class="fcard-ic">{IC_CAL}</span>
+        <div class="fcard-title">AIスケジュール自動生成</div>
         <div class="fcard-desc">制約を入力するとAIが仮予定を自動作成</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">10</span><span class="fcard-ic">{IC_USERS}</span></div>
-        <div class="fcard-title">ユニフォーム<br>管理</div>
+        <span class="fcard-ic">{IC_USERS}</span>
+        <div class="fcard-title">ユニフォーム管理</div>
         <div class="fcard-desc">サイズ・枚数の注文を一括管理</div>
       </div>
       <div class="fcard fcard-pro">
-        <div class="fcard-top"><span class="fcard-num">11</span><span class="fcard-ic">{IC_HOME}</span></div>
-        <div class="fcard-title">メンバー<br>無制限</div>
+        <span class="fcard-ic">{IC_HOME}</span>
+        <div class="fcard-title">メンバー無制限</div>
         <div class="fcard-desc">何名でも登録できる大規模対応</div>
       </div>
     </div>

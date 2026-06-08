@@ -339,6 +339,7 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN admin_memo TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN admin_email TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN trial_end TEXT DEFAULT ""',
+        'ALTER TABLE events ADD COLUMN event_color TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -1972,10 +1973,37 @@ def member_home(code):
 
 # ── Schedule ──────────────────────────────────────────────────────
 
+EVENT_COLORS = [
+    ('#3b82f6', '青', '男子・練習'),
+    ('#ef4444', '赤', '女子・試合'),
+    ('#f97316', '橙', '練習試合'),
+    ('#22c55e', '緑', '遠征・イベント'),
+    ('#a855f7', '紫', '記念・特別'),
+    ('#6b7280', 'グレー', 'その他'),
+]
+
+def color_picker_html(selected=''):
+    items = ''
+    for hex_color, label, desc in EVENT_COLORS:
+        checked = 'checked' if selected == hex_color else ''
+        ring = f'box-shadow:0 0 0 3px #fff,0 0 0 5px {hex_color}' if selected == hex_color else ''
+        items += f'''<label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+          <input type="radio" name="event_color" value="{hex_color}" {checked} style="display:none" onchange="document.querySelectorAll('.cpick-dot').forEach(d=>d.style.boxShadow='');this.nextElementSibling.style.boxShadow='0 0 0 3px #fff,0 0 0 5px '+this.value">
+          <div class="cpick-dot" style="width:28px;height:28px;border-radius:50%;background:{hex_color};cursor:pointer;{ring};transition:box-shadow .15s"></div>
+          <span style="font-size:10px;color:#666;white-space:nowrap">{label}</span>
+        </label>'''
+    return f'''<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px">{items}</div>
+<div style="font-size:11px;color:#aaa;margin-bottom:12px">青=男子/練習　赤=女子/試合　橙=練習試合　緑=遠征</div>'''
+
 def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
     import calendar as _cal
     fee_dates = fee_dates or set()
     order_dates = order_dates or set()
+    # event_dates: set or dict {date: [colors]}
+    if isinstance(event_dates, dict):
+        ev_color_map = event_dates
+    else:
+        ev_color_map = {d: ['#6b7280'] for d in event_dates}
     cal = _cal.monthcalendar(year, month)
     wd_labels = ['月','火','水','木','金','土','日']
     header = ''.join(f'<div style="text-align:center;font-size:11px;font-weight:500;color:#9ca3af;padding:4px 0">{d}</div>' for d in wd_labels)
@@ -1987,7 +2015,7 @@ def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
                 rows += '<div></div>'
             else:
                 date_str = f'{year}-{month:02d}-{day:02d}'
-                has_ev  = date_str in event_dates
+                has_ev  = date_str in ev_color_map
                 has_fee = date_str in fee_dates
                 has_ord = date_str in order_dates
                 has_any = has_ev or has_fee or has_ord
@@ -1997,7 +2025,9 @@ def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
                 cursor = 'pointer' if has_ev else 'default'
                 onclick = f'onclick="scrollToDate(\'{date_str}\')"' if has_ev else ''
                 dots = ''
-                if has_ev:  dots += '<div style="width:5px;height:5px;border-radius:50%;background:#111;display:inline-block;margin:0 1px"></div>'
+                if has_ev:
+                    for c in ev_color_map[date_str][:3]:
+                        dots += f'<div style="width:5px;height:5px;border-radius:50%;background:{c};display:inline-block;margin:0 1px"></div>'
                 if has_fee: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#dc2626;display:inline-block;margin:0 1px"></div>'
                 if has_ord: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#16a34a;display:inline-block;margin:0 1px"></div>'
                 dot_row = f'<div style="display:flex;justify-content:center;min-height:7px;margin-top:2px">{dots}</div>'
@@ -2044,16 +2074,20 @@ def schedule(code):
         (team['id'], month_start, month_end)
     ).fetchall()
 
-    ev_dates = set()
+    ev_color_map = {}
     for ev in all_events:
+        c = ev['event_color'] or '#6b7280'
         cur = datetime.strptime(ev['event_date'], '%Y-%m-%d')
         end_d = datetime.strptime(ev['end_date'], '%Y-%m-%d') if ev['end_date'] else cur
         while cur <= end_d:
-            ev_dates.add(cur.strftime('%Y-%m-%d'))
+            ds = cur.strftime('%Y-%m-%d')
+            ev_color_map.setdefault(ds, [])
+            if c not in ev_color_map[ds]:
+                ev_color_map[ds].append(c)
             cur += timedelta(days=1)
     fee_dates = set(f['due_date'] for f in fees_in_month)
     order_dates = set(o['deadline'] for o in orders_in_month)
-    calendar_html = build_calendar(vy, vm, ev_dates, fee_dates, order_dates)
+    calendar_html = build_calendar(vy, vm, ev_color_map, fee_dates, order_dates)
 
     event_cards = ''
     for ev in all_events:
@@ -2081,8 +2115,9 @@ def schedule(code):
                 <button class="btn btn-sm btn-gray" type="submit" style="color:#dc2626">削除</button>
               </form>
             </div>'''
+        ev_color_border = ev['event_color'] or '#e5e7eb'
         event_cards += f'''
-        <div class="card-sm" id="ev-{ev['event_date']}">
+        <div class="card-sm" id="ev-{ev['event_date']}" style="border-left:4px solid {ev_color_border}">
           <div class="row" style="flex-wrap:wrap;gap:6px">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
@@ -2257,11 +2292,20 @@ def admin_ai_schedule(code):
 
 以下のJSON配列形式で返してください（6〜12件程度）：
 [
-  {{"title": "...", "date": "YYYY-MM-DD", "time": "HH:MM", "end_time": "HH:MM", "location": "...", "note": "..."}},
+  {{"title": "...", "date": "YYYY-MM-DD", "time": "HH:MM", "end_time": "HH:MM", "location": "...", "note": "...", "color": "#xxxxxx"}},
   ...
 ]
 
-ルール：
+カラー選定ルール（colorフィールドに6桁HEXで設定）：
+- 男子の練習・活動：#3b82f6（青）
+- 女子の練習・活動：#ef4444（赤）
+- 試合・公式戦：#ef4444（赤）
+- 練習試合：#f97316（橙）
+- 遠征・合宿・イベント：#22c55e（緑）
+- その他・判断できない場合：#6b7280（グレー）
+- 男女混合/全体の練習：#3b82f6（青）
+
+その他ルール：
 - dateは{target_label}内（{ty}-{tm:02d}-01〜{ty}-{tm:02d}-28以降最終日）に収める
 - timeとend_timeは不明なら空文字列
 - locationは不明なら空文字列
@@ -2299,10 +2343,11 @@ def admin_ai_schedule(code):
                     location = str(ev.get('location', '')).strip()
                     note = str(ev.get('note', '')).strip()
                     if title and date:
+                        ev_color = str(ev.get('color', '')).strip()
                         conn = get_db()
                         conn.execute(
-                            'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                            (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time)
+                            'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time,event_color) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                            (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time, ev_color)
                         )
                         conn.commit()
                         conn.close()
@@ -2323,10 +2368,11 @@ def admin_ai_schedule(code):
                 location = str(ev.get('location', '')).strip()
                 note = str(ev.get('note', '')).strip()
                 if title and date:
+                    ev_color = str(ev.get('color', '')).strip()
                     conn = get_db()
                     conn.execute(
-                        'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                        (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time)
+                        'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time,event_color) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                        (new_id(), team['id'], title, date, time, location, note, now_str(), '', end_time, ev_color)
                     )
                     conn.commit()
                     conn.close()
@@ -2350,6 +2396,7 @@ def admin_ai_schedule(code):
         end_time = str(ev.get('end_time', ''))
         location = str(ev.get('location', ''))
         note = str(ev.get('note', ''))
+        ev_color = str(ev.get('color', '#6b7280')).strip() or '#6b7280'
         time_str = ''
         if time:
             time_str = f'　{time}〜{end_time}' if end_time else f'　{time}'
@@ -2359,10 +2406,13 @@ def admin_ai_schedule(code):
         if note:
             detail += f'<div style="font-size:13px;color:#666;margin-top:2px">{note}</div>'
         event_cards += f'''
-        <div class="card-sm" style="border-left:3px solid #d97706">
+        <div class="card-sm" style="border-left:4px solid {ev_color}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:16px">{title}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:10px;height:10px;border-radius:50%;background:{ev_color};flex-shrink:0"></div>
+                <div style="font-weight:700;font-size:16px">{title}</div>
+              </div>
               <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date(date)}{time_str}</div>
               {detail}
             </div>
@@ -3266,13 +3316,14 @@ def admin_new_event(code):
     error = ''
 
     if request.method == 'POST':
-        title    = request.form.get('title', '').strip()
-        date     = request.form.get('event_date', '').strip()
-        end_date = request.form.get('end_date', '').strip()
-        time     = request.form.get('event_time', '').strip()
-        end_time = request.form.get('end_time', '').strip()
-        location = request.form.get('location', '').strip()
-        note     = request.form.get('note', '').strip()
+        title       = request.form.get('title', '').strip()
+        date        = request.form.get('event_date', '').strip()
+        end_date    = request.form.get('end_date', '').strip()
+        time        = request.form.get('event_time', '').strip()
+        end_time    = request.form.get('end_time', '').strip()
+        location    = request.form.get('location', '').strip()
+        note        = request.form.get('note', '').strip()
+        event_color = request.form.get('event_color', '').strip()
         if end_date and end_date < date:
             end_date = date
         if not title or not date:
@@ -3281,8 +3332,8 @@ def admin_new_event(code):
             conn = get_db()
             eid = new_id()
             conn.execute(
-                'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                (eid, team['id'], title, date, time, location, note, now_str(), end_date, end_time)
+                'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time,event_color) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                (eid, team['id'], title, date, time, location, note, now_str(), end_date, end_time, event_color)
             )
             conn.commit()
             conn.close()
@@ -3322,6 +3373,8 @@ def admin_new_event(code):
       <input type="text" name="location" placeholder="例：市営グラウンドA面">
       <label>備考・詳細</label>
       <textarea name="note" placeholder="持ち物・集合場所など"></textarea>
+      <label>カラー（カレンダー表示色）</label>
+      {color_picker_html()}
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
     </form>
   </div>
@@ -3430,21 +3483,22 @@ def admin_edit_event(code, event_id):
 
     error = ''
     if request.method == 'POST':
-        title    = request.form.get('title', '').strip()
-        date     = request.form.get('event_date', '').strip()
-        end_date = request.form.get('end_date', '').strip()
-        time     = request.form.get('event_time', '').strip()
-        end_time = request.form.get('end_time', '').strip()
-        location = request.form.get('location', '').strip()
-        note     = request.form.get('note', '').strip()
+        title       = request.form.get('title', '').strip()
+        date        = request.form.get('event_date', '').strip()
+        end_date    = request.form.get('end_date', '').strip()
+        time        = request.form.get('event_time', '').strip()
+        end_time    = request.form.get('end_time', '').strip()
+        location    = request.form.get('location', '').strip()
+        note        = request.form.get('note', '').strip()
+        event_color = request.form.get('event_color', '').strip()
         if end_date and end_date < date:
             end_date = date
         if not title or not date:
             error = 'タイトルと日付を入力してください'
         else:
             conn.execute(
-                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,end_time=?,location=?,note=? WHERE id=?',
-                (title, date, end_date, time, end_time, location, note, event_id)
+                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,end_time=?,location=?,note=?,event_color=? WHERE id=?',
+                (title, date, end_date, time, end_time, location, note, event_color, event_id)
             )
             conn.commit()
             conn.close()
@@ -3495,6 +3549,8 @@ def admin_edit_event(code, event_id):
       <input type="text" name="location" value="{ev['location'] or ''}">
       <label>備考・詳細</label>
       <textarea name="note">{ev['note'] or ''}</textarea>
+      <label>カラー（カレンダー表示色）</label>
+      {color_picker_html(ev['event_color'] or '')}
       <button class="btn btn-blue btn-block" type="submit">保存する</button>
     </form>
   </div>

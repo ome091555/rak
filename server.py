@@ -2123,15 +2123,17 @@ def schedule(code):
     today_btn = '' if is_this_month else f'<a href="/t/{code}/schedule" style="font-size:12px;color:#d97706;padding:3px 10px;border:1.5px solid #d97706;border-radius:8px;text-decoration:none">今月</a>'
     new_btn = f'<a href="/t/{code}/admin/events/new" class="btn btn-blue btn-sm">＋ 追加</a>' if admin else ''
     ai_btn = ''
+    excel_btn = ''
     if admin and is_pro(team):
         ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
+        excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">📥 Excel</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
     <div><span class="section-label">スケジュール</span></div>
-    <div style="display:flex;gap:8px">{ai_btn}{new_btn}</div>
+    <div style="display:flex;gap:8px">{excel_btn}{ai_btn}{new_btn}</div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -2154,6 +2156,60 @@ function scrollToDate(date) {{
 }}
 </script>'''
     return page('スケジュール', body, code, active='schedule')
+
+@app.route('/t/<code>/admin/schedule/excel')
+def admin_schedule_excel(code):
+    if not is_admin(code):
+        return redirect(url_for('admin_login', code=code))
+    team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='schedule')
+
+    now = datetime.now(JST)
+    try:
+        vy = int(request.args.get('y', now.year))
+        vm = int(request.args.get('m', now.month))
+        vm = max(1, min(12, vm))
+    except Exception:
+        vy, vm = now.year, now.month
+
+    month_start = f'{vy}-{vm:02d}-01'
+    ny, nm = (vy + 1, 1) if vm == 12 else (vy, vm + 1)
+    month_end = f'{ny}-{nm:02d}-01'
+
+    conn = get_db()
+    events = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? AND event_date<? ORDER BY event_date, event_time',
+        (team['id'], month_start, month_end)
+    ).fetchall()
+
+    WD = ['月', '火', '水', '木', '金', '土', '日']
+    rows = [('日付', '曜日', 'タイトル', '開始', '終了', '場所', '備考', '出席数', '欠席数')]
+    for ev in events:
+        try:
+            d = datetime.strptime(ev['event_date'], '%Y-%m-%d')
+            date_str = f"{d.month}/{d.day}"
+            wd = WD[d.weekday()]
+        except Exception:
+            date_str = ev['event_date']
+            wd = ''
+        rsvps = conn.execute('SELECT status FROM rsvps WHERE event_id=?', (ev['id'],)).fetchall()
+        attending = sum(1 for r in rsvps if r['status'] == 'attending')
+        absent = sum(1 for r in rsvps if r['status'] == 'absent')
+        rows.append((
+            date_str, wd,
+            ev['title'] or '',
+            ev['event_time'] or '',
+            ev['end_time'] or '',
+            ev['location'] or '',
+            ev['note'] or '',
+            attending, absent
+        ))
+    conn.close()
+
+    filename = f"スケジュール_{vy}年{vm}月.xlsx"
+    return excel_response(rows, filename)
+
 
 @app.route('/t/<code>/admin/ai-schedule', methods=['GET', 'POST'])
 def admin_ai_schedule(code):
@@ -3349,8 +3405,6 @@ def admin_event_detail(code, event_id):
   </div>
   {no_answer_card}
   <div style="margin-top:4px">
-    <a href="/t/{code}/admin/events/{event_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
-    <a href="/t/{code}/admin/events/{event_id}/csv?fmt=csv" class="btn btn-gray btn-sm">📄 CSV</a>
   </div>
   <div style="text-align:center;margin-top:12px"><a href="/t/{code}/schedule" style="font-size:13px;color:#888">← スケジュール</a></div>
 </div>'''

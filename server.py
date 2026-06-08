@@ -421,6 +421,7 @@ def pro_gate(code, team, active='home'):  # noqa
         {_CHK} 注文フォーム<br>
         {_CHK} アンケート<br>
         {_CHK} AI文章生成<br>
+        {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力<br>
         {_CHK} メンバー無制限
       </div>
@@ -5261,6 +5262,7 @@ def upgrade_page(code):
         {_CHK} 注文フォーム<br>
         {_CHK} アンケート<br>
         {_CHK} AI文章生成<br>
+        {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力<br>
         {_CHK} メンバー無制限<br>
         {_CHK} 優先サポート

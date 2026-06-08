@@ -5433,35 +5433,31 @@ def upgrade_page(code):
         yearly_btn = ''
         if STRIPE_PRICE_ID_PRO_YEARLY:
             yearly_btn = f'''
-    <form method="POST" action="/t/{code}/upgrade/checkout" style="margin-top:10px">
+    <form method="POST" action="/t/{code}/upgrade/checkout" style="margin-top:8px">
       <input type="hidden" name="plan" value="yearly">
-      <button class="btn btn-block" type="submit" style="font-size:15px;padding:15px;background:#fff;color:#d97706;border:1.5px solid #f59e0b">14日間無料で試す（年額 ¥9,800）</button>
+      <button class="btn btn-block" type="submit" style="font-size:14px;padding:13px;background:#fff;color:#d97706;border:1.5px solid #f59e0b">年額プラン ¥9,800/年　<span style="font-size:11px;opacity:.8">（2ヶ月分お得）</span></button>
     </form>'''
         checkout_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout">
       <input type="hidden" name="plan" value="monthly">
-      <button class="btn btn-blue btn-block" type="submit" style="font-size:17px;padding:16px;font-weight:800">14日間無料で試す → ¥980/月</button>
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:16px;padding:15px;font-weight:700">14日間無料で試す</button>
     </form>{yearly_btn}
     '''
     else:
         checkout_btn = '<div class="msg-err">現在オンライン決済の準備中です。しばらくお待ちください。</div>'
 
     body = f'''
-<div class="container" style="max-width:480px;padding-top:40px">
+<div class="container" style="max-width:420px;padding-top:40px">
   {trial_banner}
   <div class="card" style="text-align:center;padding:32px 24px 28px">
 
-    <div style="display:inline-block;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;font-size:13px;font-weight:800;padding:6px 18px;border-radius:999px;margin-bottom:16px;letter-spacing:.04em">
-      🎁 まず14日間、無料でお試し
-    </div>
+    <div style="font-size:11px;font-weight:700;color:#d97706;letter-spacing:.1em;margin-bottom:12px">RAK PRO</div>
+    <div style="font-size:40px;font-weight:900;color:#111;margin-bottom:2px">¥980<span style="font-size:15px;font-weight:400;color:#888">/月</span></div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:6px">年払い ¥9,800（2ヶ月分お得）</div>
+    <div style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:24px">14日間無料トライアル付き</div>
 
-    <div style="font-size:13px;color:#d97706;font-weight:700;margin-bottom:6px">RakPro</div>
-    <div style="font-size:36px;font-weight:900;color:#d97706;margin-bottom:2px">¥980<span style="font-size:16px;font-weight:500;color:#888">/月</span></div>
-    <div style="font-size:12px;color:#888;margin-bottom:6px">年払い ¥9,800（2ヶ月分お得）</div>
-    <div style="font-size:12px;color:#10b981;font-weight:600;margin-bottom:24px">14日間は完全無料 — 課金は試用後から</div>
-
-    <div style="background:#f5f7fb;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left">
-      <div style="font-size:13px;color:#444;line-height:2.4">
+    <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:24px;text-align:left">
+      <div style="font-size:13px;color:#444;line-height:2.2">
         {_CHK} 集金・支払い管理<br>
         {_CHK} 注文フォーム<br>
         {_CHK} アンケート<br>
@@ -5475,20 +5471,16 @@ def upgrade_page(code):
 
     {checkout_btn}
 
-    <div style="background:#f0fdf4;border-radius:10px;padding:12px 16px;margin-top:16px;font-size:12px;color:#065f46;line-height:1.8">
-      ✅ 14日間の無料トライアル付き<br>
-      ✅ いつでもキャンセル可能<br>
-      ✅ クレジットカード払い
-    </div>
+    <div style="font-size:11px;color:#bbb;margin-top:14px">いつでもキャンセル可能 · クレジットカード払い</div>
 
-    <div style="margin-top:20px;border-top:1px solid #eee;padding-top:18px">
-      <p style="font-size:12px;color:#aaa;margin-bottom:10px">プロモコードをお持ちの方</p>
+    <div style="margin-top:20px;border-top:1px solid #f0f0f0;padding-top:16px">
+      <p style="font-size:12px;color:#bbb;margin-bottom:8px">プロモコードをお持ちの方</p>
       <form method="POST" action="/t/{code}/upgrade/promo" style="display:flex;gap:8px">
-        <input type="text" name="promo" placeholder="プロモコード" style="flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none">
-        <button type="submit" class="btn btn-outline" style="white-space:nowrap;padding:10px 16px">適用</button>
+        <input type="text" name="promo" placeholder="プロモコード" style="flex:1;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none">
+        <button type="submit" class="btn btn-outline" style="white-space:nowrap;padding:9px 14px;font-size:13px">適用</button>
       </form>
     </div>
-    <div style="margin-top:16px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+    <div style="margin-top:14px"><a href="/t/{code}/admin/dash" style="font-size:12px;color:#bbb">← ホームに戻る</a></div>
   </div>
 </div>'''
     return page('Proプランへアップグレード', body, code, active='home')

@@ -1097,6 +1097,8 @@ def legal_tokushoho():
 
 @app.route('/')
 def home():
+    join_error = request.args.get('error', '')
+    join_code  = request.args.get('code', '')
     LP_LOGO = '<svg width="30" height="27" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
     LP_LOGO_W = '<svg width="24" height="22" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
     _sv = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
@@ -1307,7 +1309,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
       <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
-      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事を<span style="white-space:nowrap">Rakひとつに。</span>LINEで探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
+      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事を<span style="white-space:nowrap">Rakひとつに。</span>連絡で探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1325,10 +1327,11 @@ footer a:hover{{color:#94a3b8}}
       <p class="hero-note"><b>登録1分</b>・今日から使える</p>
       <div class="code-wrap">
         <p class="lbl">すでにコードをお持ちの方</p>
-        <form method="POST" action="/join" class="code-bar">
-          <input type="text" name="code" placeholder="チームコードを入力">
+        <form method="POST" action="/join" class="code-bar" style="{'border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.12)' if join_error else ''}">
+          <input type="text" name="code" placeholder="チームコードを入力" value="{join_code}">
           <button type="submit">参加</button>
         </form>
+        {'<p style="color:#ef4444;font-size:12px;margin-top:6px;text-align:center">「' + join_code + '」は見つかりませんでした。コードを確認してください。</p>' if join_error else ''}
       </div>
     </div>
     <div class="hero-r">
@@ -1458,15 +1461,15 @@ footer a:hover{{color:#94a3b8}}
 <section style="padding:72px 24px;background:#fff">
   <div style="max-width:780px;margin:0 auto">
     <span class="sec-label">WHY RAK</span>
-    <div class="sec-title">LINEとExcelを<br>卒業する理由。</div>
-    <div class="sec-sub" style="margin-bottom:40px">「とりあえずLINE」では、情報が流れる。「とりあえずExcel」では、手間が増える。</div>
+    <div class="sec-title">バラバラのツールを<br>卒業する理由。</div>
+    <div class="sec-sub" style="margin-bottom:40px">「とりあえず連絡アプリ」では情報が流れる。「とりあえず表計算」では手間が増える。</div>
 
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:480px">
         <thead>
           <tr>
             <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:40%"></th>
-            <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">LINE＋Excel</th>
+            <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">従来の方法</th>
             <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#111;border-bottom:2px solid #111;border-radius:10px 10px 0 0">Rak</th>
           </tr>
         </thead>
@@ -1478,12 +1481,12 @@ footer a:hover{{color:#94a3b8}}
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
-            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">スタンプ集計・手入力</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">リアクション集計・手入力</td>
             <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
             <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">集金・費用管理</td>
-            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">Excelで手入力・追いかけ</td>
+            <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">表計算で手入力・追いかけ</td>
             <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
@@ -1518,8 +1521,8 @@ footer a:hover{{color:#94a3b8}}
       <div style="flex:1;min-width:200px">
         <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:6px">こんな人に選ばれています</div>
         <div style="font-size:13px;color:#6b7280;line-height:1.9">
-          集金のたびにLINEを送るのが辛い<br>
-          Excelの管理が追いつかない<br>
+          集金のたびに連絡を送るのが辛い<br>
+          表計算ソフトの管理が追いつかない<br>
           コーチ業より事務作業が多い<br>
           メンバーへの連絡が面倒
         </div>
@@ -1590,7 +1593,7 @@ def join():
     code = request.form.get('code', '').strip().upper()
     team = get_team(code)
     if not team:
-        return redirect('/')
+        return redirect('/?error=notfound&code=' + code)
     return redirect(url_for('team_portal', code=code))
 
 @app.route('/create', methods=['GET', 'POST'])

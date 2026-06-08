@@ -1307,7 +1307,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
       <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
-      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事をRak一つに。LINEで探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
+      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事を<span style="white-space:nowrap">Rakひとつに。</span>LINEで探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1384,7 +1384,7 @@ footer a:hover{{color:#94a3b8}}
   <div style="max-width:900px;margin:0 auto">
     <span class="sec-label">FEATURES</span>
     <div class="sec-title">チーム運営に<br>必要なものぜんぶ。</div>
-    <div class="sec-sub">練習の時間を増やすために、管理の時間を減らす。</div>
+    <div class="sec-sub">活動の時間を増やすために、管理の時間を減らす。</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:#16a34a;white-space:nowrap">FREE　無料で使える</span>
       <div style="flex:1;height:1px;background:#bbf7d0"></div>

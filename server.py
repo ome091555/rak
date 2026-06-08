@@ -3563,9 +3563,11 @@ def admin_ai(code):
     error = ''
     memo = ''
 
+    doc_type = ''
     if request.method == 'POST':
         memo = request.form.get('memo', '').strip()
         tone = request.form.get('tone', 'formal')
+        doc_type = request.form.get('doc_type', 'notice')
         if not memo:
             error = 'メモを入力してください'
         elif not ANTHROPIC_API_KEY:
@@ -3574,12 +3576,42 @@ def admin_ai(code):
             try:
                 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
                 tone_desc = '丁寧でやわらかい' if tone == 'formal' else 'シンプルで簡潔な'
-                message = client.messages.create(
-                    model='claude-haiku-4-5-20251001',
-                    max_tokens=800,
-                    messages=[{
-                        'role': 'user',
-                        'content': f'''あなたはスポーツチームの運営をサポートするAIです。
+
+                if doc_type == 'report':
+                    prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
+コーチが書いたメモをもとに、保護者・関係者向けの活動報告書を作成してください。
+
+メモ：{memo}
+
+以下のJSON形式で返してください：
+{{"title": "報告書タイトル（25字以内）", "body": "報告書本文（400〜600字、段落ごとに改行。活動の概要・成果・感謝・今後の活動について記載）"}}
+
+JSONのみ返してください。説明不要です。'''
+                    max_tokens = 1200
+                elif doc_type == 'match':
+                    prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
+コーチが書いたメモをもとに、試合結果レポートを作成してください。
+
+メモ：{memo}
+
+以下のJSON形式で返してください：
+{{"title": "試合レポートタイトル（25字以内）", "body": "本文（300〜500字、改行あり。試合結果・内容の振り返り・選手の頑張り・今後に向けた抱負を含む）"}}
+
+JSONのみ返してください。説明不要です。'''
+                    max_tokens = 1000
+                elif doc_type == 'practice':
+                    prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
+コーチが書いたメモをもとに、練習報告文を作成してください。
+
+メモ：{memo}
+
+以下のJSON形式で返してください：
+{{"title": "練習報告タイトル（20字以内）", "body": "本文（200〜350字、改行あり。練習内容・取り組み・成果・次回への課題を含む）"}}
+
+JSONのみ返してください。説明不要です。'''
+                    max_tokens = 800
+                else:
+                    prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
 コーチが書いた短いメモをもとに、保護者・メンバー向けの{tone_desc}連絡文を作成してください。
 
 メモ：{memo}
@@ -3588,7 +3620,12 @@ def admin_ai(code):
 {{"title": "お知らせのタイトル（20字以内）", "body": "本文（200字程度、改行あり）"}}
 
 JSONのみ返してください。説明不要です。'''
-                    }]
+                    max_tokens = 800
+
+                message = client.messages.create(
+                    model='claude-haiku-4-5-20251001',
+                    max_tokens=max_tokens,
+                    messages=[{'role': 'user', 'content': prompt}]
                 )
                 import json
                 text = message.content[0].text.strip()
@@ -3623,7 +3660,10 @@ JSONのみ返してください。説明不要です。'''
     if result_title and result_body:
         import urllib.parse
         params = urllib.parse.urlencode({'title': result_title, 'body': result_body})
-        use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a>'
+        if doc_type in ('report', 'match', 'practice'):
+            use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a><div style="font-size:12px;color:#888;text-align:center;margin-top:6px">※ コピーして外部ツールにも使えます</div>'
+        else:
+            use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a>'
         save_form = f'''
         <form method="POST" style="margin-top:8px">
           <input type="hidden" name="action" value="save_template">
@@ -3665,12 +3705,19 @@ JSONのみ返してください。説明不要です。'''
   <div class="card">
     <div class="section-label">✦ AI文章作成</div>
     <h1>AIで下書きを作る</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">一言メモを入力するだけで、丁寧な連絡文を自動生成します</p>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">一言メモを入力するだけで、さまざまな文書を自動生成します</p>
     {f'<div class="msg-ok">{saved_msg}</div>' if saved_msg else ''}
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
+      <label>文書タイプ</label>
+      <select name="doc_type">
+        <option value="notice" {'selected' if doc_type in ('','notice') else ''}>お知らせ・連絡文</option>
+        <option value="report" {'selected' if doc_type=='report' else ''}>活動報告書</option>
+        <option value="match" {'selected' if doc_type=='match' else ''}>試合レポート</option>
+        <option value="practice" {'selected' if doc_type=='practice' else ''}>練習報告</option>
+      </select>
       <label>メモ・キーワード</label>
-      <textarea name="memo" placeholder="例：明日の練習、雨で中止&#10;例：5/25試合、集合9時、弁当持参" rows="4">{memo}</textarea>
+      <textarea name="memo" placeholder="例（活動報告書）：県大会 準優勝 練習時間が限られている中で目指す以上の結果&#10;例（お知らせ）：明日の練習、雨で中止" rows="4">{memo}</textarea>
       <label>文体</label>
       <select name="tone">
         <option value="formal">丁寧・やわらか（保護者向け）</option>

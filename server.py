@@ -399,14 +399,10 @@ def count_team_members(team_id, conn=None):
     return n
 
 def can_add_team_member(team, conn=None):
-    if is_pro(team):
-        return True
-    return count_team_members(team['id'], conn) < FREE_MEMBER_LIMIT
+    return True
 
 def member_count_label(team, count):
-    if is_pro(team):
-        return f'{count}名'
-    return f'{count}/{FREE_MEMBER_LIMIT}名'
+    return f'{count}名'
 
 def pro_gate(code, team, active='home'):  # noqa
     body = f'''
@@ -423,8 +419,7 @@ def pro_gate(code, team, active='home'):  # noqa
         {_CHK} アンケート<br>
         {_CHK} AI文章生成<br>
         {_CHK} AIスケジュール自動生成<br>
-        {_CHK} Excel出力<br>
-        {_CHK} メンバー無制限
+        {_CHK} Excel出力
       </div>
     </div>
     <div style="font-size:28px;font-weight:900;color:#d97706;margin-bottom:4px">¥980<span style="font-size:14px;font-weight:500;color:#888">/月</span></div>
@@ -1449,11 +1444,6 @@ footer a:hover{{color:#94a3b8}}
         <div class="fcard-title">ユニフォーム管理</div>
         <div class="fcard-desc">サイズ・枚数の注文を一括管理</div>
       </div>
-      <div class="fcard fcard-pro">
-        <span class="fcard-ic">{IC_HOME}</span>
-        <div class="fcard-title">メンバー無制限</div>
-        <div class="fcard-desc">何名でも登録できる大規模対応</div>
-      </div>
     </div>
   </div>
 </section>
@@ -1543,7 +1533,7 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-items">
           <div>✓ スケジュール管理</div>
           <div>✓ チーム連絡・既読管理</div>
-          <div>✓ メンバー管理（20名まで）</div>
+          <div>✓ メンバー管理（人数制限なし）</div>
           <div>✓ チームコード招待</div>
         </div>
         <a href="/create" class="plan-btn-w">無料で始める</a>
@@ -1559,7 +1549,6 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ 会計・収支記録</div>
           <div class="acc">＋ AI文章生成（お知らせ・報告書・保護者連絡）</div>
           <div class="acc">＋ AIスケジュール自動生成</div>
-          <div class="acc" style="margin-top:6px">＋ メンバー無制限</div>
           <div class="acc">＋ Excelエクスポート</div>
         </div>
         <a href="/create" class="plan-btn-b">Proを試す（14日無料）</a>
@@ -4004,7 +3993,7 @@ def admin_members(code):
                     conn.commit()
                     msg = f'「{name}」を追加しました'
                 else:
-                    msg = f'Freeプランはメンバー{FREE_MEMBER_LIMIT}名までです。Proにアップグレードすると無制限になります。'
+                    msg = 'メンバーの追加に失敗しました。'
         elif action == 'delete':
             mid = request.form.get('member_id')
             conn.execute('DELETE FROM members WHERE id=? AND team_id=?', (mid, team['id']))
@@ -4038,21 +4027,10 @@ def admin_members(code):
         </div>'''
 
     member_n = len(members)
-    at_limit = not is_pro(team) and member_n >= FREE_MEMBER_LIMIT
     msg_cls = 'msg-ok' if msg and '追加しました' in msg else 'msg-err'
-    if at_limit:
-        add_section = f'''
-  <div class="card" style="border:2px solid #d97706">
-    <h2 style="margin-bottom:8px">メンバー上限に達しました</h2>
-    <p style="font-size:14px;color:#555;margin-bottom:16px">Freeプランは<strong>{FREE_MEMBER_LIMIT}名</strong>まで登録できます（現在 {member_n}名）。Proにアップグレードすると無制限になります。</p>
-    <a href="/t/{code}/upgrade" class="btn btn-blue btn-block">Proにアップグレード（¥980/月）</a>
-  </div>'''
-    else:
-        slots_left = '' if is_pro(team) else f'<p style="font-size:12px;color:#888;margin:-8px 0 12px">あと{FREE_MEMBER_LIMIT - member_n}名まで追加できます</p>'
-        add_section = f'''
+    add_section = f'''
   <div class="card">
     <h2>メンバーを追加</h2>
-    {slots_left}
     <form method="POST">
       <input type="hidden" name="action" value="add">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -5540,7 +5518,6 @@ def upgrade_page(code):
         {_CHK} AI文章生成<br>
         {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力<br>
-        {_CHK} メンバー無制限<br>
         {_CHK} 優先サポート
       </div>
     </div>

@@ -1498,6 +1498,64 @@ footer a:hover{{color:#94a3b8}}
       </table>
     </div>
 
+    <!-- 他社A vs Rak -->
+    <div style="margin-top:48px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#9ca3af;text-transform:uppercase;margin-bottom:8px">VS 他社A</div>
+      <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:6px">スポーツアプリ専門と<br>何が違うのか？</div>
+      <div style="font-size:14px;color:#6b7280;margin-bottom:24px">機能は同じでも、料金は<strong style="color:#111">3分の1</strong>。しかも他社Aにない機能がある。</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table style="width:100%;border-collapse:collapse;min-width:460px">
+          <thead>
+            <tr>
+              <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:44%"></th>
+              <th style="padding:12px 16px;text-align:center;font-size:13px;color:#6b7280;font-weight:600;border-bottom:2px solid #f3f4f6">他社A</th>
+              <th style="padding:12px 16px;text-align:center;font-size:14px;font-weight:800;color:#fff;background:#111;border-bottom:2px solid #111;border-radius:10px 10px 0 0">Rak</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール共有</td>
+              <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
+              <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">集金・費用管理</td>
+              <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">ユニフォーム・備品管理</td>
+              <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">AI文章・スケジュール自動生成</td>
+              <td style="padding:14px 16px;text-align:center;font-size:20px;color:#e5e7eb">—</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:18px">✓ <span style="font-size:10px;color:#d97706;font-weight:700">AI</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #f3f4f6">
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">アプリ内広告</td>
+              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:600">あり</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;font-size:13px;color:#22c55e;font-weight:600">なし</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">Proプラン料金</td>
+              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:700">¥2,980/月</td>
+              <td style="padding:14px 16px;text-align:center;background:#fafafa;border-radius:0 0 10px 10px;font-size:13px;color:#111;font-weight:800">¥980/月</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;padding:14px 18px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;font-size:13px;color:#92400e;line-height:1.7">
+        <strong>集金・AI・ユニフォーム管理をまとめて</strong>、料金は他社Aの3分の1。チームの事務作業をひとつのアプリで完結できるのはRakだけです。
+      </div>
+    </div>
+
     <div style="margin-top:32px;background:#f8f9fb;border-radius:14px;padding:24px 28px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
         <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:6px">Rakだけができること</div>

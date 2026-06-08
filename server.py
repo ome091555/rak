@@ -1239,7 +1239,7 @@ button{{font-family:inherit;cursor:pointer}}
 
 /* Pricing */
 .pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}
-.plan-grid{{max-width:640px;margin:0 auto;display:grid;gap:16px}}
+.plan-grid{{max-width:780px;margin:0 auto;display:grid;gap:16px}}
 .plan-card{{background:#fff;border:1px solid var(--rak-line);border-radius:18px;padding:26px;box-shadow:0 4px 18px rgba(0,0,0,.04)}}
 .plan-card.dark{{background:linear-gradient(160deg,#1c1c1c,#000);color:#fff;border:none;position:relative;box-shadow:0 16px 40px rgba(15,23,42,.18)}}
 .plan-name{{font-size:13px;font-weight:800;color:var(--rak-mute);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}}
@@ -1249,7 +1249,7 @@ button{{font-family:inherit;cursor:pointer}}
 .plan-price .per{{color:var(--rak-mute);font-size:13px}}
 .plan-card.dark .plan-price .per{{color:#aaa}}
 .plan-items{{font-size:13px;color:var(--rak-graphite);line-height:1.95;margin-bottom:20px}}
-.plan-card.dark .plan-items{{color:#ddd}}
+.plan-card.dark .plan-items{{color:var(--rak-amber)}}
 .plan-card.dark .plan-items .acc{{color:var(--rak-amber)}}
 .plan-rec{{position:absolute;top:-11px;right:18px;background:var(--rak-amber);color:#fff;font-size:10px;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.05em;box-shadow:0 4px 12px rgba(245,158,11,.4)}}
 .plan-btn-w{{display:block;text-align:center;padding:14px;border-radius:999px;font-weight:800;font-size:14px;background:#fff;color:var(--rak-amber-deep);border:1.5px solid var(--rak-amber)}}
@@ -1455,7 +1455,7 @@ footer a:hover{{color:#94a3b8}}
 </section>
 
 <section class="pricing" id="pricing">
-  <div style="max-width:640px;margin:0 auto">
+  <div style="max-width:780px;margin:0 auto">
     <span class="sec-label">PRICING</span>
     <div class="sec-title">シンプルな料金。</div>
     <div class="sec-sub" style="margin-bottom:32px">まず無料で始めて、必要になったらアップグレード。</div>
@@ -1482,8 +1482,8 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ 会計・収支記録</div>
           <div class="acc">＋ AI文章生成（お知らせ・報告書・保護者連絡）</div>
           <div class="acc">＋ AIスケジュール自動生成</div>
-          <div style="color:#aaa;margin-top:6px">＋ メンバー無制限</div>
-          <div style="color:#aaa">＋ Excelエクスポート</div>
+          <div class="acc" style="margin-top:6px">＋ メンバー無制限</div>
+          <div class="acc">＋ Excelエクスポート</div>
         </div>
         <a href="/create" class="plan-btn-b">Proを試す（14日無料）</a>
       </div>

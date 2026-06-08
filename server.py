@@ -5537,6 +5537,8 @@ def admin_uniforms(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='home')
     error = ''
 
     if request.method == 'POST':
@@ -5602,6 +5604,8 @@ def admin_uniform_detail(code, uid):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='home')
     conn = get_db()
     u = conn.execute('SELECT * FROM uniforms WHERE id=? AND team_id=?', (uid, team['id'])).fetchone()
     if not u:
@@ -5718,6 +5722,8 @@ def admin_delete_uniform(code, uid):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='home')
     conn = get_db()
     conn.execute('DELETE FROM uniform_assignments WHERE uniform_id=?', (uid,))
     conn.execute('DELETE FROM uniforms WHERE id=? AND team_id=?', (uid, team['id']))
@@ -5789,6 +5795,8 @@ def admin_ledger(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if not is_pro(team):
+        return pro_gate(code, team, active='home')
 
     if request.method == 'POST':
         action = request.form.get('action', '')

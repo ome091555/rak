@@ -6363,6 +6363,37 @@ def stripe_webhook():
     return jsonify(ok=True)
 
 
+# ── Super Admin ──────────────────────────────────────────────────
+
+@app.route('/superadmin/teams')
+def superadmin_teams():
+    import base64
+    auth = request.headers.get('Authorization', '')
+    if BASIC_AUTH_USER and BASIC_AUTH_PASS:
+        expected = base64.b64encode(f'{BASIC_AUTH_USER}:{BASIC_AUTH_PASS}'.encode()).decode()
+        if auth != f'Basic {expected}':
+            return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin"'})
+    conn = get_db()
+    teams = conn.execute('SELECT name, sport, team_code, plan, created_at FROM teams ORDER BY created_at DESC').fetchall()
+    members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()
+    conn.close()
+    member_map = {m['team_id']: m['cnt'] for m in members}
+    rows = ''.join(
+        f'<tr><td>{t["created_at"][:16]}</td><td>{t["name"]}</td><td>{t["sport"]}</td>'
+        f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["team_code"], 0)}</td></tr>'
+        for t in teams
+    )
+    html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Rak Admin</title>
+    <style>body{{font-family:sans-serif;padding:24px;}}table{{border-collapse:collapse;width:100%;}}
+    th,td{{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:14px;}}
+    th{{background:#f3f4f6;}}tr:hover{{background:#f9fafb;}}</style></head><body>
+    <h2>Rak チーム一覧（{len(teams)}件）</h2>
+    <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th></tr>
+    {rows}</table></body></html>'''
+    return html
+
+
 # ── Run ───────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

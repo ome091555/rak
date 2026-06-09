@@ -531,7 +531,7 @@ FAVICON_LINK = (
     '<meta name="apple-mobile-web-app-capable" content="yes">'
     '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
     '<meta name="apple-mobile-web-app-title" content="Rak">'
-    '<link rel="apple-touch-icon" href="/icon.svg">'
+    '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
 )
 
 PWA_SW = '''<script>
@@ -1042,13 +1042,18 @@ def pwa_manifest():
         "background_color": "#ffffff",
         "theme_color": "#d97706",
         "icons": [
-            {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+            {"src": "/apple-touch-icon.png", "sizes": "1254x1254", "type": "image/png", "purpose": "any maskable"}
         ]
     })
 
 @app.route('/icon.svg')
 def pwa_icon():
     return Response(_PWA_ICON_SVG, mimetype='image/svg+xml')
+
+@app.route('/apple-touch-icon.png')
+@app.route('/apple-touch-icon-precomposed.png')
+def apple_touch_icon():
+    return send_file('static/apple-touch-icon.png', mimetype='image/png')
 
 @app.route('/sw.js')
 def service_worker():

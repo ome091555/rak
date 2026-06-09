@@ -36,6 +36,7 @@ PROMO_CODES = [c.strip() for c in os.environ.get('PROMO_CODES', '').split(',') i
 VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY', '')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:m.ome.091555@gmail.com')
+GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
 
 # ── Web Push 通知 ────────────────────────────────────────────────────────
 
@@ -1121,6 +1122,7 @@ def sitemap_xml():
 def home():
     join_error = request.args.get('error', '')
     join_code  = request.args.get('code', '')
+    GOOGLE_VERIFY_TAG = f'<meta name="google-site-verification" content="{GOOGLE_SITE_VERIFICATION}">' if GOOGLE_SITE_VERIFICATION else ''
     LP_LOGO = '<svg width="30" height="27" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
     LP_LOGO_W = '<svg width="24" height="22" viewBox="0 0 110 100" fill="none"><path d="M 22 84 L 22 16 L 50 16 C 64 16 70 26 70 36 C 70 46 64 54 50 54 L 22 54" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/><path d="M 44 54 L 62 84 L 102 18" stroke="#d97706" stroke-width="11" stroke-linejoin="miter" fill="none"/></svg>'
     _sv = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
@@ -1144,6 +1146,7 @@ def home():
 <meta name="description" content="Rakはスポーツチーム・部活・サークルの運営をまるごと効率化するチーム管理アプリです。スケジュール共有・出欠確認・集金管理・AI文章作成をひとつにまとめて、事務作業をゼロに近づけます。無料から始められます。">
 <meta name="keywords" content="チーム管理アプリ,スポーツチーム,スケジュール管理,出欠確認,集金管理,部活管理,少年野球,ソフトボール,サッカー,バスケ">
 <link rel="canonical" href="https://www.rakapp.jp/">
+{GOOGLE_VERIFY_TAG}
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.rakapp.jp/">
 <meta property="og:title" content="Rak — チーム運営をラクにするアプリ">

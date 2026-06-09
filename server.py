@@ -521,10 +521,10 @@ NAV_MARK = (
 )
 FAVICON_LINK = (
     '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,'
-    "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 120'%3E"
-    "%3Crect width='130' height='120' rx='28' fill='%23d97706'/%3E"
-    "%3Cpath d='M 32 94 L 32 26 L 60 26 C 74 26 80 36 80 46 C 80 56 74 64 60 64 L 32 64' stroke='white' stroke-width='11' stroke-linejoin='miter' fill='none'/%3E"
-    "%3Cpath d='M 54 64 L 72 94 L 112 28' stroke='white' stroke-width='11' stroke-linejoin='miter' fill='none'/%3E"
+    "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E"
+    "%3Crect width='100' height='100' fill='%23d97706'/%3E"
+    "%3Cpath d='M 18 82 L 18 18 L 46 18 C 60 18 66 28 66 38 C 66 48 60 56 46 56 L 18 56' stroke='white' stroke-width='10' stroke-linejoin='miter' fill='none'/%3E"
+    "%3Cpath d='M 40 56 L 58 82 L 92 16' stroke='white' stroke-width='10' stroke-linejoin='miter' fill='none'/%3E"
     "%3C/svg%3E"
     '"><meta name="theme-color" content="#d97706">'
     '<link rel="manifest" href="/manifest.json">'
@@ -984,10 +984,10 @@ def page(title, body, code=None, active=None):
 
 # ── PWA ───────────────────────────────────────────────────────────
 
-_PWA_ICON_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 120">
-<rect width="130" height="120" rx="28" fill="#d97706"/>
-<path d="M 32 94 L 32 26 L 60 26 C 74 26 80 36 80 46 C 80 56 74 64 60 64 L 32 64" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>
-<path d="M 54 64 L 72 94 L 112 28" stroke="white" stroke-width="11" stroke-linejoin="miter" fill="none"/>
+_PWA_ICON_SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<rect width="100" height="100" fill="#d97706"/>
+<path d="M 18 82 L 18 18 L 46 18 C 60 18 66 28 66 38 C 66 48 60 56 46 56 L 18 56" stroke="white" stroke-width="10" stroke-linejoin="miter" fill="none"/>
+<path d="M 40 56 L 58 82 L 92 16" stroke="white" stroke-width="10" stroke-linejoin="miter" fill="none"/>
 </svg>'''
 
 @app.route('/push/vapid-public-key')

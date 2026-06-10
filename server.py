@@ -792,6 +792,17 @@ button{font-family:inherit}
 .nav-links-desktop a{font-size:13px;color:var(--rak-mute);padding:5px 10px;border-radius:6px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
 .nav-links-desktop a:hover{background:var(--rak-bg-soft);color:var(--rak-ink);text-decoration:none}
 .nav-links-desktop a.active{color:var(--rak-ink);font-weight:700;background:var(--rak-bg-soft)}
+/* Dropdown */
+.nav-dropdown{position:relative;display:inline-flex}
+.nav-dd-btn{font-size:13px;color:var(--rak-mute);padding:5px 9px;border-radius:6px;font-weight:500;display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:none;border:none;font-family:inherit}
+.nav-dd-btn:hover,.nav-dd-btn.active{background:var(--rak-bg-soft);color:var(--rak-ink)}
+.nav-dd-btn.active{font-weight:700}
+.nav-dd-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--rak-line);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:200;min-width:160px;padding:4px}
+.nav-dd-menu.open{display:block}
+.nav-dd-menu a{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:13px;color:var(--rak-mute);border-radius:7px;white-space:nowrap}
+.nav-dd-menu a:hover{background:var(--rak-bg-soft);color:var(--rak-ink);text-decoration:none}
+.nav-dd-menu a.active{color:var(--rak-ink);font-weight:700;background:var(--rak-bg-soft)}
+.nav-dd-sep{height:1px;background:var(--rak-line);margin:4px 8px}
 
 /* Bottom nav */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--rak-line);z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
@@ -934,17 +945,16 @@ def page(title, body, code=None, active=None):
     bottom_nav = ''
     if code:
         home_dest = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
-        tabs = [
-            ('home',      'home',      'ホーム',       home_dest),
-            ('schedule',  'schedule',  '予定',         f'/t/{code}/schedule'),
-            ('notices',   'notices',   'お知らせ',     f'/t/{code}/notices'),
-            ('members',   'members',   'メンバー',     f'/t/{code}/members'),
-            ('fees',      'fees',      '集金',         f'/t/{code}/fees'),
-            ('orders',    'orders',    '注文フォーム', f'/t/{code}/orders'),
-            ('uniforms',  'uniforms',  'ユニフォーム', f'/t/{code}/uniforms'),
-        ]
 
-        for key, icon_key, label, url in tabs:
+        # メイン5タブ（デスクトップ＋ボトムナビ共通）
+        main_tabs = [
+            ('home',     'home',     'ホーム',   home_dest),
+            ('schedule', 'schedule', '予定',     f'/t/{code}/schedule'),
+            ('notices',  'notices',  'お知らせ', f'/t/{code}/notices'),
+            ('members',  'members',  'メンバー', f'/t/{code}/members'),
+            ('fees',     'fees',     '集金',     f'/t/{code}/fees'),
+        ]
+        for key, icon_key, label, url in main_tabs:
             cls = 'active' if active == key else ''
             ico = ICONS[icon_key]
             cnt = notifs.get(key, 0)
@@ -952,19 +962,41 @@ def page(title, body, code=None, active=None):
             desktop_nav += f'<a href="{url}" class="{cls}"><span class="nav-d-icon">{ico}</span>{label}</a>'
             bottom_nav += f'<a href="{url}" class="{cls}"><span class="nav-b-icon">{ico}</span><span>{label}</span>{badge}</a>'
 
-        if admin:
-            for a_key, a_icon, a_label, a_url in [
-                ('ai',      'ai',      'AI文章',   f'/t/{code}/admin/ai'),
-                ('ledger',  'ledger',  '会計',     f'/t/{code}/admin/ledger'),
-                ('memo',    'memo',    'メモ',     f'/t/{code}/admin/memos'),
-                ('contact', 'contact', '問い合わせ', f'/feedback?from={code}'),
-                ('help',    'help',    '使い方',   f'/t/{code}/help'),
-                ('plan',    'plan',    'プラン',   f'/t/{code}/upgrade'),
-            ]:
-                cls = 'active' if active == a_key else ''
-                desktop_nav += f'<a href="{a_url}" class="{cls}"><span class="nav-d-icon">{ICONS[a_icon]}</span>{a_label}</a>'
-        elif member:
-            desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 10px">{_ICO_USER_SM} {member}</span>'
+        # 「その他▾」ドロップダウン
+        overflow_common = [
+            ('orders',   'orders',   '注文フォーム', f'/t/{code}/orders'),
+            ('uniforms', 'uniforms', 'ユニフォーム', f'/t/{code}/uniforms'),
+        ]
+        overflow_admin = [
+            ('ai',      'ai',      'AI文章',    f'/t/{code}/admin/ai'),
+            ('ledger',  'ledger',  '会計',      f'/t/{code}/admin/ledger'),
+            ('memo',    'memo',    'メモ',      f'/t/{code}/admin/memos'),
+            ('contact', 'contact', '問い合わせ', f'/feedback?from={code}'),
+            ('help',    'help',    '使い方',    f'/t/{code}/help'),
+            ('plan',    'plan',    'プラン',    f'/t/{code}/upgrade'),
+        ]
+        overflow_all = overflow_common + (overflow_admin if admin else [])
+        overflow_active = active in {k for k, _, _, _ in overflow_all}
+
+        dd_items = ''
+        for i, (key, icon_key, label, url) in enumerate(overflow_all):
+            if admin and key == 'ai':
+                dd_items += '<div class="nav-dd-sep"></div>'
+            item_cls = 'active' if active == key else ''
+            cnt = notifs.get(key, 0)
+            badge_html = f'<span style="background:#ef4444;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;margin-left:auto">{cnt}</span>' if cnt else ''
+            dd_items += f'<a href="{url}" class="{item_cls}"><span class="nav-d-icon">{ICONS[icon_key]}</span>{label}{badge_html}</a>'
+
+        dd_btn_cls = 'active' if overflow_active else ''
+        desktop_nav += (
+            f'<div class="nav-dropdown">'
+            f'<button class="nav-dd-btn {dd_btn_cls}" onclick="(function(b){{var m=b.nextElementSibling;m.classList.toggle(\'open\')}})(this)">その他&nbsp;▾</button>'
+            f'<div class="nav-dd-menu">{dd_items}</div>'
+            f'</div>'
+        )
+
+        if member and not admin:
+            desktop_nav += f'<span style="font-size:12px;color:#888;padding:6px 8px">{_ICO_USER_SM} {member}</span>'
 
         if admin:
             bottom_nav = ''
@@ -985,6 +1017,7 @@ def page(title, body, code=None, active=None):
   <div class="nav-links-desktop">{desktop_nav}</div>
   {f'<a href="/t/{code}/help" style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#f1f4f9;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;text-decoration:none;flex-shrink:0">?</a>' if code and member and not admin else ''}
 </nav>
+<script>document.addEventListener('click',function(e){{document.querySelectorAll('.nav-dd-menu.open').forEach(function(m){{if(!m.parentElement.contains(e.target))m.classList.remove('open')}})}})</script>
 {body}
 {bottom_nav}
 {PWA_SW}

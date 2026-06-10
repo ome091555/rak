@@ -5743,7 +5743,7 @@ def feedback():
   </div>
   <div style="text-align:center"><a href="{back_url}" style="font-size:13px;color:#aaa">← {back_label}</a></div>
 </div>'''
-    return page('お問い合わせ', body)
+    return page('お問い合わせ', body, from_code or None, active='contact')
 
 
 @app.route('/rak/mailtest')

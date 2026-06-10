@@ -1358,13 +1358,15 @@ footer a:hover{{color:#94a3b8}}
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
           <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">14日間無料トライアル</div>
-          <div style="font-size:11px;color:#888;margin-bottom:12px">その後 ¥980/月・いつでも解約可</div>
+          <div style="font-size:11px;color:#888;margin-bottom:4px">その後 ¥980/月・いつでも解約可</div>
+          <div style="display:inline-block;font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;margin-bottom:10px">クレカ不要</div>
           <a href="/create?intent=pro" class="btn-primary" style="display:block;font-size:13px;padding:10px 0">試してみる →</a>
         </div>
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:#64748b;margin-bottom:4px">FREE</div>
           <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">無料プラン</div>
-          <div style="font-size:11px;color:#888;margin-bottom:12px">クレカ不要・基本機能のみ</div>
+          <div style="font-size:11px;color:#888;margin-bottom:4px">基本機能のみ</div>
+          <div style="display:inline-block;font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;margin-bottom:10px">クレカ不要</div>
           <a href="/create" class="btn-ghost" style="display:block;font-size:13px;padding:10px 0">無料で始める</a>
         </div>
       </div>

@@ -5618,8 +5618,8 @@ def feedback():
     {'<div class="msg-ok">送信しました！内容を確認の上、ご連絡いたします。</div>' if sent else ''}
     {'<div class="msg-err">' + error + '</div>' if error else ''}
     <form method="POST">
-      <label>チーム名 *</label>
-      <input type="text" name="team_name" placeholder="例：FC東京U-15" required>
+      <label>チーム名 <span style="font-size:11px;color:#9ca3af;font-weight:400">（任意）</span></label>
+      <input type="text" name="team_name" placeholder="例：FC東京U-15（検討中の方は「検討中」とご記入ください）">
       <label>お名前 *</label>
       <input type="text" name="name" placeholder="例：田中 太郎" required>
       <label>メールアドレス *</label>

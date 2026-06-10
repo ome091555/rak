@@ -1783,6 +1783,8 @@ def create_team():
         email = request.form.get('email', '').strip()
         if not name or not password or not email:
             error = 'チーム名・メールアドレス・パスワードをすべて入力してください'
+        elif len(name) < 2:
+            error = 'チーム名は2文字以上で入力してください'
         elif len(password) < 8:
             error = 'パスワードは8文字以上で設定してください'
         elif not any(c.isalpha() for c in password):
@@ -2616,7 +2618,7 @@ def schedule(code):
 <div class="container">
   <div class="row" style="margin-bottom:16px">
     <div><span class="section-label">スケジュール</span></div>
-    <div style="display:flex;gap:8px">{excel_btn}{ai_btn}{new_btn}</div>
+    <div style="display:flex;gap:8px;margin-left:auto">{excel_btn}{ai_btn}{new_btn}</div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -2982,8 +2984,8 @@ def notices(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">{_ICO_BELL_SM} お知らせ</span></div>
-    {new_btn}
+    <span class="section-label">{_ICO_BELL_SM} お知らせ</span>
+    <div style="margin-left:auto">{new_btn}</div>
   </div>
   {cards if ns else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div><div style="font-weight:700;margin-bottom:4px">お知らせはまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">最初のお知らせを送ってみましょう。AIが下書きを作れます。</div><div style="display:flex;gap:8px;justify-content:center"><a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ 作成する</a><a href="/t/{code}/admin/ai" class="btn btn-outline btn-sm">✨ AIで下書き</a></div></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div>お知らせはまだありません</div>')}
   {'<div style="margin-top:8px">' + back_link + '</div>' if admin else ''}
@@ -3138,8 +3140,8 @@ def admin_settings(code):
                 return redirect('/?deleted=1')
         if action == 'name':
             new_name = request.form.get('name', '').strip()
-            if not new_name:
-                error = 'チーム名を入力してください'
+            if not new_name or len(new_name) < 2:
+                error = 'チーム名は2文字以上で入力してください'
             else:
                 conn.execute('UPDATE teams SET name=? WHERE id=?', (new_name, team['id']))
                 conn.commit()
@@ -3248,7 +3250,7 @@ def admin_settings(code):
     </form>
   </div>
 
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('設定', body, code, active='home')
 
@@ -4447,7 +4449,7 @@ JSONのみ返してください。説明不要です。'''
 
   {tmpl_section}
 
-  <div style="text-align:center;margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('AI文章作成', body, code, active='ai')
 
@@ -4527,7 +4529,7 @@ def admin_members(code):
     member_n = len(members)
     msg_cls = 'msg-ok' if msg and '追加しました' in msg else 'msg-err'
     add_section = f'''
-  <div class="card">
+  <div class="card" id="add-member">
     <h2>メンバーを追加</h2>
     <form method="POST">
       <input type="hidden" name="action" value="add">
@@ -4575,12 +4577,15 @@ def admin_members(code):
   <div class="card">
     <div class="row" style="margin-bottom:16px">
       <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
-      <span class="badge badge-blue" style="margin-left:auto">{member_count_label(team, member_n)}</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <span class="badge badge-blue">{member_count_label(team, member_n)}</span>
+        <a href="#add-member" class="btn btn-blue btn-sm">＋ 追加</a>
+      </div>
     </div>
     {rows if members else empty_invite}
   </div>
   {add_section}
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メンバー管理', body, code, active='members')
 
@@ -4678,7 +4683,7 @@ def member_list(code):
           </div>
         </div>'''
 
-    edit_btn = f'<a href="/t/{code}/admin/members" class="btn btn-sm btn-outline">編集</a>' if admin else ''
+    edit_btn = f'<a href="/t/{code}/admin/members" class="btn btn-sm btn-blue">＋ 管理・追加</a>' if admin else ''
     home_url = f'/t/{code}/admin/dash' if (admin and not member) else f'/t/{code}/home'
     body = f'''
 <div class="container" style="max-width:540px">
@@ -4694,7 +4699,7 @@ def member_list(code):
     </div>
     {rows if members else '<div class="empty">まだメンバーがいません</div>'}
   </div>
-  <div style="text-align:center"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('メンバー', body, code, active='members')
 
@@ -4746,11 +4751,11 @@ def member_fees(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">{_ICO_MONEY_SM} 集金</span></div>
-    {new_btn}
+    <span class="section-label">{_ICO_MONEY_SM} 集金</span>
+    <div style="margin-left:auto">{new_btn}</div>
   </div>
   {cards if fees else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_COIN}</div><div style="font-weight:700;margin-bottom:4px">集金項目はまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">月会費や遠征費を作成して、誰が払ったか一覧管理できます。</div><a href="/t/{code}/admin/fees/new" class="btn btn-blue btn-sm">＋ 集金項目を追加</a></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_COIN}</div>集金項目はまだありません</div>')}
-  <div style="text-align:center;margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('集金', body, code, active='fees')
 
@@ -4790,7 +4795,7 @@ def admin_fees(code):
     </div>
     {rows if fees else '<div class="empty">集金項目がありません</div>'}
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('集金管理', body, code, active='fees')
 
@@ -5111,11 +5116,11 @@ def orders_list(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">{_ICO_CLIPBOARD} 注文フォーム</span></div>
-    {new_btn}
+    <span class="section-label">{_ICO_CLIPBOARD} 注文フォーム</span>
+    <div style="margin-left:auto">{new_btn}</div>
   </div>
   {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文フォームはまだありません</div>'}
-  <div style="text-align:center;margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('注文フォーム', body, code, active='orders')
 
@@ -5674,8 +5679,8 @@ def survey_list(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <div><span class="section-label">{_ICO_CHART_SM} アンケート</span></div>
-    {new_btn}
+    <span class="section-label">{_ICO_CHART_SM} アンケート</span>
+    <div style="margin-left:auto">{new_btn}</div>
   </div>
   {cards if surveys else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_CHART + '</div>アンケートはまだありません</div>'}
 </div>'''
@@ -6206,7 +6211,7 @@ def admin_uniforms(code):
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
+  <div style="margin-top:8px"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('ユニフォーム管理', body, code, active='uniforms')
 

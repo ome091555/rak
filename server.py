@@ -1504,6 +1504,11 @@ footer a:hover{{color:#94a3b8}}
         <div class="fcard-title">チームコード招待</div>
         <div class="fcard-desc">コードを共有するだけで参加完了</div>
       </div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_BELL}</span>
+        <div class="fcard-title">保護者リンク（登録不要）</div>
+        <div class="fcard-desc">アカウント不要でスケジュール・お知らせを閲覧。保護者・スタッフに共有できます</div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--rak-amber-deep);white-space:nowrap">PRO　アップグレードで解放</span>
@@ -2980,7 +2985,7 @@ def notices(code):
     <div><span class="section-label">{_ICO_BELL_SM} お知らせ</span></div>
     {new_btn}
   </div>
-  {cards if ns else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_BELL + '</div>お知らせはまだありません</div>'}
+  {cards if ns else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div><div style="font-weight:700;margin-bottom:4px">お知らせはまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">最初のお知らせを送ってみましょう。AIが下書きを作れます。</div><div style="display:flex;gap:8px;justify-content:center"><a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ 作成する</a><a href="/t/{code}/admin/ai" class="btn btn-outline btn-sm">✨ AIで下書き</a></div></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div>お知らせはまだありません</div>')}
   {'<div style="margin-top:8px">' + back_link + '</div>' if admin else ''}
 </div>'''
     return page('お知らせ', body, code, active='notices')
@@ -3112,6 +3117,25 @@ def admin_settings(code):
             session[f'admin_{new_code}'] = True
             session.pop(f'admin_{code}', None)
             return redirect(url_for('admin_settings', code=new_code, regen='1'))
+        if action == 'delete_team':
+            confirm_pw = request.form.get('confirm_password', '')
+            if confirm_pw != team['admin_password']:
+                error = 'パスワードが違います。チームの削除はできませんでした。'
+                conn.close()
+            else:
+                tid = team['id']
+                for tbl in ['rsvps','reads','fee_payments','order_responses','push_subscriptions',
+                            'admin_memos','uniform_assignments','ledger','password_reset_tokens']:
+                    try: conn.execute(f'DELETE FROM {tbl} WHERE team_id=?', (tid,))
+                    except: pass
+                for tbl in ['events','notices','members','fees','order_forms','uniforms']:
+                    try: conn.execute(f'DELETE FROM {tbl} WHERE team_id=?', (tid,))
+                    except: pass
+                conn.execute('DELETE FROM teams WHERE id=?', (tid,))
+                conn.commit()
+                conn.close()
+                session.pop(f'admin_{code}', None)
+                return redirect('/?deleted=1')
         if action == 'name':
             new_name = request.form.get('name', '').strip()
             if not new_name:
@@ -3201,6 +3225,26 @@ def admin_settings(code):
         <button type="button" onclick="var i=document.getElementById('new-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
       </div>
       <button class="btn btn-blue btn-block" type="submit">パスワードを変更する</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;background:#fafafa">
+    <h2 style="margin-bottom:4px">ログアウト</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">このデバイスの管理者セッションを終了します</div>
+    <a href="/t/{code}/admin/logout" class="btn btn-outline btn-block">ログアウトする</a>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;border-color:#fecaca;background:#fff5f5">
+    <h2 style="margin-bottom:4px;color:#991b1b">チームを削除する</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">チームと全データ（メンバー・予定・集金・お知らせ）を完全に削除します。この操作は取り消せません。</div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#991b1b">
+      ⚠️ 削除後30日以内にサーバーからデータが消去されます。有料プランは次回更新日前に解約してください。
+    </div>
+    <form method="POST" onsubmit="return confirm('本当にチームを削除しますか？この操作は取り消せません。')">
+      <input type="hidden" name="action" value="delete_team">
+      <label style="color:#991b1b">パスワードを入力して確認</label>
+      <input type="password" name="confirm_password" placeholder="管理者パスワード" required>
+      <button class="btn btn-block" type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">チームを完全に削除する</button>
     </form>
   </div>
 
@@ -3817,6 +3861,7 @@ def team_help(code):
         ('お知らせを読む', '「連絡」タブに管理者からのお知らせが届きます。未読は赤いバッジで表示されます。'),
         ('集金を確認する', '「集金」タブで支払い状況を確認。支払った分は管理者が記録します。'),
         ('注文フォームに回答する', '弁当やウェアなどの注文フォームが届いたら「注文」タブから回答できます。'),
+        ('保護者・スタッフには閲覧リンクを', 'アカウント登録なしで予定・お知らせを見られる専用リンクがあります。管理者から共有してもらいましょう。'),
     ]
 
     steps_admin = [
@@ -3826,6 +3871,7 @@ def team_help(code):
         ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成機能で下書きを自動生成できます。'),
         ('集金を管理する', '「集金」タイルで集金項目を作成。誰が払ったか一覧で管理できます。'),
         ('メモ・ファイルを管理する', '「メモ」タイルで管理者専用のメモを作成。PDFやExcelなどのファイルも添付できます。'),
+        ('保護者リンクを共有する', 'ホームの「メンバーにはこう見える」から閲覧専用URLを取得。アカウント不要でスケジュール・お知らせが確認できるリンクを保護者やスタッフに送れます。'),
     ]
 
     def step_html(steps, color):
@@ -4509,6 +4555,20 @@ def admin_members(code):
     </form>
   </div>'''
 
+    invite_url = f'{base_url()}t/{code}/join'
+    empty_invite = f'''
+    <div style="text-align:center;padding:24px 16px">
+      <div style="font-size:32px;margin-bottom:10px">👥</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">まだメンバーがいません</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6">チームコードを共有してメンバーを招待しましょう。<br>参加者はコードを入力するだけで登録完了です。</div>
+      <div style="background:#f8f9fa;border:1px solid var(--rak-line);border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">チームコード</div>
+        <div style="font-size:28px;font-weight:900;letter-spacing:.15em;color:var(--rak-ink);font-family:monospace;margin-bottom:10px">{code}</div>
+        <button onclick="navigator.clipboard.writeText('{invite_url}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='参加URLをコピー',1500)}})" class="btn btn-blue" style="width:100%">参加URLをコピー</button>
+      </div>
+      <div style="font-size:12px;color:#aaa">または下のフォームから手動でメンバーを追加できます</div>
+    </div>'''
+
     body = f'''
 <div class="container" style="max-width:540px">
   {f'<div class="{msg_cls}">{msg}</div>' if msg else ''}
@@ -4517,7 +4577,7 @@ def admin_members(code):
       <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
       <span class="badge badge-blue" style="margin-left:auto">{member_count_label(team, member_n)}</span>
     </div>
-    {rows if members else '<div class="empty">まだメンバーがいません</div>'}
+    {rows if members else empty_invite}
   </div>
   {add_section}
   <div style="text-align:center"><a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a></div>
@@ -4689,7 +4749,7 @@ def member_fees(code):
     <div><span class="section-label">{_ICO_MONEY_SM} 集金</span></div>
     {new_btn}
   </div>
-  {cards if fees else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_COIN + '</div>集金項目はまだありません</div>'}
+  {cards if fees else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_COIN}</div><div style="font-weight:700;margin-bottom:4px">集金項目はまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">月会費や遠征費を作成して、誰が払ったか一覧管理できます。</div><a href="/t/{code}/admin/fees/new" class="btn btn-blue btn-sm">＋ 集金項目を追加</a></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_COIN}</div>集金項目はまだありません</div>')}
   <div style="text-align:center;margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('集金', body, code, active='fees')

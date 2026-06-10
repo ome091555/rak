@@ -1594,8 +1594,8 @@ footer a:hover{{color:#94a3b8}}
             </tr>
             <tr>
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">Proプラン料金</td>
-              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:700">¥2,980/月</td>
-              <td style="padding:14px 16px;text-align:center;background:#fffbeb;border-radius:0 0 10px 10px;font-size:13px;color:#d97706;font-weight:800">¥980/月</td>
+              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#ef4444;font-weight:700">高価格</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;border-radius:0 0 10px 10px;font-size:13px;color:#d97706;font-weight:800">¥980/月〜<br><span style="font-size:10px;font-weight:500;color:#92400e">1チームあたり</span></td>
             </tr>
           </tbody>
         </table>
@@ -1649,6 +1649,7 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-rec">おすすめ</div>
         <div class="plan-name">Pro</div>
         <div class="plan-price"><span class="num">¥980</span><span class="per">/月</span></div>
+        <div style="font-size:11px;color:#aaa;margin-top:-12px;margin-bottom:8px">1チームあたり・税込</div>
         <div class="plan-items">
           <div class="acc">＋ 集金・費用管理</div>
           <div class="acc">＋ 注文フォーム</div>

@@ -1566,13 +1566,13 @@ footer a:hover{{color:#94a3b8}}
           <tbody>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">スケジュール共有</td>
-              <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
-              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
+              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#6b7280">あり</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:13px;color:#d97706;font-weight:600">専用タブで流れない</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">出欠確認</td>
-              <td style="padding:14px 16px;text-align:center;font-size:18px;color:#22c55e">✓</td>
-              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
+              <td style="padding:14px 16px;text-align:center;font-size:13px;color:#6b7280">あり</td>
+              <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:13px;color:#d97706;font-weight:600">自動リマインド送信</td>
             </tr>
             <tr style="border-bottom:1px solid #f3f4f6">
               <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:600">集金・費用管理</td>
@@ -1651,19 +1651,47 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-rec">おすすめ</div>
         <div class="plan-name">Pro</div>
         <div class="plan-price"><span class="num">¥980</span><span class="per">/月</span></div>
-        <div style="font-size:11px;color:#aaa;margin-top:-12px;margin-bottom:8px">1チームあたり・税込</div>
+        <div style="font-size:11px;color:#aaa;margin-top:-12px;margin-bottom:4px">1チームあたり・税込</div>
+        <div style="display:inline-block;font-size:11px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:2px 8px;margin-bottom:10px">年額 ¥9,800 で2ヶ月分お得</div>
         <div class="plan-items">
           <div class="acc">＋ 集金・費用管理</div>
           <div class="acc">＋ 注文フォーム</div>
           <div class="acc">＋ ユニフォーム管理</div>
           <div class="acc">＋ 会計・収支記録</div>
-          <div class="acc">＋ AI文章生成（お知らせ・報告書・保護者連絡）</div>
+          <div class="acc">＋ AI文章生成（活動報告書・お知らせ・保護者連絡）</div>
           <div class="acc">＋ AIスケジュール自動生成</div>
           <div class="acc">＋ Excelエクスポート</div>
         </div>
-        <a href="/create" class="plan-btn-b">Proを試す（14日無料）</a>
+        <a href="/create?intent=pro" class="plan-btn-b">Proを試す（14日無料・クレカ不要）</a>
       </div>
     </div>
+  </div>
+</section>
+
+<section style="padding:48px 20px;max-width:680px;margin:0 auto">
+  <span class="sec-label">FAQ</span>
+  <div class="sec-title" style="font-size:22px;margin-bottom:24px">よくある質問</div>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">クレジットカードは必要ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">無料プランもProトライアル（14日間）も、クレジットカードは不要です。Proにアップグレードする際に初めてカード情報が必要になります。</div>
+    </details>
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">解約はいつでもできますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">はい。管理者ページからいつでも解約できます。解約後は次の請求日以降の課金が止まり、期間終了まで引き続きご利用いただけます。</div>
+    </details>
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">無料プランとProプランの違いは？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">無料プランはスケジュール・連絡・メンバー管理などの基本機能が使えます。Proプランでは集金・費用管理、注文フォーム、AI文章生成・スケジュール自動生成、ユニフォーム管理、Excelエクスポートなどが追加されます。</div>
+    </details>
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">年度替わりのデータはどうなりますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">チームコードはそのまま引き継がれます。新年度のメンバーを追加し、旧メンバーを削除するだけで続けて使えます。過去のデータは保持されます。</div>
+    </details>
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">子どもの個人情報は安全ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">チーム内のデータは、チームコードを知っているメンバーのみがアクセスできます。第三者への情報提供は行いません。詳細はプライバシーポリシーをご確認ください。</div>
+    </details>
   </div>
 </section>
 
@@ -1705,8 +1733,8 @@ def create_team():
         email = request.form.get('email', '').strip()
         if not name or not password or not email:
             error = 'チーム名・メールアドレス・パスワードをすべて入力してください'
-        elif len(password) < 6:
-            error = 'パスワードは6文字以上で設定してください'
+        elif len(password) < 8:
+            error = 'パスワードは8文字以上で設定してください'
         elif not any(c.isalpha() for c in password):
             error = 'パスワードに英字（a〜z / A〜Z）を1文字以上含めてください'
         elif not any(c.isdigit() for c in password):
@@ -1732,7 +1760,10 @@ def create_team():
                 return redirect(url_for('admin_dash', code=code, created='1'))
             return redirect(url_for('admin_dash', code=code, created='1'))
 
-    pro_badge = '<div style="background:var(--rak-amber);color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:10px">14日間無料トライアル</div>' if intent == 'pro' else ''
+    pro_badge = '''<div style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:800;margin-bottom:4px">✦ Pro 14日間無料トライアル付きで作成</div>
+      <div style="font-size:11px;opacity:.9">クレカ不要・いつでも解約可・14日後に自動課金なし</div>
+    </div>''' if intent == 'pro' else ''
     submit_label = 'チームを作成してProトライアルへ →' if intent == 'pro' else 'チームを作成してコードを発行 →'
     body = f'''
 <div class="container" style="max-width:480px">
@@ -1753,7 +1784,7 @@ def create_team():
         <input type="password" name="password" id="pw-input" placeholder="例：soccer2026" required style="padding-right:44px">
         <button type="button" onclick="var i=document.getElementById('pw-input');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
       </div>
-      <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む6文字以上　※メンバーには共有しないでください</div>
+      <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む8文字以上　※メンバーには共有しないでください</div>
       <button class="btn btn-blue btn-block" type="submit">{submit_label}</button>
     </form>
   </div>

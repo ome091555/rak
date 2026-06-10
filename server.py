@@ -38,6 +38,15 @@ VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:m.ome.091555@gmail.com')
 GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
 
+
+def base_url():
+    """Railway等のリバースプロキシ環境でも常にhttpsを返す"""
+    url = request.host_url
+    if not request.host.startswith('localhost') and not request.host.startswith('127.0.0.1'):
+        url = url.replace('http://', 'https://')
+    return url
+
+
 # ── Web Push 通知 ────────────────────────────────────────────────────────
 
 def _vapid_headers(endpoint):
@@ -1811,7 +1820,7 @@ def forgot_password():
             conn.execute('INSERT INTO password_reset_tokens (id,team_id,token,expires_at) VALUES (?,?,?,?)',
                          (new_id(), team['id'], token, expires))
             conn.commit()
-            reset_url = f"{request.host_url}reset-password?token={token}"
+            reset_url = f"{base_url()}reset-password?token={token}"
             if RESEND_API_KEY:
                 try:
                     import requests as _req
@@ -1916,13 +1925,58 @@ def team_portal(code):
         return redirect('/')
     member = get_member(code)
     if not member and not is_admin(code):
-        body = f'''
+        # 既存メンバー名簿を取得
+        _conn = get_db()
+        roster = [r['name'] for r in _conn.execute('SELECT name FROM members WHERE team_id=? ORDER BY name', (team['id'],)).fetchall()]
+        _conn.close()
+
+        if roster:
+            # 名簿あり：一覧から選ぶUI（二重登録防止）
+            name_buttons = ''.join(
+                f'<form method="POST" action="/t/{code}/join" style="margin:0"><input type="hidden" name="name" value="{n}"><button type="submit" class="btn btn-outline" style="width:100%;text-align:left;padding:11px 14px;font-size:14px">{n}</button></form>'
+                for n in roster
+            )
+            body = f'''
+<div class="container" style="max-width:480px;padding-top:60px">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="margin-bottom:8px">{_ICO_WELCOME}</div>
+      <h1 style="margin-bottom:4px">{team["name"]}</h1>
+      <p style="color:#666;font-size:13px">あなたの名前を選んでください</p>
+    </div>
+    <div id="roster-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      {name_buttons}
+    </div>
+    <div style="text-align:center">
+      <button onclick="document.getElementById('roster-list').style.display='none';document.getElementById('name-form').style.display='block';this.style.display='none'" style="background:none;border:none;color:#aaa;font-size:12px;cursor:pointer;padding:6px">自分の名前がない →</button>
+    </div>
+    <!-- 名前がない場合の手入力フォーム -->
+    <div id="name-form" style="display:none;margin-top:12px">
+      <div style="font-size:12px;color:#d97706;background:#fffbeb;border-radius:6px;padding:8px 12px;margin-bottom:12px">管理者に名前の登録を依頼するか、以下から入力してください</div>
+      <form method="POST" action="/t/{code}/join" onsubmit="rakSave(this)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;color:#888;margin-bottom:4px;display:block">苗字</label>
+            <input type="text" name="last_name" placeholder="田中" required style="text-align:center">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#888;margin-bottom:4px;display:block">名前</label>
+            <input type="text" name="first_name" placeholder="花子" required style="text-align:center">
+          </div>
+        </div>
+        <button class="btn btn-blue btn-block" type="submit">入る →</button>
+      </form>
+    </div>
+  </div>
+</div>'''
+        else:
+            # 名簿なし：従来の手入力フォーム
+            body = f'''
 <div class="container" style="max-width:480px;padding-top:60px">
   <div class="card" style="text-align:center">
     <div style="margin-bottom:12px">{_ICO_WELCOME}</div>
     <h1 style="margin-bottom:6px">{team["name"]}</h1>
     <p style="color:#666;font-size:13px;margin-bottom:20px">氏名を入力してください</p>
-
     <!-- localStorage に記憶がある場合のワンタップ入室 -->
     <div id="quick-join" style="display:none;margin-bottom:12px">
       <form method="POST" action="/t/{code}/join" id="quick-form">
@@ -1934,8 +1988,6 @@ def team_portal(code):
       </form>
       <button onclick="document.getElementById('quick-join').style.display='none';document.getElementById('name-form').style.display='block'" style="background:none;border:none;color:#aaa;font-size:12px;margin-top:10px;cursor:pointer;width:100%">別の名前で入る</button>
     </div>
-
-    <!-- 通常フォーム -->
     <div id="name-form">
       <form method="POST" action="/t/{code}/join" onsubmit="rakSave(this)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
@@ -1951,7 +2003,6 @@ def team_portal(code):
         <button class="btn btn-blue btn-block" type="submit">入る →</button>
       </form>
     </div>
-
     <div style="margin-top:16px"><a href="/t/{code}/help" style="font-size:12px;color:#aaa">使い方を見る →</a></div>
     <script>
     (function(){{
@@ -2995,9 +3046,20 @@ def admin_settings(code):
     msg = ''
     error = ''
 
+    regen_done = request.args.get('regen') == '1'
+
     if request.method == 'POST':
         action = request.form.get('action')
         conn = get_db()
+        if action == 'regen_code':
+            import random, string
+            new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            conn.execute('UPDATE teams SET team_code=? WHERE id=?', (new_code, team['id']))
+            conn.commit()
+            conn.close()
+            session[f'admin_{new_code}'] = True
+            session.pop(f'admin_{code}', None)
+            return redirect(url_for('admin_settings', code=new_code, regen='1'))
         if action == 'name':
             new_name = request.form.get('name', '').strip()
             if not new_name:
@@ -3035,7 +3097,20 @@ def admin_settings(code):
     body = f'''
 <div class="container" style="max-width:480px">
   {f'<div class="msg-ok">{_CHK} {msg}</div>' if msg else ''}
+  {'<div class="msg-ok">' + _CHK + ' チームコードを再発行しました。新しいコードをメンバーに共有してください。</div>' if regen_done else ''}
   {f'<div class="msg-err">{error}</div>' if error else ''}
+
+  <div class="card" style="margin-bottom:12px" id="regen">
+    <h2 style="margin-bottom:4px">チームコードの再発行</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">コードが漏洩した場合など、新しいコードを発行できます。再発行すると旧コードのURLは無効になります。</div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#991b1b">
+      ⚠️ 再発行すると旧コード・旧URLでは参加できなくなります。メンバーへの周知が必要です。
+    </div>
+    <form method="POST" onsubmit="return confirm('チームコードを再発行しますか？旧URLは使えなくなります。')">
+      <input type="hidden" name="action" value="regen_code">
+      <button class="btn btn-outline btn-block" type="submit" style="color:#dc2626;border-color:#dc2626">コードを再発行する</button>
+    </form>
+  </div>
 
   <div class="card" style="margin-bottom:12px">
     <h2 style="margin-bottom:16px">チーム名の変更</h2>
@@ -3239,13 +3314,39 @@ def admin_dash(code):
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
 
-  <div style="background:#0a0a0a;color:#fff;border-radius:10px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
-    <div>
-      <div style="font-size:10px;opacity:.45;letter-spacing:.05em;margin-bottom:1px">チームコード</div>
-      <div style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num)">{code}</div>
+  <div style="background:#0a0a0a;color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div>
+        <div style="font-size:10px;opacity:.45;letter-spacing:.05em;margin-bottom:2px">チームコード</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="code-masked" style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num)">{code[:3]}***</span>
+          <span id="code-plain" style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num);display:none">{code}</span>
+          <button onclick="rakToggleCode()" id="code-toggle-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer">表示</button>
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button onclick="rakCopyUrl()" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap">URLをコピー</button>
+        <a href="/t/{code}/admin/settings#regen" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-size:11px;padding:5px 10px;border-radius:6px;white-space:nowrap;text-decoration:none">再発行</a>
+      </div>
     </div>
-    <div style="margin-left:auto;font-size:11px;opacity:.4;text-align:right;word-break:break-all;line-height:1.5;max-width:55%">{request.host_url}t/{code}</div>
+    <div id="code-url-area" style="font-size:11px;opacity:.35;word-break:break-all;display:none">{base_url()}t/{code}</div>
   </div>
+  <script>
+  var _rakUrl = '{base_url()}t/{code}';
+  function rakToggleCode(){{
+    var m=document.getElementById('code-masked');
+    var p=document.getElementById('code-plain');
+    var b=document.getElementById('code-toggle-btn');
+    var u=document.getElementById('code-url-area');
+    if(p.style.display==='none'){{m.style.display='none';p.style.display='';b.textContent='隠す';u.style.display='block';}}
+    else{{m.style.display='';p.style.display='none';b.textContent='表示';u.style.display='none';}}
+  }}
+  function rakCopyUrl(){{
+    navigator.clipboard.writeText(_rakUrl).then(function(){{
+      var btn=event.target;btn.textContent='コピー完了！';setTimeout(function(){{btn.textContent='URLをコピー';}},2000);
+    }});
+  }}
+  </script>
 
   <style>
     .admin-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}}
@@ -5834,7 +5935,7 @@ def billing_portal(code):
     stripe.api_key = STRIPE_SECRET_KEY
     portal = stripe.billing_portal.Session.create(
         customer=team['stripe_customer_id'],
-        return_url=f"{request.host_url}t/{code}/upgrade"
+        return_url=f"{base_url()}t/{code}/upgrade"
     )
     return redirect(portal.url)
 
@@ -5852,7 +5953,7 @@ def upgrade_checkout(code):
     price_id = STRIPE_PRICE_ID_PRO
     if plan == 'yearly' and STRIPE_PRICE_ID_PRO_YEARLY:
         price_id = STRIPE_PRICE_ID_PRO_YEARLY
-    base = request.host_url.rstrip('/')
+    base = base_url().rstrip('/')
     checkout = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[{'price': price_id, 'quantity': 1}],

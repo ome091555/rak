@@ -351,6 +351,7 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN trial_end TEXT DEFAULT ""',
         'ALTER TABLE events ADD COLUMN event_color TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN viewer_token TEXT DEFAULT ""',
+        'ALTER TABLE uniform_assignments ADD COLUMN quantity INTEGER DEFAULT 1',
     ]:
         try:
             conn.execute(col_sql)
@@ -1470,7 +1471,7 @@ footer a:hover{{color:#94a3b8}}
     <span class="chip"><span class="d"></span>連絡が埋もれない</span>
     <span class="chip"><span class="d"></span>集金の管理がラク</span>
     <span class="chip"><span class="d"></span>出欠が一目でわかる</span>
-    <span class="chip"><span class="d"></span>会計も自動で記録</span>
+    <span class="chip"><span class="d"></span>会計・収支も管理</span>
   </div>
 </section>
 
@@ -1543,7 +1544,17 @@ footer a:hover{{color:#94a3b8}}
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_USERS}</span>
         <div class="fcard-title">ユニフォーム管理</div>
-        <div class="fcard-desc">サイズ・枚数の注文を一括管理</div>
+        <div class="fcard-desc">サイズ・枚数・背番号を一括管理。受取チェックまで完結</div>
+      </div>
+      <div class="fcard fcard-pro">
+        <span class="fcard-ic">{IC_CLIP}</span>
+        <div class="fcard-title">アンケート</div>
+        <div class="fcard-desc">選択・テキスト形式のアンケートを作成・集計</div>
+      </div>
+      <div class="fcard fcard-pro">
+        <span class="fcard-ic">{IC_CHART}</span>
+        <div class="fcard-title">Excelエクスポート</div>
+        <div class="fcard-desc">スケジュール・集金データをExcelに出力</div>
       </div>
     </div>
   </div>
@@ -4295,7 +4306,18 @@ def admin_ai(code):
                 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
                 tone_desc = '丁寧でやわらかい' if tone == 'formal' else 'シンプルで簡潔な'
 
-                if doc_type == 'report':
+                if doc_type == 'monthly':
+                    prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
+コーチが書いたメモをもとに、保護者・関係者向けの月次活動報告書を作成してください。
+
+メモ：{memo}
+
+以下のJSON形式で返してください：
+{{"title": "◯月度 活動報告（25字以内）", "body": "月次報告書本文（500〜700字、以下の構成で改行して記載：①今月の主な活動・試合結果 ②選手の成長・良かった点 ③課題と来月の目標 ④保護者へのお礼と協力依頼）"}}
+
+JSONのみ返してください。説明不要です。'''
+                    max_tokens = 1400
+                elif doc_type == 'report':
                     prompt = f'''あなたはスポーツチームの運営をサポートするAIです。
 コーチが書いたメモをもとに、保護者・関係者向けの活動報告書を作成してください。
 
@@ -4378,7 +4400,7 @@ JSONのみ返してください。説明不要です。'''
     if result_title and result_body:
         import urllib.parse
         params = urllib.parse.urlencode({'title': result_title, 'body': result_body})
-        if doc_type in ('report', 'match', 'practice'):
+        if doc_type in ('monthly', 'report', 'match', 'practice'):
             use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a><div style="font-size:12px;color:#888;text-align:center;margin-top:6px">※ コピーして外部ツールにも使えます</div>'
         else:
             use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a>'
@@ -4430,7 +4452,8 @@ JSONのみ返してください。説明不要です。'''
       <label>文書タイプ</label>
       <select name="doc_type">
         <option value="notice" {'selected' if doc_type in ('','notice') else ''}>お知らせ・連絡文</option>
-        <option value="report" {'selected' if doc_type=='report' else ''}>活動報告書</option>
+        <option value="monthly" {'selected' if doc_type=='monthly' else ''}>月次活動報告書</option>
+        <option value="report" {'selected' if doc_type=='report' else ''}>活動報告書（単発）</option>
         <option value="match" {'selected' if doc_type=='match' else ''}>試合レポート</option>
         <option value="practice" {'selected' if doc_type=='practice' else ''}>練習報告</option>
       </select>
@@ -5826,6 +5849,13 @@ def feedback():
     back_url = f'/t/{from_code}/admin/dash' if from_code else '/'
     back_label = 'ホームに戻る' if from_code else 'トップに戻る'
     error = ''
+    prefill_team = ''
+    prefill_email = ''
+    if from_code:
+        _ft = get_team(from_code)
+        if _ft:
+            prefill_team = _ft['name']
+            prefill_email = _ft['admin_email'] or ''
     if request.method == 'POST':
         team_name = request.form.get('team_name', '').strip()
         name = request.form.get('name', '').strip()
@@ -5854,11 +5884,11 @@ def feedback():
     {'<div class="msg-err">' + error + '</div>' if error else ''}
     <form method="POST">
       <label>チーム名 <span style="font-size:11px;color:#9ca3af;font-weight:400">（任意）</span></label>
-      <input type="text" name="team_name" placeholder="例：FC東京U-15（検討中の方は「検討中」とご記入ください）">
+      <input type="text" name="team_name" value="{prefill_team}" placeholder="例：FC東京U-15（検討中の方は「検討中」とご記入ください）">
       <label>お名前 *</label>
       <input type="text" name="name" placeholder="例：田中 太郎" required>
       <label>メールアドレス *</label>
-      <input type="text" name="email" placeholder="例：tanaka@example.com" required>
+      <input type="text" name="email" value="{prefill_email}" placeholder="例：tanaka@example.com" required>
       <label>表題 *</label>
       <select name="subject" required>
         <option value="">選択してください</option>
@@ -6027,16 +6057,22 @@ def upgrade_page(code):
     <div style="font-size:12px;color:#aaa;margin-bottom:6px">年払い ¥9,800（2ヶ月分お得）</div>
     <div style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:24px">14日間無料トライアル付き</div>
 
-    <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:24px;text-align:left">
+    <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:16px;text-align:left">
       <div style="font-size:13px;color:#444;line-height:2.2">
         {_CHK} 集金・支払い管理<br>
         {_CHK} 注文フォーム<br>
+        {_CHK} 会計・収支記録<br>
+        {_CHK} ユニフォーム管理（サイズ・枚数割当）<br>
         {_CHK} アンケート<br>
         {_CHK} AI文章生成<br>
         {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力<br>
         {_CHK} 優先サポート
       </div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#166534;text-align:left">
+      🔒 トライアル期間中に解約すれば料金はかかりません。<br>
+      課金開始日：<strong>{(datetime.now(JST) + timedelta(days=14)).strftime('%Y年%m月%d日')}</strong>
     </div>
 
     {checkout_btn}
@@ -6235,15 +6271,18 @@ def admin_uniform_detail(code, uid):
             mname = m['name']
             size = request.form.get(f'size_{mname}', '').strip()
             number = request.form.get(f'number_{mname}', '').strip()
+            quantity_s = request.form.get(f'qty_{mname}', '1').strip()
+            quantity = int(quantity_s) if quantity_s.isdigit() and int(quantity_s) > 0 else 1
             received = 1 if request.form.get(f'received_{mname}') else 0
             notes = request.form.get(f'notes_{mname}', '').strip()
             conn.execute('''
-                INSERT INTO uniform_assignments (id,uniform_id,member_name,size,number,received,notes)
-                VALUES (?,?,?,?,?,?,?)
+                INSERT INTO uniform_assignments (id,uniform_id,member_name,size,number,quantity,received,notes)
+                VALUES (?,?,?,?,?,?,?,?)
                 ON CONFLICT(uniform_id,member_name) DO UPDATE SET
                   size=excluded.size, number=excluded.number,
+                  quantity=excluded.quantity,
                   received=excluded.received, notes=excluded.notes
-            ''', (new_id(), uid, mname, size, number, received, notes))
+            ''', (new_id(), uid, mname, size, number, quantity, received, notes))
         conn.commit()
 
     members = conn.execute('SELECT * FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
@@ -6265,6 +6304,7 @@ def admin_uniform_detail(code, uid):
         a = assign_map.get(m['name'], {})
         size_val = a['size'] if a else ''
         num_val = a['number'] if a else ''
+        qty_val = a['quantity'] if a and a['quantity'] else 1
         recv_val = a['received'] if a else 0
         notes_val = a['notes'] if a else ''
         checked = 'checked' if recv_val else ''
@@ -6279,7 +6319,10 @@ def admin_uniform_detail(code, uid):
         </select>
       </td>
       <td style="padding:10px 4px">
-        <input type="text" name="number_{m['name']}" value="{num_val}" placeholder="#" style="width:60px;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;text-align:center">
+        <input type="number" name="qty_{m['name']}" value="{qty_val}" min="1" max="99" style="width:54px;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;text-align:center">
+      </td>
+      <td style="padding:10px 4px">
+        <input type="text" name="number_{m['name']}" value="{num_val}" placeholder="#" style="width:54px;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;text-align:center">
       </td>
       <td style="padding:10px 8px;text-align:center">
         <input type="checkbox" name="received_{m['name']}" {checked} style="width:16px;height:16px;accent-color:#d97706">
@@ -6298,7 +6341,8 @@ def admin_uniform_detail(code, uid):
             <tr style="border-bottom:1px solid #e5e7eb">
               <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">名前</th>
               <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">サイズ</th>
-              <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">番号</th>
+              <th style="text-align:center;padding:8px;font-size:12px;color:#6b7280;font-weight:500">枚数</th>
+              <th style="text-align:left;padding:8px;font-size:12px;color:#6b7280;font-weight:500">背番号</th>
               <th style="text-align:center;padding:8px;font-size:12px;color:#6b7280;font-weight:500">受取</th>
             </tr>
           </thead>
@@ -6439,12 +6483,21 @@ def admin_ledger(code):
             conn.close()
         return redirect(url_for('admin_ledger', code=code))
 
+    filter_year = request.args.get('y', '')
+    filter_month = request.args.get('m', '')
     conn = get_db()
-    entries = conn.execute(
+    all_entries = conn.execute(
         'SELECT * FROM ledger WHERE team_id=? ORDER BY entry_date DESC, created_at DESC',
         (team['id'],)
     ).fetchall()
     conn.close()
+
+    if filter_year and filter_month:
+        entries = [e for e in all_entries if e['entry_date'].startswith(f'{filter_year}-{filter_month.zfill(2)}')]
+    elif filter_year:
+        entries = [e for e in all_entries if e['entry_date'].startswith(filter_year)]
+    else:
+        entries = all_entries
 
     total_income  = sum(e['amount'] for e in entries if e['type'] == 'income')
     total_expense = sum(e['amount'] for e in entries if e['type'] == 'expense')
@@ -6481,8 +6534,24 @@ def admin_ledger(code):
 
     today_val = datetime.now(JST).strftime('%Y-%m-%d')
 
+    years_available = sorted(set(e['entry_date'][:4] for e in all_entries if e['entry_date']), reverse=True)
+    cur_year = filter_year or (years_available[0] if years_available else str(datetime.now(JST).year))
+    year_opts = ''.join(f'<option value="{y}" {"selected" if y==filter_year else ""}>{y}年</option>' for y in years_available)
+    month_opts = '<option value="">全月</option>' + ''.join(f'<option value="{str(i)}" {"selected" if str(i)==filter_month else ""}>{i}月</option>' for i in range(1,13))
+
     body = f'''
 <div class="container" style="max-width:560px">
+
+  <form method="GET" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+    <select name="y" onchange="this.form.submit()" style="flex:1;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;background:#fff">
+      <option value="">全期間</option>
+      {year_opts}
+    </select>
+    <select name="m" onchange="this.form.submit()" style="flex:1;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;background:#fff">
+      {month_opts}
+    </select>
+    {'<a href="/t/' + code + '/admin/ledger" style="font-size:12px;color:#d97706;white-space:nowrap">リセット</a>' if (filter_year or filter_month) else ''}
+  </form>
 
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center">
@@ -6543,7 +6612,7 @@ def admin_ledger(code):
     {rows}
   </div>
 
-  <div style="text-align:center;margin-top:8px">
+  <div style="margin-top:8px">
     <a href="/t/{code}/admin/dash" style="font-size:13px;color:#888">← ホームに戻る</a>
   </div>
 </div>

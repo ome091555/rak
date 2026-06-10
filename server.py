@@ -658,6 +658,8 @@ _ICO_USER_SM = (
     '</svg>'
 )
 # アンバーチェックマーク (機能リスト・ステータス)
+_PRO_BADGE = '<span style="font-size:9px;font-weight:700;background:#d97706;color:#fff;border-radius:3px;padding:1px 5px;margin-left:4px;letter-spacing:.02em">PRO</span>'
+
 _CHK = (
     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"'
     ' style="vertical-align:middle;margin-right:4px">'
@@ -1018,6 +1020,7 @@ def page(title, body, code=None, active=None):
   {f'<a href="/t/{code}/help" style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#f1f4f9;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;text-decoration:none;flex-shrink:0">?</a>' if code and member and not admin else ''}
 </nav>
 <script>document.addEventListener('click',function(e){{document.querySelectorAll('.nav-dd-menu.open').forEach(function(m){{if(!m.parentElement.contains(e.target))m.classList.remove('open')}})}})</script>
+{'<div style="background:#fffbeb;border-bottom:1px solid #f59e0b;padding:7px 16px;text-align:center;font-size:12px;font-weight:500;color:#92400e">Pro無料トライアル中 — 残り<strong style="color:#d97706">' + str(get_trial_days_left(team)) + '日</strong>　<a href="/t/' + code + '/upgrade" style="color:#d97706;font-weight:700;margin-left:6px">今すぐ継続 →</a></div>' if (code and admin and team and get_trial_days_left(team) is not None) else ''}
 {body}
 {bottom_nav}
 {PWA_SW}
@@ -2286,22 +2289,25 @@ def color_picker_html(selected=''):
         </label>'''
     return f'<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">{items}</div>'
 
-def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
+def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None, admin_code=None):
     import calendar as _cal
     fee_dates = fee_dates or set()
     order_dates = order_dates or set()
-    # event_dates: set or dict {date: [colors]}
     if isinstance(event_dates, dict):
         ev_color_map = event_dates
     else:
         ev_color_map = {d: ['#6b7280'] for d in event_dates}
     cal = _cal.monthcalendar(year, month)
     wd_labels = ['月','火','水','木','金','土','日']
-    header = ''.join(f'<div style="text-align:center;font-size:11px;font-weight:500;color:#9ca3af;padding:4px 0">{d}</div>' for d in wd_labels)
+    wd_colors = ['#374151','#374151','#374151','#374151','#374151','#2563eb','#dc2626']
+    header = ''.join(
+        f'<div style="text-align:center;font-size:11px;font-weight:500;color:{wd_colors[i]};padding:4px 0">{d}</div>'
+        for i, d in enumerate(wd_labels)
+    )
     today_str = datetime.now(JST).strftime('%Y-%m-%d')
     rows = ''
     for week in cal:
-        for day in week:
+        for wd_idx, day in enumerate(week):
             if day == 0:
                 rows += '<div></div>'
             else:
@@ -2313,8 +2319,21 @@ def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
                 is_today = date_str == today_str
                 bg = 'background:#0a0a0a;color:#fff;' if is_today else ''
                 fw = '700' if (is_today or has_any) else '400'
-                cursor = 'pointer' if has_ev else 'default'
-                onclick = f'onclick="scrollToDate(\'{date_str}\')"' if has_ev else ''
+                # 土日の文字色（今日は白で上書き）
+                if not is_today:
+                    day_color = wd_colors[wd_idx]
+                else:
+                    day_color = '#fff'
+                # クリック動作: 予定があればスクロール、管理者かつ予定なしなら追加ページへ
+                if has_ev:
+                    cursor = 'pointer'
+                    onclick = f'onclick="scrollToDate(\'{date_str}\')"'
+                elif admin_code:
+                    cursor = 'pointer'
+                    onclick = f'onclick="location.href=\'/t/{admin_code}/admin/events/new?date={date_str}\'"'
+                else:
+                    cursor = 'default'
+                    onclick = ''
                 dots = ''
                 if has_ev:
                     for c in ev_color_map[date_str][:3]:
@@ -2322,7 +2341,7 @@ def build_calendar(year, month, event_dates, fee_dates=None, order_dates=None):
                 if has_fee: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#dc2626;display:inline-block;margin:0 1px"></div>'
                 if has_ord: dots += '<div style="width:5px;height:5px;border-radius:50%;background:#16a34a;display:inline-block;margin:0 1px"></div>'
                 dot_row = f'<div style="display:flex;justify-content:center;min-height:7px;margin-top:2px">{dots}</div>'
-                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw}">{day}</div>{dot_row}</div>'
+                rows += f'<div style="text-align:center;padding:5px 2px;border-radius:8px;cursor:{cursor};{bg}" {onclick}><div style="font-size:13px;font-weight:{fw};color:{day_color}">{day}</div>{dot_row}</div>'
     return f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">{header}{rows}</div>'
 
 # ── 保護者用 閲覧専用ページ ───────────────────────────────────────────────
@@ -2508,7 +2527,7 @@ def schedule(code):
             cur += timedelta(days=1)
     fee_dates = set(f['due_date'] for f in fees_in_month)
     order_dates = set(o['deadline'] for o in orders_in_month)
-    calendar_html = build_calendar(vy, vm, ev_color_map, fee_dates, order_dates)
+    calendar_html = build_calendar(vy, vm, ev_color_map, fee_dates, order_dates, admin_code=code if admin else None)
 
     event_cards = ''
     for ev in all_events:
@@ -3238,6 +3257,8 @@ def admin_dash(code):
 
     members_all = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
     member_names = [m['name'] for m in members_all]
+    has_any_event = conn.execute('SELECT 1 FROM events WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
+    has_any_notice = conn.execute('SELECT 1 FROM notices WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
 
     def get_no_answer(ev_id):
         answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
@@ -3264,7 +3285,7 @@ def admin_dash(code):
             if c not in dash_ev_color_map[ds]:
                 dash_ev_color_map[ds].append(c)
             cur += timedelta(days=1)
-    dash_calendar_html = build_calendar(cy, cm, dash_ev_color_map)
+    dash_calendar_html = build_calendar(cy, cm, dash_ev_color_map, admin_code=code)
 
     # 統合タイムライン（予定 + 集金締切 + 注文締切）
     wd_jp = ['月','火','水','木','金','土','日']
@@ -3346,6 +3367,15 @@ def admin_dash(code):
     body = f'''
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
+  {(lambda: (
+    '<div style="background:#fff;border:1.5px solid #d97706;border-radius:12px;padding:16px 18px;margin-bottom:14px">'
+    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">🚀 はじめの3ステップ</div>'
+    '<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">'
+    + (f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">メンバー名簿を登録する</span></a>' if member_names else f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span><span style="font-weight:600">メンバー名簿を登録する →</span></a>')
+    + (f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">最初の予定を追加する</span></a>' if has_any_event else f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span><span style="font-weight:600">最初の予定を追加する →</span></a>')
+    + (f'<a href="/t/{code}/admin/notices/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">お知らせを送る</span></a>' if has_any_notice else f'<a href="/t/{code}/admin/notices/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">3</span><span style="font-weight:600">お知らせを送る →</span></a>')
+    + '</div></div>'
+  ) if (not member_names or not has_any_event or not has_any_notice) else '')()}
 
   <div style="background:#0a0a0a;color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -3443,7 +3473,7 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}</summary>
+      <summary><span class="atile-icon">{_ICO_MONEY_SM}</span>集金{unpaid_badge}{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
         <span style="font-size:12px;color:#888;white-space:nowrap">未払い {len(unpaid_summary)}件</span>
         <a href="/t/{code}/admin/fees" class="btn btn-outline">管理</a>
@@ -3451,28 +3481,28 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム</summary>
+      <summary><span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
         <a href="/t/{code}/orders" class="btn btn-outline">フォーム一覧</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム</summary>
+      <summary><span class="atile-icon">{_ICO_UNIFORM}</span>ユニフォーム{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
         <a href="/t/{code}/admin/uniforms" class="btn btn-outline">管理</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章</summary>
+      <summary><span class="atile-icon">{_ICO_CHART_SM}</span>AI文章{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
         <a href="/t/{code}/admin/ai" class="btn btn-outline">文章を作成</a>
       </div>
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_LEDGER}</span>会計</summary>
+      <summary><span class="atile-icon">{_ICO_LEDGER}</span>会計{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
         <a href="/t/{code}/admin/ledger" class="btn btn-outline">収支記録</a>
       </div>
@@ -3496,8 +3526,11 @@ def admin_dash(code):
       <summary><span class="atile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>保護者用リンク</summary>
       <div style="padding:12px 14px;font-size:13px">
         <div style="color:#6b7280;margin-bottom:8px;line-height:1.5">登録不要でスケジュール・お知らせが閲覧できるリンクです。保護者やスタッフに共有できます。</div>
-        <div style="background:#f3f4f6;border-radius:6px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;margin-bottom:8px;font-family:monospace" id="viewer-url">{request.host_url}t/{code}/view/{team['viewer_token']}</div>
-        <button onclick="var u=document.getElementById('viewer-url').textContent;navigator.clipboard.writeText(u).then(function(){{var b=document.getElementById('viewer-copy-btn');b.textContent='コピーしました ✓';b.style.background='#22c55e';b.style.color='#fff';setTimeout(function(){{b.textContent='リンクをコピー';b.style.background='';b.style.color=''}},2000)}})" id="viewer-copy-btn" class="btn btn-outline" style="width:100%;font-size:13px">リンクをコピー</button>
+        <div style="background:#f3f4f6;border-radius:6px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;margin-bottom:8px;font-family:monospace" id="viewer-url">{base_url()}t/{code}/view/{team['viewer_token']}</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="var u=document.getElementById('viewer-url').textContent;navigator.clipboard.writeText(u).then(function(){{var b=document.getElementById('viewer-copy-btn');b.textContent='コピー ✓';b.style.background='#22c55e';b.style.color='#fff';setTimeout(function(){{b.textContent='コピー';b.style.background='';b.style.color=''}},2000)}})" id="viewer-copy-btn" class="btn btn-outline" style="flex:1;font-size:13px">コピー</button>
+          <a href="{base_url()}t/{code}/view/{team['viewer_token']}" target="_blank" class="btn btn-outline" style="flex:1;font-size:13px;text-align:center">👁 確認する</a>
+        </div>
       </div>
     </details>
 
@@ -3840,6 +3873,7 @@ def admin_new_event(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
     error = ''
+    prefill_date = request.args.get('date', '')
 
     if request.method == 'POST':
         title       = request.form.get('title', '').strip()
@@ -3876,7 +3910,7 @@ def admin_new_event(code):
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>開始日 *</label>
-          <input type="date" name="event_date" id="ev-date" required oninput="rakDateJa(this,'ev-date-ja')">
+          <input type="date" name="event_date" id="ev-date" value="{prefill_date}" required oninput="rakDateJa(this,'ev-date-ja')">
           <div id="ev-date-ja" style="font-size:11px;color:#6b7280;margin-top:3px;min-height:16px"></div>
         </div>
         <div>

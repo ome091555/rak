@@ -1685,6 +1685,11 @@ footer a:hover{{color:#94a3b8}}
         <div class="fcard-title">保護者リンク（登録不要）</div>
         <div class="fcard-desc">アカウント不要でスケジュール・お知らせを閲覧。保護者・スタッフに共有できます</div>
       </div>
+      <div class="fcard">
+        <span class="fcard-ic">{IC_CLIP}</span>
+        <div class="fcard-title">メモ・資料保管</div>
+        <div class="fcard-desc">運営メモに写真やファイルを添付して保管。大会要項・名簿などをチームの保管庫に</div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--rak-amber-deep);white-space:nowrap">PRO　アップグレードで解放</span>
@@ -3898,16 +3903,27 @@ def admin_memo_detail(code, memo_id):
     files = conn.execute('SELECT * FROM memo_files WHERE memo_id=? ORDER BY created_at DESC', (memo_id,)).fetchall()
     conn.close()
     content_html = memo['content'].replace('\n', '<br>') if memo['content'] else '<span style="color:#aaa">内容なし</span>'
-    file_rows = ''.join(f'''
-    <div class="card-sm" style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{f['original_name']}</div>
-      <div style="display:flex;gap:8px;flex-shrink:0;margin-left:8px">
-        <a href="/t/{code}/admin/memos/file/{f['id']}" class="btn btn-sm btn-outline">DL</a>
-        <form method="post" action="/t/{code}/admin/memos/file/{f['id']}/delete" style="margin:0">
-          <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none">削除</button>
-        </form>
+    _img_exts = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic')
+    file_rows = ''
+    for f in files:
+        is_img = os.path.splitext(f['stored_name'])[1].lower() in _img_exts
+        preview = (f'<a href="/t/{code}/admin/memos/file/{f["id"]}?inline=1" target="_blank">'
+                   f'<img src="/t/{code}/admin/memos/file/{f["id"]}?inline=1" '
+                   f'style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px" loading="lazy"></a>') if is_img else ''
+        file_rows += f'''
+    <div class="card-sm">
+      {preview}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{f['original_name']}</div>
+        <div style="display:flex;gap:8px;flex-shrink:0;margin-left:8px">
+          <a href="/t/{code}/admin/memos/file/{f['id']}" class="btn btn-sm btn-outline">DL</a>
+          <form method="post" action="/t/{code}/admin/memos/file/{f['id']}/delete" style="margin:0">
+            <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none">削除</button>
+          </form>
+        </div>
       </div>
-    </div>''' for f in files) or '<div style="font-size:13px;color:#aaa">添付ファイルなし</div>'
+    </div>'''
+    file_rows = file_rows or '<div style="font-size:13px;color:#aaa">添付ファイルなし</div>'
     body = f'''
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -3926,7 +3942,8 @@ def admin_memo_detail(code, memo_id):
     </div>
     {file_rows}
     <form method="POST" action="/t/{code}/admin/memos/{memo_id}/file" enctype="multipart/form-data" style="margin-top:14px">
-      <input type="file" name="file" style="font-size:13px;margin-bottom:8px">
+      <input type="file" name="file" multiple style="font-size:13px;margin-bottom:8px">
+      <div style="font-size:11px;color:#aaa;margin-bottom:8px">写真・PDF・Excelなど何でも添付できます（複数選択可）</div>
       <button type="submit" class="btn btn-outline btn-block">アップロード</button>
     </form>
   </div>
@@ -3995,8 +4012,9 @@ def admin_memo_file_upload(code, memo_id):
     conn = get_db()
     memo = conn.execute('SELECT id FROM admin_memos WHERE id=? AND team_id=?', (memo_id, team['id'])).fetchone()
     if not memo: conn.close(); return redirect(f'/t/{code}/admin/memos')
-    f = request.files.get('file')
-    if f and f.filename:
+    for f in request.files.getlist('file'):
+        if not f or not f.filename:
+            continue
         os.makedirs(MEMO_FILE_DIR, exist_ok=True)
         fid = new_id()
         ext = os.path.splitext(f.filename)[1]
@@ -4015,8 +4033,9 @@ def admin_memo_file_download(code, file_id):
     f = conn.execute('SELECT * FROM memo_files WHERE id=?', (file_id,)).fetchone()
     conn.close()
     if not f: return 'Not found', 404
+    inline = request.args.get('inline') == '1'
     return send_file(os.path.join(MEMO_FILE_DIR, f['stored_name']),
-                     download_name=f['original_name'], as_attachment=True)
+                     download_name=f['original_name'], as_attachment=not inline)
 
 @app.route('/t/<code>/admin/memos/file/<file_id>/delete', methods=['POST'])
 def admin_memo_file_delete(code, file_id):
@@ -4059,7 +4078,7 @@ def team_help(code):
         ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成機能で下書きを自動生成できます。'),
         ('集金を管理する', '「集金」タイルで集金項目を作成。誰が払ったか一覧で管理できます。'),
         ('メモ・ファイルを管理する', '「メモ」タイルで管理者専用のメモを作成。PDFやExcelなどのファイルも添付できます。'),
-        ('保護者リンクを共有する', 'ホームの「メンバーにはこう見える」から閲覧専用URLを取得。アカウント不要でスケジュール・お知らせが確認できるリンクを保護者やスタッフに送れます。'),
+        ('保護者リンクを共有する', 'ホームの「保護者用リンク」を開いてURLをコピー。アカウント不要でスケジュール・お知らせが確認できるリンクを保護者やスタッフに送れます。'),
     ]
 
     def step_html(steps, color):

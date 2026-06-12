@@ -1921,6 +1921,7 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-name">Pro</div>
         <div class="plan-price"><span class="num">¥980</span><span class="per">/月</span></div>
         <div style="font-size:11px;color:#aaa;margin-top:-12px;margin-bottom:4px">1チームあたり・税込</div>
+        <div style="display:inline-block;font-size:11px;font-weight:700;color:#fff;background:#d97706;border-radius:6px;padding:2px 8px;margin-bottom:6px">リリース記念価格 — ご利用中のチームはずっとこの価格</div>
         <div style="display:inline-block;font-size:11px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:2px 8px;margin-bottom:10px">年額 ¥9,800 で2ヶ月分お得</div>
         <div class="plan-items">
           <div class="acc">＋ 集金・費用管理</div>

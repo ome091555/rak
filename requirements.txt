@@ -6,3 +6,4 @@ stripe
 requests
 cryptography
 PyJWT
+pywebpush

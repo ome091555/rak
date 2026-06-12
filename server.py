@@ -37,6 +37,7 @@ VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY', '')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:m.ome.091555@gmail.com')
 GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
+FIREBASE_SERVICE_ACCOUNT_JSON = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON', '')
 
 
 def base_url():
@@ -45,6 +46,13 @@ def base_url():
     if not request.host.startswith('localhost') and not request.host.startswith('127.0.0.1'):
         url = url.replace('http://', 'https://')
     return url
+
+
+@app.before_request
+def redirect_apex_to_www():
+    """wwwなし（rakapp.jp）はwwwありへ301リダイレクトして正規URLに統一する"""
+    if request.host == 'rakapp.jp':
+        return redirect('https://www.rakapp.jp' + request.full_path.rstrip('?'), code=301)
 
 
 # ── Web Push 通知 ────────────────────────────────────────────────────────
@@ -69,27 +77,116 @@ def _vapid_headers(endpoint):
     except Exception:
         return None
 
+_fcm_token_cache = {'token': None, 'exp': 0}
+
+def _fcm_access_token():
+    """FirebaseサービスアカウントからFCM用OAuth2アクセストークンを取得する（キャッシュ付き）"""
+    import time
+    if _fcm_token_cache['token'] and time.time() < _fcm_token_cache['exp'] - 60:
+        return _fcm_token_cache['token']
+    try:
+        import jwt as pyjwt
+        import requests as _req
+        sa = json.loads(FIREBASE_SERVICE_ACCOUNT_JSON)
+        now = int(time.time())
+        assertion = pyjwt.encode(
+            {
+                'iss': sa['client_email'],
+                'scope': 'https://www.googleapis.com/auth/firebase.messaging',
+                'aud': 'https://oauth2.googleapis.com/token',
+                'iat': now,
+                'exp': now + 3600,
+            },
+            sa['private_key'],
+            algorithm='RS256'
+        )
+        res = _req.post(
+            'https://oauth2.googleapis.com/token',
+            data={
+                'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion': assertion,
+            },
+            timeout=10
+        )
+        token = res.json()['access_token']
+        _fcm_token_cache['token'] = token
+        _fcm_token_cache['exp'] = now + 3600
+        return token
+    except Exception:
+        return None
+
+def _send_fcm_to_team(team_id, title, body, url='/'):
+    """チームの全ネイティブアプリ端末にFCM経由でプッシュ通知を送る"""
+    if not FIREBASE_SERVICE_ACCOUNT_JSON:
+        return
+    access_token = _fcm_access_token()
+    if not access_token:
+        return
+    try:
+        project_id = json.loads(FIREBASE_SERVICE_ACCOUNT_JSON)['project_id']
+    except Exception:
+        return
+    conn = get_db()
+    tokens = conn.execute('SELECT * FROM native_push_tokens WHERE team_id=?', (team_id,)).fetchall()
+    import requests as _req
+    for t in tokens:
+        try:
+            res = _req.post(
+                f'https://fcm.googleapis.com/v1/projects/{project_id}/messages:send',
+                headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
+                data=json.dumps({'message': {
+                    'token': t['token'],
+                    'notification': {'title': title, 'body': body},
+                    'data': {'url': url},
+                }}),
+                timeout=10
+            )
+            # 無効トークン（アンインストール等）は削除する
+            if res.status_code in (400, 404):
+                conn.execute('DELETE FROM native_push_tokens WHERE id=?', (t['id'],))
+                conn.commit()
+        except Exception:
+            pass
+    conn.close()
+
 def send_push_to_team(team_id, title, body, url='/'):
-    """チームの全購読者にWeb Push通知を送る"""
+    """チームの全購読者に通知を送る（Web Push＋ネイティブFCMの二系統）"""
+    _send_fcm_to_team(team_id, title, body, url)
     if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
         return
     conn = get_db()
     subs = conn.execute('SELECT * FROM push_subscriptions WHERE team_id=?', (team_id,)).fetchall()
     conn.close()
-    import requests as _req
-    for s in subs:
-        try:
-            headers = _vapid_headers(s['endpoint'])
-            if not headers:
-                continue
-            _req.post(
-                s['endpoint'],
-                headers=headers,
-                data=json.dumps({'title': title, 'body': body, 'url': url}),
-                timeout=10
-            )
-        except Exception:
-            pass
+    payload = json.dumps({'title': title, 'body': body, 'url': url})
+    try:
+        from pywebpush import webpush, WebPushException
+        for s in subs:
+            try:
+                webpush(
+                    subscription_info={
+                        'endpoint': s['endpoint'],
+                        'keys': {'p256dh': s['p256dh'], 'auth': s['auth']},
+                    },
+                    data=payload,
+                    vapid_private_key=VAPID_PRIVATE_KEY,
+                    vapid_claims={'sub': VAPID_EMAIL},
+                    ttl=86400,
+                )
+            except WebPushException:
+                pass
+            except Exception:
+                pass
+    except ImportError:
+        # pywebpush未導入環境のフォールバック（ペイロード暗号化不可のため本文なしで送る）
+        import requests as _req
+        for s in subs:
+            try:
+                headers = _vapid_headers(s['endpoint'])
+                if not headers:
+                    continue
+                _req.post(s['endpoint'], headers=headers, timeout=10)
+            except Exception:
+                pass
 
 # ── メール送信 ────────────────────────────────────────────────────────────
 
@@ -324,6 +421,15 @@ def init_db():
             created_at TEXT NOT NULL,
             UNIQUE(team_id, member_name, endpoint)
         );
+        CREATE TABLE IF NOT EXISTS native_push_tokens (
+            id TEXT PRIMARY KEY,
+            team_id TEXT NOT NULL,
+            member_name TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            token TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(team_id, member_name, token)
+        );
     ''')
     conn.commit()
     # migration: end_date column
@@ -545,10 +651,33 @@ FAVICON_LINK = (
 )
 
 PWA_SW = '''<script>
-if("serviceWorker"in navigator){
+function rakIsNativeApp(){
+  return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+}
+if(!rakIsNativeApp()&&"serviceWorker"in navigator){
   navigator.serviceWorker.register("/sw.js");
 }
+async function rakSubscribePushNative(code){
+  try{
+    const Push=window.Capacitor.Plugins.PushNotifications;
+    const platform=window.Capacitor.getPlatform();
+    Push.addListener("registration",async(t)=>{
+      await fetch("/t/"+code+"/push/subscribe-native",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({token:t.value,platform:platform})
+      });
+      localStorage.setItem("rak_push_"+code,"1");
+    });
+    Push.addListener("pushNotificationActionPerformed",(n)=>{
+      const url=n.notification&&n.notification.data&&n.notification.data.url;
+      if(url)location.href=url;
+    });
+    const perm=await Push.requestPermissions();
+    if(perm.receive==="granted")await Push.register();
+  }catch(e){}
+}
 async function rakSubscribePush(code){
+  if(rakIsNativeApp()){return rakSubscribePushNative(code);}
   try{
     const reg=await navigator.serviceWorker.ready;
     const res=await fetch("/push/vapid-public-key");
@@ -565,9 +694,19 @@ async function rakSubscribePush(code){
     localStorage.setItem("rak_push_"+code,"1");
   }catch(e){}
 }
+function rakPushBannerOn(code){
+  const hide=()=>{const b=document.getElementById("rak-push-banner");if(b)b.style.display="none";};
+  if(rakIsNativeApp()){rakSubscribePush(code);hide();return;}
+  Notification.requestPermission().then(p=>{if(p==="granted"){rakSubscribePush(code);hide();}});
+}
 async function rakRequestPush(code){
-  if(!("Notification"in window)||!("serviceWorker"in navigator))return;
   if(localStorage.getItem("rak_push_"+code)==="1")return;
+  if(rakIsNativeApp()){
+    const banner=document.getElementById("rak-push-banner");
+    if(banner)banner.style.display="flex";
+    return;
+  }
+  if(!("Notification"in window)||!("serviceWorker"in navigator))return;
   if(Notification.permission==="granted"){rakSubscribePush(code);return;}
   if(Notification.permission==="denied")return;
   const banner=document.getElementById("rak-push-banner");
@@ -1060,6 +1199,42 @@ def push_subscribe(code):
         VALUES (?,?,?,?,?,?,?)
         ON CONFLICT(team_id,member_name,endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth
     ''', (new_id(), team['id'], member, endpoint, p256dh, auth, now_str()))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+@app.route('/t/<code>/push/subscribe-native', methods=['POST'])
+def push_subscribe_native(code):
+    team = get_team(code)
+    if not team:
+        return jsonify(error='not found'), 404
+    member = get_member(code)
+    if not member:
+        return jsonify(error='not member'), 403
+    data = request.get_json() or {}
+    token    = data.get('token', '')
+    platform = data.get('platform', '')
+    if not token or platform not in ('ios', 'android'):
+        return jsonify(error='invalid'), 400
+    conn = get_db()
+    conn.execute('''
+        INSERT INTO native_push_tokens (id,team_id,member_name,platform,token,created_at)
+        VALUES (?,?,?,?,?,?)
+        ON CONFLICT(team_id,member_name,token) DO UPDATE SET platform=excluded.platform
+    ''', (new_id(), team['id'], member, platform, token, now_str()))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+@app.route('/t/<code>/push/unsubscribe-native', methods=['POST'])
+def push_unsubscribe_native(code):
+    team = get_team(code)
+    if not team:
+        return jsonify(error='not found'), 404
+    data = request.get_json() or {}
+    token = data.get('token', '')
+    conn = get_db()
+    conn.execute('DELETE FROM native_push_tokens WHERE team_id=? AND token=?', (team['id'], token))
     conn.commit()
     conn.close()
     return jsonify(ok=True)
@@ -2266,7 +2441,7 @@ def member_home(code):
       <div style="font-weight:600;margin-bottom:2px">お知らせ通知をオンにする</div>
       <div style="font-size:12px;color:var(--rak-mute)">管理者が投稿したときにすぐ届きます</div>
     </div>
-    <button onclick="Notification.requestPermission().then(p=>{{if(p==='granted'){{rakSubscribePush('{code}');document.getElementById('rak-push-banner').style.display='none';}}}})"
+    <button onclick="rakPushBannerOn('{code}')"
       class="btn btn-amber btn-sm">通知をオン</button>
     <button onclick="localStorage.setItem('rak_push_{code}','skip');this.closest('#rak-push-banner').style.display='none';"
       style="background:none;border:none;color:var(--rak-mute);font-size:18px;cursor:pointer;padding:0 4px">×</button>
@@ -4395,22 +4570,50 @@ JSONのみ返してください。説明不要です。'''
             result_title = t_title
             result_body = t_body
 
-    use_btn = ''
-    save_form = ''
+    result_block = ''
     if result_title and result_body:
-        import urllib.parse
-        params = urllib.parse.urlencode({'title': result_title, 'body': result_body})
-        if doc_type in ('monthly', 'report', 'match', 'practice'):
-            use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a><div style="font-size:12px;color:#888;text-align:center;margin-top:6px">※ コピーして外部ツールにも使えます</div>'
-        else:
-            use_btn = f'<a href="/t/{code}/admin/notices/new?{params}" class="btn btn-blue" style="display:block;text-align:center;margin-top:12px">このままお知らせとして送信 →</a>'
-        save_form = f'''
-        <form method="POST" style="margin-top:8px">
-          <input type="hidden" name="action" value="save_template">
-          <input type="hidden" name="t_title" value="{result_title}">
-          <input type="hidden" name="t_body" value="{result_body}">
-          <button class="btn btn-outline btn-sm" type="submit" style="width:100%">📌 テンプレートとして保存</button>
-        </form>'''
+        import html as _html
+        esc_title = _html.escape(result_title, quote=True)
+        esc_body = _html.escape(result_body)
+        result_block = f'''
+  <div class="card" style="border-color:#d97706">
+    <div class="section-label">生成結果</div>
+    <input id="ai-res-title" value="{esc_title}" style="width:100%;font-weight:700;font-size:16px;margin-bottom:8px">
+    <textarea id="ai-res-body" rows="14" style="width:100%;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;border:1px solid #e5e7eb;box-sizing:border-box">{esc_body}</textarea>
+    <div style="font-size:12px;color:#888;margin-top:4px">✎ タイトル・本文はこのまま書き換えできます</div>
+    <button type="button" id="ai-copy-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="rakAiCopy()">📋 本文をコピー</button>
+    <a id="ai-use-btn" href="#" class="btn btn-blue" style="display:block;text-align:center;margin-top:8px">このままお知らせとして送信 →</a>
+    <form method="POST" style="margin-top:8px" onsubmit="rakAiSyncForm()">
+      <input type="hidden" name="action" value="save_template">
+      <input type="hidden" name="t_title" id="ai-save-title" value="">
+      <input type="hidden" name="t_body" id="ai-save-body" value="">
+      <button class="btn btn-outline btn-sm" type="submit" style="width:100%">📌 テンプレートとして保存</button>
+    </form>
+  </div>
+  <script>
+  function rakAiTitle(){{return document.getElementById('ai-res-title').value;}}
+  function rakAiBody(){{return document.getElementById('ai-res-body').value;}}
+  function rakAiSyncUse(){{
+    document.getElementById('ai-use-btn').href='/t/{code}/admin/notices/new?title='+encodeURIComponent(rakAiTitle())+'&body='+encodeURIComponent(rakAiBody());
+  }}
+  function rakAiSyncForm(){{
+    document.getElementById('ai-save-title').value=rakAiTitle();
+    document.getElementById('ai-save-body').value=rakAiBody();
+  }}
+  function rakAiCopy(){{
+    const ta=document.getElementById('ai-res-body');
+    ta.focus();ta.select();
+    try{{document.execCommand('copy');}}catch(e){{}}
+    if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(ta.value).catch(()=>{{}});}}
+    ta.setSelectionRange(0,0);ta.blur();
+    const b=document.getElementById('ai-copy-btn');
+    b.textContent='✓ コピーしました';
+    setTimeout(()=>{{b.textContent='📋 本文をコピー';}},1500);
+  }}
+  document.getElementById('ai-res-title').addEventListener('input',rakAiSyncUse);
+  document.getElementById('ai-res-body').addEventListener('input',rakAiSyncUse);
+  rakAiSyncUse();
+  </script>'''
 
     # 保存済みテンプレート一覧
     team = get_team(code)
@@ -4458,7 +4661,7 @@ JSONのみ返してください。説明不要です。'''
         <option value="practice" {'selected' if doc_type=='practice' else ''}>練習報告</option>
       </select>
       <label>メモ・キーワード</label>
-      <textarea name="memo" placeholder="例（活動報告書）：県大会 準優勝 練習時間が限られている中で目指す以上の結果&#10;例（お知らせ）：明日の練習、雨で中止" rows="4">{memo}</textarea>
+      <textarea name="memo" placeholder="例（活動報告書）：県大会 準優勝&#10;例（お知らせ）：明日の練習、雨で中止" rows="4">{memo}</textarea>
       <label>文体</label>
       <select name="tone">
         <option value="formal">丁寧・やわらか（保護者向け）</option>
@@ -4468,7 +4671,7 @@ JSONのみ返してください。説明不要です。'''
     </form>
   </div>
 
-  {('<div class="card" style="border-color:#d97706"><div class="section-label">生成結果</div><h2>' + result_title + '</h2><div style="white-space:pre-wrap;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;margin-top:8px">' + result_body + '</div>' + use_btn + save_form + '</div>') if result_title else ''}
+  {result_block}
 
   {tmpl_section}
 

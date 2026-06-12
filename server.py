@@ -48,6 +48,25 @@ def base_url():
     return url
 
 
+_BOT_UA_WORDS = ('bot', 'crawler', 'spider', 'facebookexternalhit', 'preview', 'curl', 'python-requests')
+
+def log_lp_event(event, src=''):
+    """LPファネル計測。失敗してもページ表示には影響させない"""
+    try:
+        ua = (request.headers.get('User-Agent') or '').lower()
+        if any(w in ua for w in _BOT_UA_WORDS):
+            return
+        is_mobile = 1 if ('mobile' in ua or 'iphone' in ua or 'android' in ua) else 0
+        ref = (request.referrer or '')[:200]
+        conn = get_db()
+        conn.execute('INSERT INTO lp_events (id,event,src,ref,is_mobile,created_at) VALUES (?,?,?,?,?,?)',
+                     (new_id(), event, src[:40], ref, is_mobile, now_str()))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
 @app.before_request
 def redirect_apex_to_www():
     """wwwなし（rakapp.jp）はwwwありへ301リダイレクトして正規URLに統一する"""
@@ -420,6 +439,14 @@ def init_db():
             auth TEXT NOT NULL,
             created_at TEXT NOT NULL,
             UNIQUE(team_id, member_name, endpoint)
+        );
+        CREATE TABLE IF NOT EXISTS lp_events (
+            id TEXT PRIMARY KEY,
+            event TEXT NOT NULL,
+            src TEXT DEFAULT '',
+            ref TEXT DEFAULT '',
+            is_mobile INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS native_push_tokens (
             id TEXT PRIMARY KEY,
@@ -1346,6 +1373,7 @@ def sitemap_xml():
 
 @app.route('/')
 def home():
+    log_lp_event('lp_view', src=request.args.get('utm_source', ''))
     join_error = request.args.get('error', '')
     join_code  = request.args.get('code', '')
     GOOGLE_VERIFY_TAG = f'<meta name="google-site-verification" content="{GOOGLE_SITE_VERIFICATION}">' if GOOGLE_SITE_VERIFICATION else ''
@@ -1581,14 +1609,14 @@ footer a:hover{{color:#94a3b8}}
           <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">14日間無料トライアル</div>
           <div style="font-size:11px;color:#888;margin-bottom:4px">その後 ¥980/月・いつでも解約可</div>
           <div style="display:inline-block;font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;margin-bottom:10px">クレカ不要</div>
-          <a href="/create?intent=pro" class="btn-primary" style="display:block;font-size:13px;padding:10px 0">試してみる →</a>
+          <a href="/create?intent=pro&src=fcard" class="btn-primary" style="display:block;font-size:13px;padding:10px 0">試してみる →</a>
         </div>
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:#64748b;margin-bottom:4px">FREE</div>
           <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">無料プラン</div>
           <div style="font-size:11px;color:#888;margin-bottom:4px">基本機能のみ</div>
           <div style="display:inline-block;font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;margin-bottom:10px">クレカ不要</div>
-          <a href="/create" class="btn-ghost" style="display:block;font-size:13px;padding:10px 0">無料で始める</a>
+          <a href="/create?src=fcard_free" class="btn-ghost" style="display:block;font-size:13px;padding:10px 0">無料で始める</a>
         </div>
       </div>
       <p class="hero-note"><b>登録1分</b>・今日から使える</p>
@@ -1886,7 +1914,7 @@ footer a:hover{{color:#94a3b8}}
           <div>✓ メンバー管理（人数制限なし）</div>
           <div>✓ チームコード招待</div>
         </div>
-        <a href="/create" class="plan-btn-w">無料で始める</a>
+        <a href="/create?src=plan_free" class="plan-btn-w">無料で始める</a>
       </div>
       <div class="plan-card dark">
         <div class="plan-rec">おすすめ</div>
@@ -1903,7 +1931,7 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ AIスケジュール自動生成</div>
           <div class="acc">＋ Excelエクスポート</div>
         </div>
-        <a href="/create?intent=pro" class="plan-btn-b">Proを試す（14日無料・クレカ不要）</a>
+        <a href="/create?intent=pro&src=plan_pro" class="plan-btn-b">Proを試す（14日無料・クレカ不要）</a>
       </div>
     </div>
   </div>
@@ -1939,7 +1967,7 @@ footer a:hover{{color:#94a3b8}}
 <section class="cta-sec">
   <h2>今日から、<br>チームを<span style="color:var(--rak-amber)">ラク</span>に。</h2>
   <p>登録不要・無料からスタート。チームコードを発行して今日から使えます。</p>
-  <a href="/create" class="btn-amber-solid">無料でチームを作る →</a>
+  <a href="/create?src=bottom" class="btn-amber-solid">無料でチームを作る →</a>
 </section>
 
 <footer>
@@ -1949,7 +1977,7 @@ footer a:hover{{color:#94a3b8}}
     <a href="/legal/privacy">プライバシー</a>
     <a href="/legal/tokushoho">特定商取引法</a>
     <a href="/feedback">お問い合わせ</a>
-    <a href="/create">チームを作る</a>
+    <a href="/create?src=footer">チームを作る</a>
   </div>
   <p>© 2026 Rak</p>
 </footer>
@@ -1968,6 +1996,8 @@ def join():
 def create_team():
     error = ''
     intent = request.args.get('intent', '') or request.form.get('intent', '')
+    if request.method == 'GET':
+        log_lp_event('create_view', src=request.args.get('src', '') or ('pro' if intent == 'pro' else ''))
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         password = request.form.get('password', '').strip()
@@ -1997,6 +2027,7 @@ def create_team():
             )
             conn.commit()
             conn.close()
+            log_lp_event('team_created', src=('pro' if intent == 'pro' else ''))
             session.permanent = True
             session[f'admin_{code}'] = True
             if intent == 'pro':
@@ -6174,6 +6205,59 @@ def mail_test():
         result.append(f'❌ エラー: {type(e).__name__}: {e}')
         result.append(traceback.format_exc())
     return '<br>'.join(result).replace('\n', '<br>')
+
+
+@app.route('/rak/lp-stats')
+def rak_lp_stats():
+    pw = request.args.get('pw', '')
+    admin_pw = os.environ.get('RAK_ADMIN_PW', 'rakadmin2026')
+    if pw != admin_pw:
+        return redirect('/rak/feedback')
+    conn = get_db()
+    days = conn.execute('''
+        SELECT substr(created_at,1,10) AS d,
+               SUM(event='lp_view') AS lp,
+               SUM(event='create_view') AS cv,
+               SUM(event='team_created') AS tc,
+               SUM(is_mobile) AS mob,
+               COUNT(*) AS total
+        FROM lp_events
+        WHERE created_at >= datetime('now', '-7 days')
+        GROUP BY d ORDER BY d DESC
+    ''').fetchall()
+    srcs = conn.execute('''
+        SELECT src, event, COUNT(*) AS c FROM lp_events
+        WHERE event IN ('create_view','team_created') AND created_at >= datetime('now', '-7 days')
+        GROUP BY src, event ORDER BY c DESC
+    ''').fetchall()
+    conn.close()
+    day_rows = ''.join(
+        f"<tr><td>{r['d']}</td><td>{r['lp']}</td><td>{r['cv']}</td><td>{r['tc']}</td>"
+        f"<td>{(r['cv'] / r['lp'] * 100) if r['lp'] else 0:.1f}%</td>"
+        f"<td>{(r['tc'] / r['cv'] * 100) if r['cv'] else 0:.1f}%</td>"
+        f"<td>{(r['mob'] / r['total'] * 100) if r['total'] else 0:.0f}%</td></tr>"
+        for r in days) or '<tr><td colspan="7">データなし</td></tr>'
+    src_rows = ''.join(
+        f"<tr><td>{r['src'] or '(直接/不明)'}</td><td>{r['event']}</td><td>{r['c']}</td></tr>"
+        for r in srcs) or '<tr><td colspan="3">データなし</td></tr>'
+    body = f'''
+<div class="container" style="max-width:720px">
+  <h1>LPファネル（直近7日）</h1>
+  <div class="card" style="overflow-x:auto">
+    <table style="width:100%;font-size:13px;border-collapse:collapse" border="1" cellpadding="6">
+      <tr><th>日付</th><th>LP表示</th><th>登録P表示</th><th>登録完了</th><th>LP→登録P</th><th>登録P→完了</th><th>モバイル率</th></tr>
+      {day_rows}
+    </table>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <h2>CTA別（src）</h2>
+    <table style="width:100%;font-size:13px;border-collapse:collapse" border="1" cellpadding="6">
+      <tr><th>src</th><th>イベント</th><th>件数</th></tr>
+      {src_rows}
+    </table>
+  </div>
+</div>'''
+    return page('LPファネル', body)
 
 
 @app.route('/rak/feedback')

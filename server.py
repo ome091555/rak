@@ -236,7 +236,6 @@ def send_inquiry_email(team_name, name, email, subject, message):
         print(f'[RESEND ERROR] {type(e).__name__}: {e}')
 
 
-
 # ── DB ────────────────────────────────────────────────────────────
 
 def get_db():
@@ -6160,52 +6159,6 @@ def feedback():
   <div style="text-align:center"><a href="{back_url}" style="font-size:13px;color:#aaa">← {back_label}</a></div>
 </div>'''
     return page('お問い合わせ', body, from_code or None, active='contact')
-
-
-@app.route('/rak/mailtest')
-def mail_test():
-    """メール送信テスト（デバッグ用・後で削除）"""
-    import traceback
-    # グローバル変数ではなくos.environから直接読む
-    api_key = os.environ.get('RESEND_API_KEY', '')
-    result = []
-    result.append(f'RESEND_API_KEY 設定: {bool(api_key)}')
-    result.append(f'キー先頭4文字: {api_key[:4] if api_key else "なし"}')
-    result.append(f'送信先: {NOTIFY_EMAIL}')
-    result.append(f'全環境変数キー: {[k for k in os.environ.keys() if "RESEND" in k or "GMAIL" in k]}')
-    result.append(f'環境変数の総数: {len(os.environ)}')
-    result.append(f'RAILWAYキーあり: {"RAILWAY_ENVIRONMENT" in os.environ}')
-    result.append(f'全キー一覧（先頭30）: {list(os.environ.keys())[:30]}')
-    if not api_key:
-        result.append('❌ APIキーが読めていません')
-        return '<br>'.join(result)
-    try:
-        import requests as _req
-        res = _req.post(
-            'https://api.resend.com/emails',
-            headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json',
-                'User-Agent': 'RakApp/1.0',
-            },
-            json={
-                'from': 'Rak <send@rakapp.jp>',
-                'to': [NOTIFY_EMAIL],
-                'subject': '【Rakテスト】メール送信テスト',
-                'text': 'テストメールです。正常に送信されました。',
-            },
-            timeout=10
-        )
-        result.append(f'ステータス: {res.status_code}')
-        result.append(f'レスポンス: {res.text}')
-        if res.status_code == 200:
-            result.append(f'✅ 送信成功！Gmailを確認 → {NOTIFY_EMAIL}')
-        else:
-            result.append('❌ 送信失敗')
-    except Exception as e:
-        result.append(f'❌ エラー: {type(e).__name__}: {e}')
-        result.append(traceback.format_exc())
-    return '<br>'.join(result).replace('\n', '<br>')
 
 
 @app.route('/rak/lp-stats')

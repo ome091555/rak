@@ -2006,12 +2006,8 @@ def create_team():
             error = 'チーム名・メールアドレス・パスワードをすべて入力してください'
         elif len(name) < 2:
             error = 'チーム名は2文字以上で入力してください'
-        elif len(password) < 8:
-            error = 'パスワードは8文字以上で設定してください'
-        elif not any(c.isalpha() for c in password):
-            error = 'パスワードに英字（a〜z / A〜Z）を1文字以上含めてください'
-        elif not any(c.isdigit() for c in password):
-            error = 'パスワードに数字（0〜9）を1文字以上含めてください'
+        elif len(password) < 6:
+            error = 'パスワードは6文字以上で設定してください'
         else:
             team_id = new_id()
             code = new_id().upper()[:6]
@@ -2044,21 +2040,21 @@ def create_team():
   <div class="card">
     {pro_badge}
     <h1>チームを作成</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">作成後、メンバーに共有するチームコードが発行されます</p>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">30秒で完了・クレジットカード不要。作成後すぐ使えます。</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
       <input type="hidden" name="intent" value="{intent}">
       <label>チーム名・グループ名 *</label>
       <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
-      <label>管理者メールアドレス *</label>
+      <label>メールアドレス *</label>
       <input type="email" name="email" placeholder="例：admin@example.com" required>
-      <div style="font-size:12px;color:#888;margin-top:4px;margin-bottom:4px">パスワードを忘れた際の再設定に使用します</div>
-      <label>管理者パスワード *</label>
+      <div style="font-size:12px;color:#888;margin-top:4px;margin-bottom:4px">あなたの再ログイン用です。メンバーには不要・公開されません。</div>
+      <label>パスワード *</label>
       <div style="position:relative">
-        <input type="password" name="password" id="pw-input" placeholder="例：soccer2026" required style="padding-right:44px">
+        <input type="password" name="password" id="pw-input" placeholder="6文字以上" required style="padding-right:44px">
         <button type="button" onclick="var i=document.getElementById('pw-input');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
       </div>
-      <div style="font-size:12px;color:#888;margin-top:6px">英字・数字を含む8文字以上　※メンバーには共有しないでください</div>
+      <div style="font-size:12px;color:#888;margin-top:6px">6文字以上ならOK　※メンバーには共有しないでください</div>
       <button class="btn btn-blue btn-block" type="submit">{submit_label}</button>
     </form>
   </div>

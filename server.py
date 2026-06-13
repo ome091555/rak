@@ -224,7 +224,7 @@ def send_inquiry_email(team_name, name, email, subject, message):
                 'User-Agent': 'RakApp/1.0',
             },
             json={
-                'from': 'Rak <send@runways.jp>',
+                'from': 'Rak <send@rakapp.jp>',
                 'to': [NOTIFY_EMAIL],
                 'subject': f'【Rakお問い合わせ】{subject or "（表題なし）"} - {team_name}',
                 'text': f'Rakにお問い合わせが届きました。\n\n■ チーム名：{team_name}\n■ お名前：{name}\n■ メールアドレス：{email}\n■ 表題：{subject or "（未選択）"}\n■ メッセージ：\n{message}\n\n---\n返信先：{email}',
@@ -2092,7 +2092,7 @@ def forgot_password():
                     import requests as _req
                     _req.post('https://api.resend.com/emails',
                         headers={'Authorization': f'Bearer {RESEND_API_KEY}', 'Content-Type': 'application/json'},
-                        json={'from': 'Rak <send@runways.jp>', 'to': [email],
+                        json={'from': 'Rak <send@rakapp.jp>', 'to': [email],
                               'subject': '【Rak】パスワードリセットのご案内',
                               'text': f'チーム「{team["name"]}」の管理者パスワードをリセットします。\n\n以下のURLから1時間以内に新しいパスワードを設定してください。\n\n{reset_url}\n\n※このメールに心当たりがない場合は無視してください。'},
                         timeout=10)
@@ -6189,7 +6189,7 @@ def mail_test():
                 'User-Agent': 'RakApp/1.0',
             },
             json={
-                'from': 'Rak <send@runways.jp>',
+                'from': 'Rak <send@rakapp.jp>',
                 'to': [NOTIFY_EMAIL],
                 'subject': '【Rakテスト】メール送信テスト',
                 'text': 'テストメールです。正常に送信されました。',

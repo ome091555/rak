@@ -2839,13 +2839,21 @@ def schedule(code):
 
     answer_link_card = ''
     if admin:
+        view_url = f"{base_url()}t/{code}/view/{team['viewer_token']}"
         ans_url = f"{base_url()}t/{code}/answer/{team['viewer_token']}"
         answer_link_card = f'''
   <div class="card" style="margin-bottom:16px;border:1.5px solid #d97706;background:#fffdf7">
-    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 出欠の回答リンク</div>
-    <div style="font-size:12px;color:#666;margin-bottom:10px">このリンクをLINEなどに貼るだけ。メンバーは登録不要で、開いて出席/欠席を押すだけです。回答は自動で集計されます。</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">🔗 メンバーへの共有リンク</div>
+    <div style="font-size:12px;color:#666;margin-bottom:12px">LINEなどに貼るだけ。メンバーは登録不要で開けます。</div>
+    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">📅 予定表を見せる</div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px">カレンダーと予定をそのまま見てもらえます</div>
+    <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="view-url">{view_url}</div>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('view-url').textContent).then(function(){{var b=document.getElementById('view-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='予定表リンクをコピー';b.style.background='#111'}},2000)}})" id="view-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:700;cursor:pointer">予定表リンクをコピー</button>
+    <div style="height:1px;background:#f0e6d0;margin:14px 0"></div>
+    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">📣 出欠を答えてもらう</div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px">開いて出席/欠席を押すだけ。自動で集計されます</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="ans-url">{ans_url}</div>
-    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ans-url').textContent).then(function(){{var b=document.getElementById('ans-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='リンクをコピー';b.style.background='#d97706'}},2000)}})" id="ans-copy" style="width:100%;margin-top:10px;padding:11px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:14px;font-weight:700;cursor:pointer">リンクをコピー</button>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ans-url').textContent).then(function(){{var b=document.getElementById('ans-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='出欠リンクをコピー';b.style.background='#d97706'}},2000)}})" id="ans-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:13px;font-weight:700;cursor:pointer">出欠リンクをコピー</button>
   </div>'''
 
     body = f'''

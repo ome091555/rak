@@ -2832,12 +2832,24 @@ def schedule(code):
             ai_btn = f'<a href="/t/{code}/upgrade" class="btn btn-sm" style="background:#f5f5f5;color:#d97706;border:1px solid #d97706">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
 
+    answer_link_card = ''
+    if admin:
+        ans_url = f"{base_url()}t/{code}/answer/{team['viewer_token']}"
+        answer_link_card = f'''
+  <div class="card" style="margin-bottom:16px;border:1.5px solid #d97706;background:#fffdf7">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 出欠の回答リンク</div>
+    <div style="font-size:12px;color:#666;margin-bottom:10px">このリンクをLINEなどに貼るだけ。メンバーは登録不要で、開いて出席/欠席を押すだけです。回答は自動で集計されます。</div>
+    <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="ans-url">{ans_url}</div>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ans-url').textContent).then(function(){{var b=document.getElementById('ans-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='リンクをコピー';b.style.background='#d97706'}},2000)}})" id="ans-copy" style="width:100%;margin-top:10px;padding:11px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:14px;font-weight:700;cursor:pointer">リンクをコピー</button>
+  </div>'''
+
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
     <div><span class="section-label">スケジュール</span></div>
     <div style="display:flex;gap:8px;margin-left:auto">{excel_btn}{ai_btn}{new_btn}</div>
   </div>
+  {answer_link_card}
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <a href="/t/{code}/schedule?y={py}&m={pm}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#f1f4f9;color:#333;font-size:18px;text-decoration:none;flex-shrink:0">‹</a>
@@ -3156,6 +3168,151 @@ def rsvp(code, event_id):
     conn.commit()
     conn.close()
     return redirect(url_for('schedule', code=code))
+
+
+# ── 無登録の出欠回答ページ（メンバーはリンクを開いてタップするだけ）────────────
+
+def _answer_invalid_page():
+    return render_template_string('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rak</title></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px;color:#888"><p>リンクが無効か、期限切れです。</p></body></html>'), 404
+
+
+@app.route('/t/<code>/answer/<token>')
+def answer_page(code, token):
+    """出欠回答ページ（公開・ログイン不要）。token=viewer_token で認証"""
+    import html as _html
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+
+    # 名前選択（?name=... が来たらクッキーに保存してリダイレクト）
+    pick = request.args.get('name', '').strip()
+    if pick:
+        r = redirect(f'/t/{code}/answer/{token}')
+        r.set_cookie(f'rak_ans_{code}', pick, max_age=60 * 60 * 24 * 180, samesite='Lax')
+        return r
+    if request.args.get('reset'):
+        r = redirect(f'/t/{code}/answer/{token}')
+        r.delete_cookie(f'rak_ans_{code}')
+        return r
+
+    my_name = request.cookies.get(f'rak_ans_{code}', '')
+    today = datetime.now(JST).strftime('%Y-%m-%d')
+    conn = get_db()
+    members = conn.execute('SELECT name FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
+    events = conn.execute(
+        'SELECT * FROM events WHERE team_id=? AND event_date>=? ORDER BY event_date,event_time LIMIT 20',
+        (team['id'], today)).fetchall()
+    my_rsvps = {}
+    if my_name:
+        for r in conn.execute('SELECT event_id,status FROM rsvps WHERE member_name=?', (my_name,)).fetchall():
+            my_rsvps[r['event_id']] = r['status']
+    conn.close()
+
+    head = f'''<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+{FAVICON_LINK}{FONT}
+<title>{_html.escape(team["name"])}｜出欠の回答</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:'Noto Sans JP',-apple-system,sans-serif;background:#f7f8fa;color:#111;padding:20px 16px 60px;max-width:520px;margin:0 auto}}
+.head{{text-align:center;margin-bottom:20px}}
+.head .tm{{font-size:13px;color:#888}}
+.head h1{{font-size:20px;margin-top:4px}}
+.card{{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}}
+.ev-title{{font-weight:700;font-size:16px}}
+.ev-meta{{font-size:13px;color:#666;margin-top:2px}}
+.btns{{display:flex;gap:10px;margin-top:14px}}
+.btns button{{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:700;border:2px solid #e5e7eb;background:#fff;color:#9ca3af;cursor:pointer}}
+.btns button.on-go{{border-color:#16a34a;background:#f0fdf4;color:#16a34a}}
+.btns button.on-no{{border-color:#dc2626;background:#fef2f2;color:#dc2626}}
+.namebox{{text-align:center;padding:8px 0}}
+.namebox a{{display:block;padding:14px;margin:8px 0;border:1.5px solid #e5e7eb;border-radius:10px;text-decoration:none;color:#111;font-weight:600;font-size:15px}}
+.who{{text-align:center;font-size:13px;color:#666;margin-bottom:14px}}
+.who b{{color:#111}}
+.who a{{color:#d97706;font-size:12px;margin-left:6px}}
+.foot{{text-align:center;font-size:11px;color:#bbb;margin-top:24px}}
+input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;margin-top:8px}}
+.subbtn{{width:100%;padding:13px;border:none;border-radius:10px;background:#111;color:#fff;font-size:15px;font-weight:700;margin-top:10px;cursor:pointer}}
+</style></head><body>
+<div class="head"><div class="tm">{_html.escape(team["name"])}</div><h1>出欠の回答</h1></div>'''
+
+    wd = ['月','火','水','木','金','土','日']
+    def dl(d, t):
+        try:
+            from datetime import date as _d
+            x = _d.fromisoformat(d)
+            s = f'{x.month}月{x.day}日（{wd[x.weekday()]}）'
+            return s + (f'　{t}' if t else '')
+        except Exception:
+            return d
+
+    if not my_name:
+        # 名前選択画面
+        opts = ''.join(
+            f'<a href="/t/{code}/answer/{token}?name={_html.escape(m["name"])}">{_html.escape(m["name"])}</a>'
+            for m in members)
+        if not opts:
+            opts = '<div style="color:#888;font-size:13px;padding:8px">名簿が未登録です。下に名前を入力してください。</div>'
+        body = f'''
+<div class="card">
+  <div style="font-weight:700;margin-bottom:6px">あなたのお名前を選んでください</div>
+  <div style="font-size:12px;color:#888;margin-bottom:8px">登録不要。選ぶだけで回答できます。</div>
+  <div class="namebox">{opts}</div>
+  <form method="GET" action="/t/{code}/answer/{token}">
+    <input type="text" name="name" placeholder="名簿にない方はここに入力" maxlength="20">
+    <button class="subbtn" type="submit">この名前で回答する</button>
+  </form>
+</div>
+<div class="foot">Powered by Rak</div></body></html>'''
+        return head + body
+
+    # 回答画面
+    ev_html = ''
+    if not events:
+        ev_html = '<div class="card" style="text-align:center;color:#888">回答する予定はまだありません</div>'
+    for ev in events:
+        st = my_rsvps.get(ev['id'], '')
+        go_cls = 'on-go' if st == 'attending' else ''
+        no_cls = 'on-no' if st == 'absent' else ''
+        ev_html += f'''
+<div class="card">
+  <div class="ev-title">{_html.escape(ev["title"])}</div>
+  <div class="ev-meta">{dl(ev["event_date"], ev["event_time"])}{("　📍" + _html.escape(ev["location"])) if ev["location"] else ""}</div>
+  <form method="POST" action="/t/{code}/answer/{token}/rsvp/{ev["id"]}" class="btns">
+    <button name="status" value="attending" class="{go_cls}" type="submit">{'✓ ' if st=='attending' else ''}出席</button>
+    <button name="status" value="absent" class="{no_cls}" type="submit">{'✓ ' if st=='absent' else ''}欠席</button>
+  </form>
+</div>'''
+    body = f'''
+<div class="who"><b>{_html.escape(my_name)}</b> さんとして回答中<a href="/t/{code}/answer/{token}?reset=1">（変更）</a></div>
+{ev_html}
+<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
+    return head + body
+
+
+@app.route('/t/<code>/answer/<token>/rsvp/<event_id>', methods=['POST'])
+def answer_rsvp(code, token, event_id):
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+    name = request.cookies.get(f'rak_ans_{code}', '').strip()
+    if not name:
+        return redirect(f'/t/{code}/answer/{token}')
+    status = request.form.get('status', 'attending')
+    if status not in ('attending', 'absent'):
+        status = 'attending'
+    conn = get_db()
+    # イベントがこのチームのものか検証
+    ev = conn.execute('SELECT id FROM events WHERE id=? AND team_id=?', (event_id, team['id'])).fetchone()
+    if ev:
+        conn.execute('''
+            INSERT INTO rsvps (id,event_id,member_name,status,updated_at)
+            VALUES (?,?,?,?,?)
+            ON CONFLICT(event_id,member_name) DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
+        ''', (new_id(), event_id, name, status, now_str()))
+        conn.commit()
+    conn.close()
+    return redirect(f'/t/{code}/answer/{token}')
 
 
 # ── Notices ───────────────────────────────────────────────────────

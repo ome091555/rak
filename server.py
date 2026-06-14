@@ -1602,7 +1602,7 @@ footer a:hover{{color:#94a3b8}}
   <div class="hero-inner">
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
-      <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
+      <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br><span style="white-space:nowrap">あなたの<span class="highlight"><span>事務</span></span>だけ、</span><span style="white-space:nowrap">ラクに。</span></h1>
       <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。<span style="white-space:nowrap">メンバーはアプリも登録も不要。</span>いつもの連絡アプリに届くリンクを開いて、<span style="white-space:nowrap">タップで答えるだけです。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">

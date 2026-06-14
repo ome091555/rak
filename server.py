@@ -1426,7 +1426,7 @@ def home():
   --font-num:"Inter","Noto Sans JP",system-ui,sans-serif;
 }}
 *{{box-sizing:border-box;margin:0;padding:0}}
-html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}}
+html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all;overflow-wrap:break-word}}
 a{{color:inherit;text-decoration:none}}
 button{{font-family:inherit;cursor:pointer}}
 

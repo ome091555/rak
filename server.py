@@ -1602,8 +1602,8 @@ footer a:hover{{color:#94a3b8}}
   <div class="hero-inner">
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
-      <h1>メンバーは<span style="color:var(--rak-amber)">LINEのまま</span>。<br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
-      <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。<span style="white-space:nowrap">メンバーはアプリも登録も不要。</span>いつものLINEに届くリンクを開いて、<span style="white-space:nowrap">タップで答えるだけです。</span></p>
+      <h1>メンバーは<span style="color:var(--rak-amber)">いつもの連絡アプリ</span>のまま。<br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
+      <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。<span style="white-space:nowrap">メンバーはアプリも登録も不要。</span>いつもの連絡アプリに届くリンクを開いて、<span style="white-space:nowrap">タップで答えるだけです。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1665,7 +1665,7 @@ footer a:hover{{color:#94a3b8}}
 <section class="catch">
   <div class="catch-in">
     <span class="chip"><span class="d"></span>メンバーは登録不要</span>
-    <span class="chip"><span class="d"></span>いつものLINEで完結</span>
+    <span class="chip"><span class="d"></span>いつもの連絡アプリで完結</span>
     <span class="chip"><span class="d"></span>出欠は自動で集計</span>
     <span class="chip"><span class="d"></span>事務作業がゼロに近づく</span>
   </div>
@@ -1685,7 +1685,7 @@ footer a:hover{{color:#94a3b8}}
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
         <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">2</div>
-        <div><div style="font-weight:700;font-size:16px">リンクをLINEに貼る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">コピーして、いつものLINEグループへ。新しい連絡ツールに乗り換えさせる必要はありません。</div></div>
+        <div><div style="font-weight:700;font-size:16px">リンクを連絡アプリに貼る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">コピーして、いつもの連絡アプリのグループへ。新しい連絡ツールに乗り換えさせる必要はありません。</div></div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
         <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">3</div>
@@ -1699,7 +1699,7 @@ footer a:hover{{color:#94a3b8}}
   <div style="max-width:900px;margin:0 auto">
     <span class="sec-label">FEATURES</span>
     <div class="sec-title">あなたの事務作業、<br>ぜんぶここで。</div>
-    <div class="sec-sub">作るのはアプリで。配るのはいつものLINEで。集計はRakが自動で。</div>
+    <div class="sec-sub">作るのはアプリで。配るのはいつもの連絡アプリで。集計はRakが自動で。</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:#16a34a;white-space:nowrap">FREE　無料で使える</span>
       <div style="flex:1;height:1px;background:#bbf7d0"></div>
@@ -1961,7 +1961,7 @@ footer a:hover{{color:#94a3b8}}
   <div style="display:flex;flex-direction:column;gap:2px">
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">メンバーもアプリを入れる必要がありますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
-      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">いいえ。アプリを入れて使うのは運営担当のあなただけです。メンバーは、LINEなどで届いた専用リンクを開いて出席/欠席などをタップするだけ。アカウント登録もアプリのインストールも一切不要です。</div>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">いいえ。アプリを入れて使うのは運営担当のあなただけです。メンバーは、連絡アプリなどで届いた専用リンクを開いて出席/欠席などをタップするだけ。アカウント登録もアプリのインストールも一切不要です。</div>
     </details>
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">クレジットカードは必要ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
@@ -2904,7 +2904,7 @@ def schedule(code):
         answer_link_card = f'''
   <div class="card" style="margin-bottom:16px;border:1.5px solid #d97706;background:#fffdf7">
     <div style="font-weight:700;font-size:14px;margin-bottom:4px">🔗 メンバーへの共有リンク</div>
-    <div style="font-size:12px;color:#666;margin-bottom:12px">LINEなどに貼るだけ。メンバーは登録不要で開けます。</div>
+    <div style="font-size:12px;color:#666;margin-bottom:12px">ふだんの連絡アプリに貼るだけ。メンバーは登録不要で開けます。</div>
     <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">📅 予定表を見せる</div>
     <div style="font-size:11px;color:#888;margin-bottom:6px">カレンダーと予定をそのまま見てもらえます</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="view-url">{view_url}</div>
@@ -4353,7 +4353,7 @@ def team_help(code):
     ]
 
     steps_admin = [
-        ('チームを作成してコードを共有する', 'チーム登録後に表示されるチームコードをメンバーに共有します。LINEやメールで送るだけでOK。'),
+        ('チームを作成してコードを共有する', 'チーム登録後に表示されるチームコードをメンバーに共有します。連絡アプリやメールで送るだけでOK。'),
         ('メンバーを登録する', '「メンバー」タイルから名前を追加。出欠・集金管理に使われます。'),
         ('予定を追加する', '「予定」タイルから練習や試合を登録。日時・場所・メモを設定できます。'),
         ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成機能で下書きを自動生成できます。'),

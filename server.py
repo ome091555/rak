@@ -570,8 +570,7 @@ def pro_gate(code, team, active='home'):  # noqa
       <div style="font-weight:700;margin-bottom:12px;color:#d97706">Proプランでできること</div>
       <div style="font-size:13px;color:#444;line-height:2.2">
         {_CHK} 集金・支払い管理<br>
-        {_CHK} 注文フォーム<br>
-        {_CHK} アンケート<br>
+        {_CHK} 注文・アンケート<br>
         {_CHK} AI文章生成<br>
         {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力
@@ -1135,7 +1134,7 @@ def page(title, body, code=None, active=None):
 
         # 「その他▾」ドロップダウン
         overflow_common = [
-            ('orders',   'orders',   '注文フォーム', f'/t/{code}/orders'),
+            ('orders',   'orders',   '注文・アンケート', f'/t/{code}/orders'),
             ('uniforms', 'uniforms', 'ユニフォーム', f'/t/{code}/uniforms'),
         ]
         overflow_admin = [
@@ -1738,8 +1737,8 @@ footer a:hover{{color:#94a3b8}}
       </div>
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_CLIP}</span>
-        <div class="fcard-title">注文フォーム</div>
-        <div class="fcard-desc">弁当・グッズの注文をまとめて管理</div>
+        <div class="fcard-title">注文・アンケート</div>
+        <div class="fcard-desc">弁当・グッズの注文や、希望調査・多数決を回収。選択式は票数も自動集計</div>
       </div>
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_CHART}</span>
@@ -1760,11 +1759,6 @@ footer a:hover{{color:#94a3b8}}
         <span class="fcard-ic">{IC_USERS}</span>
         <div class="fcard-title">ユニフォーム管理</div>
         <div class="fcard-desc">サイズ・枚数・背番号を一括管理。受取チェックまで完結</div>
-      </div>
-      <div class="fcard fcard-pro">
-        <span class="fcard-ic">{IC_CLIP}</span>
-        <div class="fcard-title">アンケート</div>
-        <div class="fcard-desc">選択・テキスト形式のアンケートを作成・集計</div>
       </div>
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_CHART}</span>
@@ -4218,9 +4212,9 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon">{_ICO_CLIPBOARD}</span>注文フォーム{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
+      <summary><span class="atile-icon">{_ICO_CLIPBOARD}</span>注文・アンケート{''+_PRO_BADGE if not is_pro(team) else ''}</summary>
       <div class="atile-body">
-        <a href="/t/{code}/orders" class="btn btn-outline">フォーム一覧</a>
+        <a href="/t/{code}/orders" class="btn btn-outline">一覧・作成</a>
       </div>
     </details>
 
@@ -5880,10 +5874,10 @@ def orders_list(code):
     body = f'''
 <div class="container">
   <div class="row" style="margin-bottom:16px">
-    <span class="section-label">{_ICO_CLIPBOARD} 注文フォーム</span>
+    <span class="section-label">{_ICO_CLIPBOARD} 注文・アンケート</span>
     <div style="margin-left:auto">{new_btn}</div>
   </div>
-  {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文フォームはまだありません</div>'}
+  {cards if forms else '<div class="empty card"><div style="margin-bottom:8px">' + _SVG_EMPTY_FORM + '</div>注文・アンケートはまだありません</div>'}
   <div style="margin-top:8px"><a href="{home_url}" style="font-size:13px;color:#888">← ホームに戻る</a></div>
 </div>'''
     return page('注文フォーム', body, code, active='orders')
@@ -5960,6 +5954,42 @@ def order_form_view(code, form_id):
             f'<th style="padding:8px 12px;text-align:left;font-size:13px;color:#d97706">{f["label"]}</th>'
             for f in fields
         )
+
+        # 集計ビュー（選択式の項目だけ票数を表示＝アンケート用途）
+        agg_html = ''
+        for f in fields:
+            if f['field_type'] != 'select' or not f['options']:
+                continue
+            opts_list = [o.strip() for o in f['options'].split(',') if o.strip()]
+            counts = {o: 0 for o in opts_list}
+            other = 0
+            for r in responses:
+                v = conn.execute('SELECT value FROM order_response_values WHERE response_id=? AND field_id=?',
+                                 (r['id'], f['id'])).fetchone()
+                val = v['value'].strip() if v and v['value'] else ''
+                if not val:
+                    continue
+                if val in counts:
+                    counts[val] += 1
+                else:
+                    other += 1
+            tot = sum(counts.values()) + other
+            bars = ''
+            for o in opts_list:
+                c = counts[o]
+                pct = int(c / tot * 100) if tot else 0
+                bars += f'''
+                <div style="margin-bottom:8px">
+                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>{o}</span><span style="color:#888">{c}票 ({pct}%)</span></div>
+                  <div style="height:7px;border-radius:4px;background:#f1f5f9"><div style="height:7px;border-radius:4px;background:#d97706;width:{pct}%"></div></div>
+                </div>'''
+            if other:
+                bars += f'<div style="font-size:12px;color:#aaa;margin-top:4px">その他の回答：{other}件</div>'
+            agg_html += f'''
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:10px">📊 {f["label"]}　<span style="font-size:12px;color:#888;font-weight:400">集計（{tot}票）</span></div>
+    {bars}
+  </div>'''
 
         field_rows = ''
         for f in fields:
@@ -6042,6 +6072,8 @@ def order_form_view(code, form_id):
   </div>
 
   {photo_card}
+
+  {agg_html}
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
@@ -6181,12 +6213,12 @@ def admin_new_order_form(code):
     body = f'''
 <div class="container" style="max-width:480px">
   <div class="card">
-    <h1>注文フォームを作成</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">フォームを作成後、項目（質問）を追加できます</p>
+    <h1>注文・アンケートを作成</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">作成後に項目（質問）を追加します。<br>「選択肢から選ぶ」項目を入れると、票数が自動集計されてアンケート（多数決・希望調査）としても使えます。</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
-      <label>フォーム名 *</label>
-      <input type="text" name="title" placeholder="例：遠征弁当注文、ユニフォームサイズ確認" required>
+      <label>タイトル *</label>
+      <input type="text" name="title" placeholder="例：遠征弁当の注文、打ち上げの日程アンケート" required>
       <label>説明（任意）</label>
       <textarea name="description" placeholder="例：5/25（日）遠征分のお弁当を注文してください" rows="3"></textarea>
       <label>回答期限（任意）</label>
@@ -6815,10 +6847,9 @@ def upgrade_page(code):
     <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:16px;text-align:left">
       <div style="font-size:13px;color:#444;line-height:2.2">
         {_CHK} 集金・支払い管理<br>
-        {_CHK} 注文フォーム<br>
+        {_CHK} 注文・アンケート<br>
         {_CHK} 会計・収支記録<br>
         {_CHK} ユニフォーム管理（サイズ・枚数割当）<br>
-        {_CHK} アンケート<br>
         {_CHK} AI文章生成<br>
         {_CHK} AIスケジュール自動生成<br>
         {_CHK} Excel出力<br>

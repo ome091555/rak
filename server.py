@@ -1601,9 +1601,9 @@ footer a:hover{{color:#94a3b8}}
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-l">
-      <div class="hero-badge"><span class="dot"></span>スポーツチーム・部活・サークル向け</div>
-      <h1>チーム運営、<br>スマホ一つで<br><span class="highlight"><span>ぜんぶ</span></span><span style="color:var(--rak-amber)">ラク</span>に。</h1>
-      <p class="lead">予定・連絡・集金・会計まで、バラバラだった仕事を<span style="white-space:nowrap">Rakひとつに。</span>連絡で探さない、紙で集めない。<span style="white-space:nowrap">活動に集中できる。</span></p>
+      <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
+      <h1>メンバーは<span style="color:var(--rak-amber)">LINEのまま</span>。<br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
+      <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。<span style="white-space:nowrap">メンバーはアプリも登録も不要。</span>いつものLINEに届くリンクを開いて、<span style="white-space:nowrap">タップで答えるだけです。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1620,15 +1620,7 @@ footer a:hover{{color:#94a3b8}}
           <a href="/create?src=fcard_free" class="btn-ghost" style="display:block;font-size:13px;padding:10px 0">無料で始める</a>
         </div>
       </div>
-      <p class="hero-note"><b>登録1分</b>・今日から使える</p>
-      <div class="code-wrap">
-        <p class="lbl">すでにコードをお持ちの方</p>
-        <form method="POST" action="/join" class="code-bar" style="{'border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.12)' if join_error else ''}">
-          <input type="text" name="code" placeholder="チームコードを入力" value="{join_code}">
-          <button type="submit">参加</button>
-        </form>
-        {'<p style="color:#ef4444;font-size:12px;margin-top:6px;text-align:center">「' + join_code + '」は見つかりませんでした。コードを確認してください。</p>' if join_error else ''}
-      </div>
+      <p class="hero-note"><b>メールとパスワードだけ</b>・30秒で開始</p>
     </div>
     <div class="hero-r">
       <div class="phone"><div class="scr">
@@ -1672,18 +1664,42 @@ footer a:hover{{color:#94a3b8}}
 
 <section class="catch">
   <div class="catch-in">
-    <span class="chip"><span class="d"></span>連絡が埋もれない</span>
-    <span class="chip"><span class="d"></span>集金の管理がラク</span>
-    <span class="chip"><span class="d"></span>出欠が一目でわかる</span>
-    <span class="chip"><span class="d"></span>会計・収支も管理</span>
+    <span class="chip"><span class="d"></span>メンバーは登録不要</span>
+    <span class="chip"><span class="d"></span>いつものLINEで完結</span>
+    <span class="chip"><span class="d"></span>出欠は自動で集計</span>
+    <span class="chip"><span class="d"></span>事務作業がゼロに近づく</span>
+  </div>
+</section>
+
+<section style="padding:64px 24px;background:#fffdf7">
+  <div style="max-width:760px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:36px">
+      <span class="sec-label">HOW IT WORKS</span>
+      <div class="sec-title" style="margin-top:6px">使い方は、3ステップ。</div>
+      <div class="sec-sub">アプリを入れるのは、あなただけ。</div>
+    </div>
+    <div style="display:grid;gap:16px">
+      <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">1</div>
+        <div><div style="font-weight:700;font-size:16px">Rakで作る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">出欠・予定・お知らせを、アプリでサッと作成。AIが文章や予定づくりも手伝います。</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">2</div>
+        <div><div style="font-weight:700;font-size:16px">リンクをLINEに貼る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">コピーして、いつものLINEグループへ。新しい連絡ツールに乗り換えさせる必要はありません。</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">3</div>
+        <div><div style="font-weight:700;font-size:16px">メンバーはタップで回答</div><div style="font-size:14px;color:#6b7280;margin-top:3px">リンクを開いて出席/欠席を押すだけ。登録もアプリも不要。回答はRakで自動集計されます。</div></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <section class="features" id="features">
   <div style="max-width:900px;margin:0 auto">
     <span class="sec-label">FEATURES</span>
-    <div class="sec-title">チーム運営に<br>必要なものぜんぶ。</div>
-    <div class="sec-sub">活動の時間を増やすために、管理の時間を減らす。</div>
+    <div class="sec-title">あなたの事務作業、<br>ぜんぶここで。</div>
+    <div class="sec-sub">作るのはアプリで。配るのはいつものLINEで。集計はRakが自動で。</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:800;letter-spacing:.06em;color:#16a34a;white-space:nowrap">FREE　無料で使える</span>
       <div style="flex:1;height:1px;background:#bbf7d0"></div>
@@ -1944,6 +1960,10 @@ footer a:hover{{color:#94a3b8}}
   <div class="sec-title" style="font-size:22px;margin-bottom:24px">よくある質問</div>
   <div style="display:flex;flex-direction:column;gap:2px">
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden">
+      <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">メンバーもアプリを入れる必要がありますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">いいえ。アプリを入れて使うのは運営担当のあなただけです。メンバーは、LINEなどで届いた専用リンクを開いて出席/欠席などをタップするだけ。アカウント登録もアプリのインストールも一切不要です。</div>
+    </details>
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">クレジットカードは必要ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
       <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">無料プランもProトライアル（14日間）も、クレジットカードは不要です。Proにアップグレードする際に初めてカード情報が必要になります。</div>
     </details>
@@ -1957,19 +1977,19 @@ footer a:hover{{color:#94a3b8}}
     </details>
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">年度替わりのデータはどうなりますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
-      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">チームコードはそのまま引き継がれます。新年度のメンバーを追加し、旧メンバーを削除するだけで続けて使えます。過去のデータは保持されます。</div>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">同じアカウントをそのまま使えます。新年度のメンバー名簿に入れ替えるだけで続けて使え、過去のデータも保持されます。</div>
     </details>
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">子どもの個人情報は安全ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
-      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">チーム内のデータは、チームコードを知っているメンバーのみがアクセスできます。第三者への情報提供は行いません。詳細はプライバシーポリシーをご確認ください。</div>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">メンバーはアカウント登録不要で、共有された専用リンクからのみアクセスします。リンクを知っている人だけが閲覧・回答でき、第三者への情報提供は行いません。詳細はプライバシーポリシーをご確認ください。</div>
     </details>
   </div>
 </section>
 
 <section class="cta-sec">
-  <h2>今日から、<br>チームを<span style="color:var(--rak-amber)">ラク</span>に。</h2>
-  <p>登録不要・無料からスタート。チームコードを発行して今日から使えます。</p>
-  <a href="/create?src=bottom" class="btn-amber-solid">無料でチームを作る →</a>
+  <h2>今日から、<br>あなたの事務を<span style="color:var(--rak-amber)">ラク</span>に。</h2>
+  <p>メールとパスワードだけ・30秒で開始。無料からはじめられます。メンバーには何もインストールさせません。</p>
+  <a href="/create?src=bottom" class="btn-amber-solid">無料ではじめる →</a>
 </section>
 
 <footer>

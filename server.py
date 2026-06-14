@@ -3391,6 +3391,157 @@ def answer_rsvp(code, token, event_id):
     return redirect(f'/t/{code}/answer/{token}')
 
 
+@app.route('/t/<code>/order-answer/<token>/<form_id>')
+def order_answer_page(code, token, form_id):
+    """注文フォーム回答ページ（公開・ログイン不要）。token=viewer_token で認証"""
+    import html as _html
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+
+    # 名前選択（出欠リンクと同じクッキーを共有）
+    pick = request.args.get('name', '').strip()
+    if pick:
+        r = redirect(f'/t/{code}/order-answer/{token}/{form_id}')
+        r.set_cookie(f'rak_ans_{code}', pick, max_age=60 * 60 * 24 * 180, samesite='Lax')
+        return r
+    if request.args.get('reset'):
+        r = redirect(f'/t/{code}/order-answer/{token}/{form_id}')
+        r.delete_cookie(f'rak_ans_{code}')
+        return r
+
+    conn = get_db()
+    form = conn.execute('SELECT * FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])).fetchone()
+    if not form:
+        conn.close()
+        return _answer_invalid_page()
+    fields = conn.execute('SELECT * FROM order_form_fields WHERE form_id=? ORDER BY sort_order', (form_id,)).fetchall()
+    photos = conn.execute('SELECT * FROM order_form_photos WHERE form_id=? ORDER BY uploaded_at', (form_id,)).fetchall()
+    members = conn.execute('SELECT name FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
+
+    my_name = request.cookies.get(f'rak_ans_{code}', '')
+    my_values = {}
+    if my_name:
+        mr = conn.execute('SELECT id FROM order_responses WHERE form_id=? AND member_name=?', (form_id, my_name)).fetchone()
+        if mr:
+            for v in conn.execute('SELECT field_id,value FROM order_response_values WHERE response_id=?', (mr['id'],)).fetchall():
+                my_values[v['field_id']] = v['value']
+    conn.close()
+
+    head = f'''<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+{FAVICON_LINK}{FONT}
+<title>{_html.escape(team["name"] or "チーム")}｜{_html.escape(form["title"])}</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:'Noto Sans JP',-apple-system,sans-serif;background:#f7f8fa;color:#111;padding:20px 16px 60px;max-width:520px;margin:0 auto}}
+.head{{text-align:center;margin-bottom:20px}}
+.head .tm{{font-size:13px;color:#888}}
+.head h1{{font-size:20px;margin-top:4px}}
+.card{{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}}
+.namebox a{{display:block;padding:14px;margin:8px 0;border:1.5px solid #e5e7eb;border-radius:10px;text-decoration:none;color:#111;font-weight:600;font-size:15px;text-align:center}}
+.who{{text-align:center;font-size:13px;color:#666;margin-bottom:14px}}
+.who b{{color:#111}}
+.who a{{color:#d97706;font-size:12px;margin-left:6px}}
+.foot{{text-align:center;font-size:11px;color:#bbb;margin-top:24px}}
+label{{display:block;font-size:13px;color:#555;font-weight:600;margin-top:14px;margin-bottom:4px}}
+input[type=text],select{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;background:#fff}}
+.subbtn{{width:100%;padding:14px;border:none;border-radius:10px;background:#111;color:#fff;font-size:15px;font-weight:700;margin-top:16px;cursor:pointer}}
+.dl-meta{{font-size:13px;color:#f59e0b;margin-top:4px}}
+.desc{{font-size:13px;color:#666;margin-top:6px;line-height:1.6}}
+.fphoto{{width:100%;border-radius:10px;border:1.5px solid #eee;margin-bottom:10px;display:block}}
+.okmsg{{background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:12px}}
+</style></head><body>
+<div class="head"><div class="tm">{_html.escape(team["name"] or "チーム")}</div><h1>{_html.escape(form["title"])}</h1></div>'''
+
+    if not my_name:
+        opts = ''.join(
+            f'<a href="/t/{code}/order-answer/{token}/{form_id}?name={_html.escape(m["name"])}">{_html.escape(m["name"])}</a>'
+            for m in members)
+        if not opts:
+            opts = '<div style="color:#888;font-size:13px;padding:8px;text-align:center">名簿が未登録です。下に名前を入力してください。</div>'
+        body = f'''
+<div class="card">
+  <div style="font-weight:700;margin-bottom:6px">あなたのお名前を選んでください</div>
+  <div style="font-size:12px;color:#888;margin-bottom:8px">登録不要。選ぶだけで回答できます。</div>
+  <div class="namebox">{opts}</div>
+  <form method="GET" action="/t/{code}/order-answer/{token}/{form_id}">
+    <input type="text" name="name" placeholder="名簿にない方はここに入力" maxlength="20">
+    <button class="subbtn" type="submit">この名前で回答する</button>
+  </form>
+</div>
+<div class="foot">Powered by Rak</div></body></html>'''
+        return head + body
+
+    # 回答フォーム
+    photos_html = ''.join(f'<img src="/uploads/{p["id"]}" class="fphoto">' for p in photos)
+    desc_html = f'<div class="desc">{_html.escape(form["description"])}</div>' if form['description'] else ''
+    dl_html = f'<div class="dl-meta">期限：{fmt_date(form["deadline"])}</div>' if form['deadline'] else ''
+    answered = bool(my_values)
+    field_inputs = ''
+    for field in fields:
+        cur = my_values.get(field['id'], '')
+        if field['field_type'] == 'select' and field['options']:
+            opts_list = [o.strip() for o in field['options'].split(',') if o.strip()]
+            options_html = '<option value="">選択してください</option>' + ''.join(
+                f'<option value="{_html.escape(o)}" {"selected" if cur == o else ""}>{_html.escape(o)}</option>'
+                for o in opts_list)
+            field_inputs += f'<label>{_html.escape(field["label"])}</label><select name="field_{field["id"]}">{options_html}</select>'
+        else:
+            field_inputs += (
+                f'<label>{_html.escape(field["label"])}</label>'
+                f'<input type="text" name="field_{field["id"]}" value="{_html.escape(cur)}" placeholder="入力してください">'
+            )
+    if not fields:
+        form_html = '<div style="text-align:center;color:#888;font-size:13px;padding:12px">この注文フォームはまだ準備中です</div>'
+    else:
+        form_html = (
+            f'<form method="POST" action="/t/{code}/order-answer/{token}/{form_id}/submit">'
+            f'{field_inputs}<button class="subbtn" type="submit">{"回答を更新する" if answered else "送信する"}</button></form>'
+        )
+    body = f'''
+<div class="who"><b>{_html.escape(my_name)}</b> さんとして回答中<a href="/t/{code}/order-answer/{token}/{form_id}?reset=1">（変更）</a></div>
+<div class="card">
+  {'<div class="okmsg">' + _CHK + ' 回答済みです。修正して再送信できます。</div>' if answered else ''}
+  {desc_html}
+  {dl_html}
+  {photos_html}
+  {form_html}
+</div>
+<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
+    return head + body
+
+
+@app.route('/t/<code>/order-answer/<token>/<form_id>/submit', methods=['POST'])
+def order_answer_submit(code, token, form_id):
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+    name = request.cookies.get(f'rak_ans_{code}', '').strip()
+    if not name:
+        return redirect(f'/t/{code}/order-answer/{token}/{form_id}')
+    conn = get_db()
+    form = conn.execute('SELECT id FROM order_forms WHERE id=? AND team_id=?', (form_id, team['id'])).fetchone()
+    if not form:
+        conn.close()
+        return _answer_invalid_page()
+    fields = conn.execute('SELECT * FROM order_form_fields WHERE form_id=? ORDER BY sort_order', (form_id,)).fetchall()
+    resp = conn.execute('SELECT id FROM order_responses WHERE form_id=? AND member_name=?', (form_id, name)).fetchone()
+    if resp:
+        resp_id = resp['id']
+        conn.execute('UPDATE order_responses SET submitted_at=? WHERE id=?', (now_str(), resp_id))
+        conn.execute('DELETE FROM order_response_values WHERE response_id=?', (resp_id,))
+    else:
+        resp_id = new_id()
+        conn.execute('INSERT INTO order_responses VALUES (?,?,?,?)', (resp_id, form_id, name, now_str()))
+    for field in fields:
+        value = request.form.get(f'field_{field["id"]}', '').strip()
+        conn.execute('INSERT INTO order_response_values VALUES (?,?,?,?)', (new_id(), resp_id, field['id'], value))
+    conn.commit()
+    conn.close()
+    return redirect(f'/t/{code}/order-answer/{token}/{form_id}')
+
+
 # ── Notices ───────────────────────────────────────────────────────
 
 @app.route('/t/<code>/notices')
@@ -5724,6 +5875,13 @@ def order_form_view(code, form_id):
     <div style="margin-top:12px">
       <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
     </div>
+  </div>
+
+  <div class="card" style="background:#fffdf7;border:1.5px solid #fde68a">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 メンバーに回答してもらう</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.6">下のリンクをコピーして、ふだんの連絡アプリ（LINE等）に貼るだけ。メンバーは登録不要で、名前を選んでタップ回答できます。</div>
+    <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace;margin-bottom:8px">{base_url()}t/{code}/order-answer/{team['viewer_token']}/{form_id}</div>
+    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/order-answer/{team['viewer_token']}/{form_id}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='🔗 回答リンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">🔗 回答リンクをコピー</button>
   </div>
 
   {photo_card}

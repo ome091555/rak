@@ -1602,7 +1602,7 @@ footer a:hover{{color:#94a3b8}}
   <div class="hero-inner">
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
-      <h1>メンバーは<span style="color:var(--rak-amber)">いつもの連絡アプリ</span>のまま。<br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
+      <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br>あなたの<span class="highlight"><span>事務</span></span>だけ、ラクに。</h1>
       <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。<span style="white-space:nowrap">メンバーはアプリも登録も不要。</span>いつもの連絡アプリに届くリンクを開いて、<span style="white-space:nowrap">タップで答えるだけです。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
@@ -1625,37 +1625,29 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-r">
       <div class="phone"><div class="scr">
         <div class="scr-status"><span>9:41</span><span>● ● ● ▮</span></div>
-        <div class="scr-head">
-          <div class="scr-team">
-            <div class="em">{IC_BALL}</div>
-            <div><div class="nm">FC サンライズ</div><div class="sub">メンバー 22名</div></div>
-          </div>
-          <div class="scr-bell">{IC_BELL}</div>
+        <div style="text-align:center;padding:14px 12px 6px">
+          <div style="font-size:11px;color:#9ca3af">FC サンライズ</div>
+          <div style="font-size:16px;font-weight:800;color:#111;margin-top:2px">出欠の回答</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px">登録不要・タップで回答</div>
         </div>
-        <div class="scr-body">
-          <div class="scr-sec">今日の予定</div>
-          <div class="mc"><div class="mc-ev">
-            <div class="mc-date"><span class="d">7</span><span class="m">SAT</span></div>
-            <div><div class="mc-ev-t">練習　18:00–20:00</div><div class="mc-ev-s">市民グラウンド A面</div><span class="mc-tag">出席 18 / 22</span></div>
-          </div></div>
-          <div class="scr-sec">お知らせ</div>
-          <div class="mc">
-            <div class="mc-msg-t">今週末の試合について</div>
-            <div class="mc-msg-b">集合は8時半、駅前ロータリーです。ユニフォームは白で…</div>
-            <div class="mc-read"><span>既読</span><div class="bar"><i></i></div><span>14 / 15</span></div>
+        <div style="padding:6px 12px">
+          <div style="font-size:10px;color:#9ca3af;text-align:center;margin-bottom:10px">田中 さんとして回答中</div>
+          <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+            <div style="font-size:13px;font-weight:700;color:#111">練習試合 vs FCさくら</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">6月20日（土）9:00　市民グラウンド</div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <div style="flex:1;text-align:center;padding:9px;border-radius:8px;border:2px solid #16a34a;background:#f0fdf4;color:#16a34a;font-size:12px;font-weight:700">✓ 出席</div>
+              <div style="flex:1;text-align:center;padding:9px;border-radius:8px;border:2px solid #e5e7eb;color:#9ca3af;font-size:12px;font-weight:700">欠席</div>
+            </div>
           </div>
-          <div class="scr-sec">集金</div>
-          <div class="mc"><div class="mc-pay">
-            <div class="l">6月 月会費</div>
-            <div class="amt">¥3,000</div>
-          </div></div>
-        </div>
-        <div class="scr-nav">
-          <div class="on"><span class="ic">{IC_HOME}</span>ホーム</div>
-          <div><span class="ic">{IC_CAL}</span>予定</div>
-          <div><span class="ic">{IC_MEGA}</span>連絡</div>
-          <div><span class="ic">{IC_YEN}</span>集金</div>
-          <div><span class="ic">{IC_USERS}</span>メンバー</div>
+          <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+            <div style="font-size:13px;font-weight:700;color:#111">通常練習</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">6月23日（火）19:00　市民体育館</div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <div style="flex:1;text-align:center;padding:9px;border-radius:8px;border:2px solid #e5e7eb;color:#9ca3af;font-size:12px;font-weight:700">出席</div>
+              <div style="flex:1;text-align:center;padding:9px;border-radius:8px;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;font-size:12px;font-weight:700">✓ 欠席</div>
+            </div>
+          </div>
         </div>
       </div></div>
     </div>
@@ -1724,11 +1716,6 @@ footer a:hover{{color:#94a3b8}}
         <span class="fcard-ic">{IC_LINK}</span>
         <div class="fcard-title">チームコード招待</div>
         <div class="fcard-desc">コードを共有するだけで参加完了</div>
-      </div>
-      <div class="fcard">
-        <span class="fcard-ic">{IC_BELL}</span>
-        <div class="fcard-title">保護者リンク（登録不要）</div>
-        <div class="fcard-desc">アカウント不要でスケジュール・お知らせを閲覧。保護者・スタッフに共有できます</div>
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_CLIP}</span>
@@ -4041,18 +4028,6 @@ def admin_dash(code):
     </details>
 
     <details class="atile">
-      <summary><span class="atile-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>保護者用リンク</summary>
-      <div style="padding:12px 14px;font-size:13px">
-        <div style="color:#6b7280;margin-bottom:8px;line-height:1.5">登録不要でスケジュール・お知らせが閲覧できるリンクです。保護者やスタッフに共有できます。</div>
-        <div style="background:#f3f4f6;border-radius:6px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;margin-bottom:8px;font-family:monospace" id="viewer-url">{base_url()}t/{code}/view/{team['viewer_token']}</div>
-        <div style="display:flex;gap:6px">
-          <button onclick="var u=document.getElementById('viewer-url').textContent;navigator.clipboard.writeText(u).then(function(){{var b=document.getElementById('viewer-copy-btn');b.textContent='コピー ✓';b.style.background='#22c55e';b.style.color='#fff';setTimeout(function(){{b.textContent='コピー';b.style.background='';b.style.color=''}},2000)}})" id="viewer-copy-btn" class="btn btn-outline" style="flex:1;font-size:13px">コピー</button>
-          <a href="{base_url()}t/{code}/view/{team['viewer_token']}" target="_blank" class="btn btn-outline" style="flex:1;font-size:13px;text-align:center">👁 確認する</a>
-        </div>
-      </div>
-    </details>
-
-    <details class="atile">
       <summary><span class="atile-icon">{_ICO_HELP}</span>使い方</summary>
       <div class="atile-body">
         <a href="/t/{code}/help" class="btn btn-outline">ガイドを見る</a>
@@ -4353,13 +4328,12 @@ def team_help(code):
     ]
 
     steps_admin = [
-        ('チームを作成してコードを共有する', 'チーム登録後に表示されるチームコードをメンバーに共有します。連絡アプリやメールで送るだけでOK。'),
-        ('メンバーを登録する', '「メンバー」タイルから名前を追加。出欠・集金管理に使われます。'),
-        ('予定を追加する', '「予定」タイルから練習や試合を登録。日時・場所・メモを設定できます。'),
-        ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成機能で下書きを自動生成できます。'),
-        ('集金を管理する', '「集金」タイルで集金項目を作成。誰が払ったか一覧で管理できます。'),
-        ('メモ・ファイルを管理する', '「メモ」タイルで管理者専用のメモを作成。PDFやExcelなどのファイルも添付できます。'),
-        ('保護者リンクを共有する', 'ホームの「保護者用リンク」を開いてURLをコピー。アカウント不要でスケジュール・お知らせが確認できるリンクを保護者やスタッフに送れます。'),
+        ('メンバー名簿を登録する', '「メンバー」タイルから名前を追加します。出欠や集金の集計で「誰が答えたか」を表示するために使います。'),
+        ('予定を追加する', '「予定」タイルから練習や試合を登録。出欠の取り方（出席・欠席／欠席のみ／取らない）も選べます。'),
+        ('共有リンクをメンバーに送る', '「予定」画面の共有リンクをコピーして、ふだんの連絡アプリに貼るだけ。メンバーは登録不要でリンクを開き、出欠をタップで回答できます。'),
+        ('お知らせを作成する', '「お知らせ」タイルから連絡文を作成。AI文章作成で下書きを自動生成し、コピーして連絡アプリに貼れます。'),
+        ('集金・会計を管理する', '「集金」で誰が払ったかを管理、「会計」でチームの収支を記録できます。'),
+        ('メモ・ファイルを管理する', '「メモ」タイルで管理者専用のメモを作成。PDFや写真などのファイルも添付できます。'),
     ]
 
     def step_html(steps, color):

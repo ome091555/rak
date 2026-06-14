@@ -1454,7 +1454,7 @@ button{{font-family:inherit;cursor:pointer}}
 .highlight{{position:relative;display:inline-block}}
 .highlight::before{{content:"";position:absolute;left:-2px;right:-2px;bottom:3px;height:14px;background:var(--rak-amber-tint);z-index:0;border-radius:3px}}
 .highlight>span{{position:relative;z-index:1}}
-.hero p.lead{{font-size:16.5px;line-height:1.8;color:var(--rak-graphite);max-width:460px;margin:0 0 30px}}
+.hero p.lead{{font-size:16.5px;line-height:1.8;color:var(--rak-graphite);max-width:460px;margin:0 0 30px;word-break:keep-all}}
 .hero-btns{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}}
 .btn-primary{{background:var(--rak-amber);color:#fff;padding:15px 30px;border-radius:999px;font-size:15.5px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .12s;box-shadow:0 8px 22px rgba(245,158,11,.4)}}
 .btn-primary:hover{{background:var(--rak-amber-deep);color:#fff;transform:translateY(-2px);box-shadow:0 12px 26px rgba(245,158,11,.5)}}

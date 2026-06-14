@@ -1426,7 +1426,7 @@ def home():
   --font-num:"Inter","Noto Sans JP",system-ui,sans-serif;
 }}
 *{{box-sizing:border-box;margin:0;padding:0}}
-html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all;overflow-wrap:break-word}}
+html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all}}
 a{{color:inherit;text-decoration:none}}
 button{{font-family:inherit;cursor:pointer}}
 
@@ -1531,7 +1531,7 @@ button{{font-family:inherit;cursor:pointer}}
 .fcard-ic{{display:inline-flex;color:var(--rak-amber);background:var(--rak-amber-tint);border-radius:14px;padding:12px}}
 .fcard-ic svg{{width:28px;height:28px}}
 .fcard-title{{font-size:14px;font-weight:800;line-height:1.4;color:#0f172a}}
-.fcard-desc{{font-size:11.5px;color:#64748b;line-height:1.6}}
+.fcard-desc{{font-size:11.5px;color:#64748b;line-height:1.6;min-height:2.5em}}
 
 /* Pricing */
 .pricing{{padding:76px 24px;background:linear-gradient(180deg,#fffaf2,#fff5e6)}}

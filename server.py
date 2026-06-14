@@ -3883,39 +3883,6 @@ def admin_dash(code):
     + '</div></div>'
   ) if (not member_names or not has_any_event or not has_any_notice) else '')()}
 
-  <div style="background:#0a0a0a;color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div>
-        <div style="font-size:10px;opacity:.45;letter-spacing:.05em;margin-bottom:2px">チームコード</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span id="code-masked" style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num)">{code[:3]}***</span>
-          <span id="code-plain" style="font-size:22px;font-weight:600;letter-spacing:.14em;font-family:var(--font-num);display:none">{code}</span>
-          <button onclick="rakToggleCode()" id="code-toggle-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer">表示</button>
-        </div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:6px">
-        <button onclick="rakCopyUrl()" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap">URLをコピー</button>
-        <a href="/t/{code}/admin/settings#regen" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-size:11px;padding:5px 10px;border-radius:6px;white-space:nowrap;text-decoration:none">再発行</a>
-      </div>
-    </div>
-    <div id="code-url-area" style="font-size:11px;opacity:.35;word-break:break-all;display:none">{base_url()}t/{code}</div>
-  </div>
-  <script>
-  var _rakUrl = '{base_url()}t/{code}';
-  function rakToggleCode(){{
-    var m=document.getElementById('code-masked');
-    var p=document.getElementById('code-plain');
-    var b=document.getElementById('code-toggle-btn');
-    var u=document.getElementById('code-url-area');
-    if(p.style.display==='none'){{m.style.display='none';p.style.display='';b.textContent='隠す';u.style.display='block';}}
-    else{{m.style.display='';p.style.display='none';b.textContent='表示';u.style.display='none';}}
-  }}
-  function rakCopyUrl(){{
-    navigator.clipboard.writeText(_rakUrl).then(function(){{
-      var btn=event.target;btn.textContent='コピー完了！';setTimeout(function(){{btn.textContent='URLをコピー';}},2000);
-    }});
-  }}
-  </script>
 
   <style>
     .admin-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}}

@@ -485,6 +485,8 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN viewer_token TEXT DEFAULT ""',
         'ALTER TABLE uniform_assignments ADD COLUMN quantity INTEGER DEFAULT 1',
         'ALTER TABLE events ADD COLUMN rsvp_mode TEXT DEFAULT "both"',
+        'ALTER TABLE fee_payments ADD COLUMN reported INTEGER DEFAULT 0',
+        'ALTER TABLE fee_payments ADD COLUMN reported_at TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(col_sql)
@@ -3542,6 +3544,141 @@ def order_answer_submit(code, token, form_id):
     return redirect(f'/t/{code}/order-answer/{token}/{form_id}')
 
 
+@app.route('/t/<code>/pay-answer/<token>')
+def pay_answer_page(code, token):
+    """集金の支払い自己申告ページ（公開・ログイン不要）。token=viewer_token で認証"""
+    import html as _html
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+
+    # 名前選択（出欠・注文リンクと同じクッキーを共有）
+    pick = request.args.get('name', '').strip()
+    if pick:
+        r = redirect(f'/t/{code}/pay-answer/{token}')
+        r.set_cookie(f'rak_ans_{code}', pick, max_age=60 * 60 * 24 * 180, samesite='Lax')
+        return r
+    if request.args.get('reset'):
+        r = redirect(f'/t/{code}/pay-answer/{token}')
+        r.delete_cookie(f'rak_ans_{code}')
+        return r
+
+    my_name = request.cookies.get(f'rak_ans_{code}', '')
+    conn = get_db()
+    members = conn.execute('SELECT name FROM members WHERE team_id=? ORDER BY CAST(number AS INTEGER), name', (team['id'],)).fetchall()
+    fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
+    my_pay = {}
+    if my_name:
+        for p in conn.execute('SELECT fee_id,paid,reported FROM fee_payments WHERE member_name=?', (my_name,)).fetchall():
+            my_pay[p['fee_id']] = p
+    conn.close()
+
+    head = f'''<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+{FAVICON_LINK}{FONT}
+<title>{_html.escape(team["name"] or "チーム")}｜集金の支払い</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:'Noto Sans JP',-apple-system,sans-serif;background:#f7f8fa;color:#111;padding:20px 16px 60px;max-width:520px;margin:0 auto}}
+.head{{text-align:center;margin-bottom:20px}}
+.head .tm{{font-size:13px;color:#888}}
+.head h1{{font-size:20px;margin-top:4px}}
+.card{{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}}
+.fee-title{{font-weight:700;font-size:16px}}
+.fee-meta{{font-size:14px;color:#555;margin-top:2px}}
+.namebox a{{display:block;padding:14px;margin:8px 0;border:1.5px solid #e5e7eb;border-radius:10px;text-decoration:none;color:#111;font-weight:600;font-size:15px;text-align:center}}
+.who{{text-align:center;font-size:13px;color:#666;margin-bottom:14px}}
+.who b{{color:#111}}
+.who a{{color:#d97706;font-size:12px;margin-left:6px}}
+.foot{{text-align:center;font-size:11px;color:#bbb;margin-top:24px}}
+.paybtn{{width:100%;padding:13px;border-radius:10px;font-size:15px;font-weight:700;border:2px solid #16a34a;background:#16a34a;color:#fff;cursor:pointer;margin-top:12px}}
+.subbtn{{width:100%;padding:13px;border:none;border-radius:10px;background:#111;color:#fff;font-size:15px;font-weight:700;margin-top:10px;cursor:pointer}}
+input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;margin-top:8px}}
+.badge-paid{{display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;margin-top:12px;text-align:center;width:100%}}
+.badge-rep{{display:inline-block;background:#fffbeb;border:1px solid #fde68a;color:#b45309;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;margin-top:12px;text-align:center;width:100%}}
+</style></head><body>
+<div class="head"><div class="tm">{_html.escape(team["name"] or "チーム")}</div><h1>集金の支払い</h1></div>'''
+
+    if not my_name:
+        opts = ''.join(
+            f'<a href="/t/{code}/pay-answer/{token}?name={_html.escape(m["name"])}">{_html.escape(m["name"])}</a>'
+            for m in members)
+        if not opts:
+            opts = '<div style="color:#888;font-size:13px;padding:8px;text-align:center">名簿が未登録です。下に名前を入力してください。</div>'
+        body = f'''
+<div class="card">
+  <div style="font-weight:700;margin-bottom:6px">あなたのお名前を選んでください</div>
+  <div style="font-size:12px;color:#888;margin-bottom:8px">登録不要。選ぶだけで申告できます。</div>
+  <div class="namebox">{opts}</div>
+  <form method="GET" action="/t/{code}/pay-answer/{token}">
+    <input type="text" name="name" placeholder="名簿にない方はここに入力" maxlength="20">
+    <button class="subbtn" type="submit">この名前で申告する</button>
+  </form>
+</div>
+<div class="foot">Powered by Rak</div></body></html>'''
+        return head + body
+
+    fee_html = ''
+    if not fees:
+        fee_html = '<div class="card" style="text-align:center;color:#888">支払う集金はまだありません</div>'
+    for f in fees:
+        p = my_pay.get(f['id'])
+        paid = p['paid'] if p else 0
+        reported = p['reported'] if p else 0
+        meta = f'¥{f["amount"]:,}' + (f'　期限：{fmt_date(f["due_date"])}' if f['due_date'] else '')
+        note_html = f'<div style="font-size:12px;color:#888;margin-top:4px">{_html.escape(f["note"])}</div>' if f['note'] else ''
+        if paid:
+            action = '<div class="badge-paid">' + _CHK + ' 支払い確認済み</div>'
+        elif reported:
+            action = '''<div class="badge-rep">⏳ 支払い申告ずみ（主催者の確認待ち）</div>
+  <form method="POST" action="/t/{code}/pay-answer/{token}/report/{fid}" style="margin-top:6px"><button name="undo" value="1" type="submit" style="width:100%;padding:9px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#888;font-size:12px;cursor:pointer">申告を取り消す</button></form>'''.replace('{code}', code).replace('{token}', token).replace('{fid}', f['id'])
+        else:
+            action = f'''<form method="POST" action="/t/{code}/pay-answer/{token}/report/{f["id"]}">
+    <button class="paybtn" type="submit">支払いました</button>
+  </form>
+  <div style="font-size:11px;color:#aaa;text-align:center;margin-top:6px">※ 実際のお支払い（現金・振込）の後に押してください</div>'''
+        fee_html += f'''
+<div class="card">
+  <div class="fee-title">{_html.escape(f["title"])}</div>
+  <div class="fee-meta">{meta}</div>
+  {note_html}
+  {action}
+</div>'''
+    body = f'''
+<div class="who"><b>{_html.escape(my_name)}</b> さんとして申告中<a href="/t/{code}/pay-answer/{token}?reset=1">（変更）</a></div>
+{fee_html}
+<div class="foot">「支払いました」を押すと主催者に届きます　·　Powered by Rak</div></body></html>'''
+    return head + body
+
+
+@app.route('/t/<code>/pay-answer/<token>/report/<fee_id>', methods=['POST'])
+def pay_answer_report(code, token, fee_id):
+    team = get_team(code)
+    if not team or team['viewer_token'] != token:
+        return _answer_invalid_page()
+    name = request.cookies.get(f'rak_ans_{code}', '').strip()
+    if not name:
+        return redirect(f'/t/{code}/pay-answer/{token}')
+    undo = request.form.get('undo') == '1'
+    conn = get_db()
+    fee = conn.execute('SELECT id FROM fees WHERE id=? AND team_id=?', (fee_id, team['id'])).fetchone()
+    if fee:
+        if undo:
+            conn.execute('''INSERT INTO fee_payments (id,fee_id,member_name,paid,paid_at,reported,reported_at)
+                VALUES (?,?,?,0,'',0,'')
+                ON CONFLICT(fee_id,member_name) DO UPDATE SET reported=0, reported_at=''
+                WHERE fee_payments.paid=0''',
+                (new_id(), fee_id, name))
+        else:
+            conn.execute('''INSERT INTO fee_payments (id,fee_id,member_name,paid,paid_at,reported,reported_at)
+                VALUES (?,?,?,0,'',1,?)
+                ON CONFLICT(fee_id,member_name) DO UPDATE SET reported=1, reported_at=excluded.reported_at''',
+                (new_id(), fee_id, name, now_str()))
+        conn.commit()
+    conn.close()
+    return redirect(f'/t/{code}/pay-answer/{token}')
+
+
 # ── Notices ───────────────────────────────────────────────────────
 
 @app.route('/t/<code>/notices')
@@ -5511,28 +5648,39 @@ def admin_fee_detail(code, fee_id):
     pay_map = {p['member_name']: p for p in payments}
     conn.close()
 
+    def _rep(p):
+        try: return p['reported'] if p else 0
+        except (KeyError, IndexError): return 0
+
     rows = ''
     for m in members:
         p = pay_map.get(m['name'])
         paid = p['paid'] if p else 0
         paid_at = p['paid_at'] if p else ''
+        reported = _rep(p) and not paid
         toggle_val = 0 if paid else 1
-        btn_class = 'btn-green' if paid else 'btn-gray'
-        btn_label = _CHK + ' 支払済' if paid else '未払い'
+        if paid:
+            btn_label = _CHK + ' 支払済'
+        elif reported:
+            btn_label = '申告→確定する'
+        else:
+            btn_label = '未払い'
+        rep_badge = '<span style="font-size:11px;font-weight:700;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:2px 7px;margin-left:8px">⏳ 申告あり</span>' if reported else ''
         rows += f'''
-        <div class="card-sm row" style="justify-content:space-between;align-items:center">
+        <div class="card-sm row" style="justify-content:space-between;align-items:center;{'background:#fffdf5' if reported else ''}">
           <div>
-            <span style="font-weight:700">{m['name']}</span>
+            <span style="font-weight:700">{m['name']}</span>{rep_badge}
             {f'<span style="font-size:11px;color:#aaa;margin-left:8px">{paid_at}</span>' if paid_at else ''}
           </div>
           <form method="POST">
             <input type="hidden" name="member_name" value="{m['name']}">
             <input type="hidden" name="paid" value="{toggle_val}">
-            <button class="btn btn-sm {'btn-blue' if paid else 'btn-outline'}" type="submit">{btn_label}</button>
+            <button class="btn btn-sm {'btn-blue' if paid else ('btn-amber' if reported else 'btn-outline')}" type="submit">{btn_label}</button>
           </form>
         </div>'''
 
     paid_count = sum(1 for m in members if pay_map.get(m['name']) and pay_map[m['name']]['paid'])
+    report_count = sum(1 for m in members if _rep(pay_map.get(m['name'])) and not (pay_map.get(m['name']) and pay_map[m['name']]['paid']))
 
     body = f'''
 <div class="container" style="max-width:540px">
@@ -5550,11 +5698,20 @@ def admin_fee_detail(code, fee_id):
       ¥{f['amount']:,}{'　期限：' + fmt_date(f['due_date']) if f['due_date'] else ''}
     </div>
     {f'<div style="font-size:13px;color:#666;margin-top:8px">{f["note"]}</div>' if f['note'] else ''}
-    <div style="margin-top:12px;display:flex;gap:10px">
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
       <span class="badge badge-green">支払済 {paid_count}名</span>
       <span class="badge badge-red">未払い {len(members)-paid_count}名</span>
+      {f'<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a">⏳ 申告 {report_count}名</span>' if report_count else ''}
     </div>
   </div>
+
+  <div class="card" style="background:#fffdf7;border:1.5px solid #fde68a">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 メンバーに支払いを申告してもらう</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.6">下のリンクを連絡アプリ（LINE等）に貼るだけ。メンバーは登録不要で「支払いました」をタップ→ここに「⏳ 申告あり」が出るので、確認して確定できます。</div>
+    <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace;margin-bottom:8px">{base_url()}t/{code}/pay-answer/{team['viewer_token']}</div>
+    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/pay-answer/{team['viewer_token']}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='🔗 支払いリンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">🔗 支払いリンクをコピー</button>
+  </div>
+
   <div class="card">
     <h2 style="margin-bottom:12px">支払い状況</h2>
     {rows if members else '<div class="empty">メンバーがいません。先にメンバー名簿を登録してください。</div>'}

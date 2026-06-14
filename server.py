@@ -3556,20 +3556,9 @@ def admin_settings(code):
     msg = ''
     error = ''
 
-    regen_done = request.args.get('regen') == '1'
-
     if request.method == 'POST':
         action = request.form.get('action')
         conn = get_db()
-        if action == 'regen_code':
-            import random, string
-            new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            conn.execute('UPDATE teams SET team_code=? WHERE id=?', (new_code, team['id']))
-            conn.commit()
-            conn.close()
-            session[f'admin_{new_code}'] = True
-            session.pop(f'admin_{code}', None)
-            return redirect(url_for('admin_settings', code=new_code, regen='1'))
         if action == 'delete_team':
             confirm_pw = request.form.get('confirm_password', '')
             if confirm_pw != team['admin_password']:
@@ -3626,20 +3615,7 @@ def admin_settings(code):
     body = f'''
 <div class="container" style="max-width:480px">
   {f'<div class="msg-ok">{_CHK} {msg}</div>' if msg else ''}
-  {'<div class="msg-ok">' + _CHK + ' チームコードを再発行しました。新しいコードをメンバーに共有してください。</div>' if regen_done else ''}
   {f'<div class="msg-err">{error}</div>' if error else ''}
-
-  <div class="card" style="margin-bottom:12px" id="regen">
-    <h2 style="margin-bottom:4px">チームコードの再発行</h2>
-    <div style="font-size:12px;color:#888;margin-bottom:16px">コードが漏洩した場合など、新しいコードを発行できます。再発行すると旧コードのURLは無効になります。</div>
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#991b1b">
-      ⚠️ 再発行すると旧コード・旧URLでは参加できなくなります。メンバーへの周知が必要です。
-    </div>
-    <form method="POST" onsubmit="return confirm('チームコードを再発行しますか？旧URLは使えなくなります。')">
-      <input type="hidden" name="action" value="regen_code">
-      <button class="btn btn-outline btn-block" type="submit" style="color:#dc2626;border-color:#dc2626">コードを再発行する</button>
-    </form>
-  </div>
 
   <div class="card" style="margin-bottom:12px">
     <h2 style="margin-bottom:16px">チーム名の変更</h2>
@@ -4287,12 +4263,10 @@ def team_help(code):
     admin = is_admin(code)
 
     steps_member = [
-        ('チームに参加する', 'チームコードを入力して氏名（フルネーム）を登録するだけ。URLを開けばすぐに使えます。'),
-        ('予定を確認・出欠を回答する', '「予定」タブから練習や試合の日程を確認。参加・不参加・未定を回答できます。'),
-        ('お知らせを読む', '「連絡」タブに管理者からのお知らせが届きます。未読は赤いバッジで表示されます。'),
-        ('集金を確認する', '「集金」タブで支払い状況を確認。支払った分は管理者が記録します。'),
-        ('注文フォームに回答する', '弁当やウェアなどの注文フォームが届いたら「注文」タブから回答できます。'),
-        ('保護者・スタッフには閲覧リンクを', 'アカウント登録なしで予定・お知らせを見られる専用リンクがあります。管理者から共有してもらいましょう。'),
+        ('届いたリンクを開く', '連絡アプリ（LINE等）に管理者から届いた出欠リンクをタップするだけ。アプリのインストールも登録も不要です。'),
+        ('自分の名前を選ぶ', 'リンクを開くと名簿が表示されます。自分の名前をタップして選びます。次回からは自動で記憶されます。'),
+        ('出欠をタップで回答する', '予定ごとに「出席・欠席」をタップするだけ。回答はそのまま管理者に届き、自動で集計されます。'),
+        ('予定表リンクで日程を確認', '管理者から予定表リンクが届いたら、開くだけでチームの練習・試合スケジュールを確認できます。'),
     ]
 
     steps_admin = [
@@ -5045,18 +5019,12 @@ def admin_members(code):
     </form>
   </div>'''
 
-    invite_url = f'{base_url()}t/{code}/join'
     empty_invite = f'''
     <div style="text-align:center;padding:24px 16px">
       <div style="font-size:32px;margin-bottom:10px">👥</div>
       <div style="font-weight:700;font-size:15px;margin-bottom:6px">まだメンバーがいません</div>
-      <div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6">チームコードを共有してメンバーを招待しましょう。<br>参加者はコードを入力するだけで登録完了です。</div>
-      <div style="background:#f8f9fa;border:1px solid var(--rak-line);border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="font-size:11px;color:#888;margin-bottom:6px">チームコード</div>
-        <div style="font-size:28px;font-weight:900;letter-spacing:.15em;color:var(--rak-ink);font-family:monospace;margin-bottom:10px">{code}</div>
-        <button onclick="navigator.clipboard.writeText('{invite_url}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='参加URLをコピー',1500)}})" class="btn btn-blue" style="width:100%">参加URLをコピー</button>
-      </div>
-      <div style="font-size:12px;color:#aaa">または下のフォームから手動でメンバーを追加できます</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.7">名簿を登録しておくと、出欠リンクでメンバーが<br>自分の名前を選んで回答できます。<br>メンバー側の登録・アプリは不要です。</div>
+      <a href="#add-member" class="btn btn-blue" style="display:inline-block">＋ メンバーを追加する</a>
     </div>'''
 
     body = f'''

@@ -1625,12 +1625,12 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-r">
       <div class="phone"><div class="scr">
         <div class="scr-status"><span>9:41</span><span>● ● ● ▮</span></div>
-        <div style="text-align:center;padding:14px 12px 6px">
-          <div style="font-size:11px;color:#9ca3af">FC サンライズ</div>
-          <div style="font-size:16px;font-weight:800;color:#111;margin-top:2px">出欠の回答</div>
-          <div style="font-size:10px;color:#9ca3af;margin-top:3px">登録不要・タップで回答</div>
+        <div style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;text-align:center;padding:16px 12px 14px">
+          <div style="font-size:11px;opacity:.9">FC サンライズ</div>
+          <div style="font-size:17px;font-weight:800;margin-top:2px">出欠の回答</div>
+          <div style="display:inline-block;font-size:10px;background:rgba(255,255,255,.22);border-radius:20px;padding:3px 10px;margin-top:6px">登録不要・タップで回答</div>
         </div>
-        <div style="padding:6px 12px">
+        <div style="padding:12px;background:#f7f8fa;flex:1">
           <div style="font-size:10px;color:#9ca3af;text-align:center;margin-bottom:10px">田中 さんとして回答中</div>
           <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
             <div style="font-size:13px;font-weight:700;color:#111">練習試合 vs FCさくら</div>

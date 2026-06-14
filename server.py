@@ -1594,6 +1594,7 @@ footer a:hover{{color:#94a3b8}}
   <div class="lp-nav-links">
     <a href="#features" class="hide-sp">機能</a>
     <a href="#pricing" class="hide-sp">料金</a>
+    <a href="/login">ログイン</a>
   </div>
 </nav>
 
@@ -1993,6 +1994,49 @@ def join():
         return redirect('/?error=notfound&code=' + code)
     return redirect(url_for('team_portal', code=code))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ''
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        if not email or not password:
+            error = 'メールアドレスとパスワードを入力してください'
+        else:
+            conn = get_db()
+            team = conn.execute(
+                'SELECT team_code FROM teams WHERE LOWER(admin_email)=? AND admin_password=? ORDER BY created_at DESC LIMIT 1',
+                (email, password)).fetchone()
+            conn.close()
+            if team:
+                code = team['team_code']
+                session.permanent = True
+                session[f'admin_{code}'] = True
+                return redirect(url_for('admin_dash', code=code))
+            error = 'メールアドレスかパスワードが違います'
+    body = f'''
+<div class="container" style="max-width:420px">
+  <div class="card">
+    <h1>ログイン</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">登録したメールアドレスとパスワードでログインします。</p>
+    {f'<div class="msg-err">{error}</div>' if error else ''}
+    <form method="POST">
+      <label>メールアドレス</label>
+      <input type="email" name="email" placeholder="例：admin@example.com" required>
+      <label>パスワード</label>
+      <div style="position:relative">
+        <input type="password" name="password" id="lg-pw" required style="padding-right:44px">
+        <button type="button" onclick="var i=document.getElementById('lg-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
+      </div>
+      <button class="btn btn-blue btn-block" type="submit" style="margin-top:14px">ログイン</button>
+    </form>
+    <div style="text-align:center;margin-top:12px"><a href="/forgot-password" style="font-size:12px;color:#888">パスワードを忘れた方</a></div>
+  </div>
+  <div style="text-align:center;font-size:13px;color:#888">アカウントがない方は <a href="/create" style="color:#d97706;font-weight:600">新規作成</a></div>
+</div>'''
+    return page('ログイン', body)
+
+
 @app.route('/create', methods=['GET', 'POST'])
 def create_team():
     error = ''
@@ -2003,10 +2047,8 @@ def create_team():
         name = request.form.get('name', '').strip()
         password = request.form.get('password', '').strip()
         email = request.form.get('email', '').strip()
-        if not name or not password or not email:
-            error = 'チーム名・メールアドレス・パスワードをすべて入力してください'
-        elif len(name) < 2:
-            error = 'チーム名は2文字以上で入力してください'
+        if not password or not email:
+            error = 'メールアドレスとパスワードを入力してください'
         elif len(password) < 6:
             error = 'パスワードは6文字以上で設定してください'
         else:
@@ -2040,28 +2082,26 @@ def create_team():
 <div class="container" style="max-width:480px">
   <div class="card">
     {pro_badge}
-    <h1>チームを作成</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">30秒で完了・クレジットカード不要。作成後すぐ使えます。</p>
+    <h1>はじめる</h1>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">メールとパスワードだけ。30秒で完了・クレジットカード不要。</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
     <form method="POST">
       <input type="hidden" name="intent" value="{intent}">
-      <label>チーム名・グループ名 *</label>
-      <input type="text" name="name" placeholder="例：FCランウェイズ、○○部、△△サークル" required>
       <label>メールアドレス *</label>
       <input type="email" name="email" placeholder="例：admin@example.com" required>
-      <div style="font-size:12px;color:#888;margin-top:4px;margin-bottom:4px">あなたの再ログイン用です。メンバーには不要・公開されません。</div>
+      <div style="font-size:12px;color:#888;margin-top:4px;margin-bottom:4px">ログインとパスワード再設定に使います。メンバーには不要・公開されません。</div>
       <label>パスワード *</label>
       <div style="position:relative">
         <input type="password" name="password" id="pw-input" placeholder="6文字以上" required style="padding-right:44px">
         <button type="button" onclick="var i=document.getElementById('pw-input');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'表示':'隠す'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:4px">表示</button>
       </div>
-      <div style="font-size:12px;color:#888;margin-top:6px">6文字以上ならOK　※メンバーには共有しないでください</div>
+      <div style="font-size:12px;color:#888;margin-top:6px">6文字以上ならOK。チーム名は作成後に設定できます。</div>
       <button class="btn btn-blue btn-block" type="submit">{submit_label}</button>
     </form>
   </div>
-  <div style="text-align:center"><a href="/" style="font-size:13px;color:#888">← トップに戻る</a></div>
+  <div style="text-align:center;font-size:13px;color:#888">すでにアカウントをお持ちの方は <a href="/login" style="color:#d97706;font-weight:600">ログイン</a></div>
 </div>'''
-    return page('チーム作成', body)
+    return page('はじめる', body)
 
 
 # ── Password reset ────────────────────────────────────────────────
@@ -2658,7 +2698,7 @@ def viewer_page(code, token):
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 {FAVICON_LINK}
 {FONT}
-<title>{team["name"]} | Rak 閲覧</title>
+<title>{team["name"] or "チーム"} | Rak 閲覧</title>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#f5f5f7;color:#1a1a1a;min-height:100vh}}
@@ -2677,7 +2717,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",s
 <div class="hdr">
   <div class="hdr-logo">Rak</div>
   <div style="flex:1">
-    <div class="hdr-name">{team["name"]}</div>
+    <div class="hdr-name">{team["name"] or "チーム"}</div>
   </div>
   <span class="badge">閲覧専用</span>
 </div>
@@ -3224,7 +3264,7 @@ def answer_page(code, token):
     head = f'''<!DOCTYPE html><html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 {FAVICON_LINK}{FONT}
-<title>{_html.escape(team["name"])}｜出欠の回答</title>
+<title>{_html.escape(team["name"] or "チーム")}｜出欠の回答</title>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:'Noto Sans JP',-apple-system,sans-serif;background:#f7f8fa;color:#111;padding:20px 16px 60px;max-width:520px;margin:0 auto}}
@@ -3247,7 +3287,7 @@ body{{font-family:'Noto Sans JP',-apple-system,sans-serif;background:#f7f8fa;col
 input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;margin-top:8px}}
 .subbtn{{width:100%;padding:13px;border:none;border-radius:10px;background:#111;color:#fff;font-size:15px;font-weight:700;margin-top:10px;cursor:pointer}}
 </style></head><body>
-<div class="head"><div class="tm">{_html.escape(team["name"])}</div><h1>出欠の回答</h1></div>'''
+<div class="head"><div class="tm">{_html.escape(team["name"] or "チーム")}</div><h1>出欠の回答</h1></div>'''
 
     wd = ['月','火','水','木','金','土','日']
     def dl(d, t):
@@ -3813,9 +3853,18 @@ def admin_dash(code):
     unanswered_events_count = sum(1 for ev in events if get_no_answer(ev['id']))
     unanswered_badge = f'<span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">{unanswered_events_count}</span>' if unanswered_events_count else ''
 
+    name_prompt = ''
+    if not (team['name'] or '').strip():
+        name_prompt = f'''
+  <a href="/t/{code}/admin/settings" style="display:block;text-decoration:none;background:#fffbeb;border:1.5px solid #d97706;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:#111">📝 チーム名を設定しましょう</div>
+    <div style="font-size:12px;color:#92400e;margin-top:2px">メンバーに共有する画面に表示されます（タップして設定）</div>
+  </a>'''
+
     body = f'''
 <div class="container">
-  {'<div class="msg-ok">' + _CHK + ' チームを作成しました！チームコードをメンバーに共有してください。</div>' if created else ''}
+  {'<div class="msg-ok">' + _CHK + ' 作成しました！まずはチーム名を設定して、予定を追加しましょう。</div>' if created else ''}
+  {name_prompt}
   {(lambda: (
     '<div style="background:#fff;border:1.5px solid #d97706;border-radius:12px;padding:16px 18px;margin-bottom:14px">'
     '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">🚀 はじめの3ステップ</div>'

@@ -484,6 +484,7 @@ def init_db():
         'ALTER TABLE events ADD COLUMN event_color TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN viewer_token TEXT DEFAULT ""',
         'ALTER TABLE uniform_assignments ADD COLUMN quantity INTEGER DEFAULT 1',
+        'ALTER TABLE events ADD COLUMN rsvp_mode TEXT DEFAULT "both"',
     ]:
         try:
             conn.execute(col_sql)
@@ -2759,6 +2760,13 @@ def schedule(code):
         rsvps = conn.execute('SELECT * FROM rsvps WHERE event_id=?', (ev['id'],)).fetchall()
         attending = sum(1 for r in rsvps if r['status'] == 'attending')
         absent = sum(1 for r in rsvps if r['status'] == 'absent')
+        _mode = ev['rsvp_mode'] or 'both'
+        if _mode == 'none':
+            rsvp_badges = ''
+        elif _mode == 'absent_only':
+            rsvp_badges = f'<span class="badge badge-red">欠席 {absent}</span>'
+        else:
+            rsvp_badges = f'<span class="badge badge-green">出席 {attending}</span><span class="badge badge-red">欠席 {absent}</span>'
         my_rsvp = ''
         if member:
             r = conn.execute('SELECT status FROM rsvps WHERE event_id=? AND member_name=?',
@@ -2788,10 +2796,7 @@ def schedule(code):
               <div style="font-weight:700;font-size:16px">{ev['title']}</div>
               <div style="font-size:13px;color:#666;margin-top:2px">{fmt_date_range(ev['event_date'], ev['end_date'])}{'　' + ev['event_time'] + ('〜' + (ev['end_time'] if ev['end_time'] else '') if ev['event_time'] else '') if ev['event_time'] else ''}{('　' + ev['location']) if ev['location'] else ''}</div>
             </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <span class="badge badge-green">出席 {attending}</span>
-              <span class="badge badge-red">欠席 {absent}</span>
-            </div>
+            <div style="display:flex;gap:6px;align-items:center">{rsvp_badges}</div>
           </div>
           {f'<div style="font-size:13px;color:#666;margin-top:8px;background:#f8faff;padding:8px 12px;border-radius:8px">{ev["note"]}</div>' if ev['note'] else ''}
           {rsvp_btns}
@@ -3271,17 +3276,32 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
     if not events:
         ev_html = '<div class="card" style="text-align:center;color:#888">回答する予定はまだありません</div>'
     for ev in events:
+        mode = ev['rsvp_mode'] or 'both'
         st = my_rsvps.get(ev['id'], '')
         go_cls = 'on-go' if st == 'attending' else ''
         no_cls = 'on-no' if st == 'absent' else ''
-        ev_html += f'''
-<div class="card">
-  <div class="ev-title">{_html.escape(ev["title"])}</div>
-  <div class="ev-meta">{dl(ev["event_date"], ev["event_time"])}{("　📍" + _html.escape(ev["location"])) if ev["location"] else ""}</div>
+        meta = f'{dl(ev["event_date"], ev["event_time"])}{("　📍" + _html.escape(ev["location"])) if ev["location"] else ""}'
+        if mode == 'none':
+            buttons = '<div style="font-size:12px;color:#9ca3af;margin-top:10px">この予定は出欠の回答は不要です（連絡のみ）</div>'
+        elif mode == 'absent_only':
+            # 基本は出席。欠席する人だけ押す
+            buttons = f'''
+  <div style="font-size:12px;color:#666;margin-top:8px">基本は参加でお願いします。休む場合だけ下を押してください。</div>
+  <form method="POST" action="/t/{code}/answer/{token}/rsvp/{ev["id"]}" class="btns">
+    <button name="status" value="absent" class="{no_cls}" type="submit" style="flex:1">{'✓ 欠席で連絡済み' if st=='absent' else '欠席します'}</button>
+    {('<button name="status" value="attending" type="submit" style="flex:0 0 auto;border-color:#16a34a;color:#16a34a">やっぱり出席</button>') if st=='absent' else ''}
+  </form>'''
+        else:  # both
+            buttons = f'''
   <form method="POST" action="/t/{code}/answer/{token}/rsvp/{ev["id"]}" class="btns">
     <button name="status" value="attending" class="{go_cls}" type="submit">{'✓ ' if st=='attending' else ''}出席</button>
     <button name="status" value="absent" class="{no_cls}" type="submit">{'✓ ' if st=='absent' else ''}欠席</button>
-  </form>
+  </form>'''
+        ev_html += f'''
+<div class="card">
+  <div class="ev-title">{_html.escape(ev["title"])}</div>
+  <div class="ev-meta">{meta}</div>
+  {buttons}
 </div>'''
     body = f'''
 <div class="who"><b>{_html.escape(my_name)}</b> さんとして回答中<a href="/t/{code}/answer/{token}?reset=1">（変更）</a></div>
@@ -4321,6 +4341,9 @@ def admin_new_event(code):
         location    = request.form.get('location', '').strip()
         note        = request.form.get('note', '').strip()
         event_color = request.form.get('event_color', '').strip()
+        rsvp_mode   = request.form.get('rsvp_mode', 'both').strip()
+        if rsvp_mode not in ('both', 'absent_only', 'none'):
+            rsvp_mode = 'both'
         if end_date and end_date < date:
             end_date = date
         if not title or not date:
@@ -4329,8 +4352,8 @@ def admin_new_event(code):
             conn = get_db()
             eid = new_id()
             conn.execute(
-                'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time,event_color) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-                (eid, team['id'], title, date, time, location, note, now_str(), end_date, end_time, event_color)
+                'INSERT INTO events (id,team_id,title,event_date,event_time,location,note,created_at,end_date,end_time,event_color,rsvp_mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+                (eid, team['id'], title, date, time, location, note, now_str(), end_date, end_time, event_color, rsvp_mode)
             )
             conn.commit()
             conn.close()
@@ -4370,6 +4393,13 @@ def admin_new_event(code):
       <input type="text" name="location" placeholder="例：市営グラウンドA面">
       <label>備考・詳細</label>
       <textarea name="note" placeholder="持ち物・集合場所など"></textarea>
+      <label>出欠の取り方</label>
+      <select name="rsvp_mode">
+        <option value="both">出席・欠席を聞く</option>
+        <option value="absent_only">欠席のみ連絡（基本は出席扱い）</option>
+        <option value="none">出欠は取らない（連絡だけ）</option>
+      </select>
+      <div style="font-size:11px;color:#888;margin-top:4px">回答リンクでメンバーに表示するボタンが変わります</div>
       <label>カラー（カレンダー表示色）</label>
       {color_picker_html()}
       <button class="btn btn-blue btn-block" type="submit">追加する</button>
@@ -4488,14 +4518,17 @@ def admin_edit_event(code, event_id):
         location    = request.form.get('location', '').strip()
         note        = request.form.get('note', '').strip()
         event_color = request.form.get('event_color', '').strip()
+        rsvp_mode   = request.form.get('rsvp_mode', 'both').strip()
+        if rsvp_mode not in ('both', 'absent_only', 'none'):
+            rsvp_mode = 'both'
         if end_date and end_date < date:
             end_date = date
         if not title or not date:
             error = 'タイトルと日付を入力してください'
         else:
             conn.execute(
-                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,end_time=?,location=?,note=?,event_color=? WHERE id=?',
-                (title, date, end_date, time, end_time, location, note, event_color, event_id)
+                'UPDATE events SET title=?,event_date=?,end_date=?,event_time=?,end_time=?,location=?,note=?,event_color=?,rsvp_mode=? WHERE id=?',
+                (title, date, end_date, time, end_time, location, note, event_color, rsvp_mode, event_id)
             )
             conn.commit()
             conn.close()
@@ -4546,6 +4579,13 @@ def admin_edit_event(code, event_id):
       <input type="text" name="location" value="{ev['location'] or ''}">
       <label>備考・詳細</label>
       <textarea name="note">{ev['note'] or ''}</textarea>
+      <label>出欠の取り方</label>
+      <select name="rsvp_mode">
+        <option value="both" {'selected' if (ev['rsvp_mode'] or 'both')=='both' else ''}>出席・欠席を聞く</option>
+        <option value="absent_only" {'selected' if ev['rsvp_mode']=='absent_only' else ''}>欠席のみ連絡（基本は出席扱い）</option>
+        <option value="none" {'selected' if ev['rsvp_mode']=='none' else ''}>出欠は取らない（連絡だけ）</option>
+      </select>
+      <div style="font-size:11px;color:#888;margin-top:4px">回答リンクでメンバーに表示するボタンが変わります</div>
       <label>カラー（カレンダー表示色）</label>
       {color_picker_html(ev['event_color'] or '')}
       <button class="btn btn-blue btn-block" type="submit">保存する</button>

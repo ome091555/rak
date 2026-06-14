@@ -1603,7 +1603,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
       <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br><span style="white-space:nowrap">あなたの<span class="highlight"><span>事務</span></span>だけ、</span><span style="white-space:nowrap">ラクに。</span></h1>
-      <p class="lead"><span style="white-space:nowrap">出欠・集金・予定づくり</span>——<span style="white-space:nowrap">運営担当の「めんどくさい」を</span><span style="white-space:nowrap">Rakが肩代わり。</span><span style="white-space:nowrap">メンバーはアプリも登録も不要。</span><span style="white-space:nowrap">いつもの連絡アプリに届くリンクを開いて、</span><span style="white-space:nowrap">タップで答えるだけです。</span></p>
+      <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが肩代わり。メンバーはアプリも登録も不要。いつもの連絡アプリに届くリンクを開いて、タップで答えるだけです。</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1704,8 +1704,8 @@ footer a:hover{{color:#94a3b8}}
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_MEGA}</span>
-        <div class="fcard-title">連絡・既読管理</div>
-        <div class="fcard-desc">お知らせを送って既読を確認</div>
+        <div class="fcard-title">お知らせ作成</div>
+        <div class="fcard-desc">連絡文を作成。コピーして連絡アプリに貼るだけ</div>
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_USERS}</span>
@@ -1714,8 +1714,8 @@ footer a:hover{{color:#94a3b8}}
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_LINK}</span>
-        <div class="fcard-title">チームコード招待</div>
-        <div class="fcard-desc">コードを共有するだけで参加完了</div>
+        <div class="fcard-title">共有リンク（登録不要）</div>
+        <div class="fcard-desc">出欠・予定のリンクを連絡アプリに貼るだけ。メンバーはタップで回答</div>
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_CLIP}</span>
@@ -1914,9 +1914,9 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-price"><span class="num">¥0</span><span class="per">/月</span></div>
         <div class="plan-items">
           <div>✓ スケジュール管理</div>
-          <div>✓ チーム連絡・既読管理</div>
+          <div>✓ お知らせ作成</div>
           <div>✓ メンバー管理（人数制限なし）</div>
-          <div>✓ チームコード招待</div>
+          <div>✓ 出欠・予定の共有リンク（登録不要）</div>
         </div>
         <a href="/create?src=plan_free" class="plan-btn-w">無料で始める</a>
       </div>

@@ -1426,7 +1426,8 @@ def home():
   --font-num:"Inter","Noto Sans JP",system-ui,sans-serif;
 }}
 *{{box-sizing:border-box;margin:0;padding:0}}
-html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all}}
+html,body{{font-family:var(--font-jp);color:var(--rak-black);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}}
+h1,h2,h3,.sec-title,.sec-sub,.fcard-title,.hero-badge{{word-break:keep-all}}
 a{{color:inherit;text-decoration:none}}
 button{{font-family:inherit;cursor:pointer}}
 

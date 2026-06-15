@@ -2407,10 +2407,6 @@ def member_home(code):
     calendar_html = build_calendar(vy, vm, ev_dates, fee_dates_cal, order_dates_cal)
 
     # バッジカウント
-    unread = conn.execute(
-        'SELECT COUNT(*) FROM notices WHERE team_id=? AND id NOT IN (SELECT notice_id FROM reads WHERE member_name=?)',
-        (team['id'], member)
-    ).fetchone()[0]
     unpaid = conn.execute(
         '''SELECT COUNT(*) FROM fees f WHERE f.team_id=?
            AND NOT EXISTS (SELECT 1 FROM fee_payments WHERE fee_id=f.id AND member_name=? AND paid=1)''',
@@ -2481,11 +2477,6 @@ def member_home(code):
       <h1 style="margin-top:1px">{first_name}さん</h1>
     </div>
     <div style="display:flex;gap:8px;margin-left:auto">
-      <a href="/t/{code}/notices" style="position:relative;display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
-        {"" if not unread else f'<span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px">{unread}</span>'}
-        <div style="font-size:18px;font-weight:600;color:{"var(--rak-amber)" if unread else "var(--rak-black)"}">{unread}</div>
-        <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未読</div>
-      </a>
       <a href="/t/{code}/schedule" style="display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--rak-line);border-radius:10px;padding:10px 14px;text-decoration:none;min-width:60px">
         <div style="font-size:18px;font-weight:600;color:{"var(--rak-amber)" if unanswered_rsvp else "var(--rak-black)"}">{unanswered_rsvp}</div>
         <div style="font-size:10px;color:var(--rak-mute);margin-top:1px">未回答</div>
@@ -3697,19 +3688,13 @@ def notices(code):
 
     cards = ''
     for n in ns:
-        read_count = conn.execute('SELECT COUNT(*) FROM reads WHERE notice_id=?', (n['id'],)).fetchone()[0]
-        is_read = bool(conn.execute('SELECT 1 FROM reads WHERE notice_id=? AND member_name=?',
-                                    (n['id'], member)).fetchone()) if member else True
         cards += f'''
         <a href="/t/{code}/notices/{n['id']}" style="text-decoration:none;display:block">
-          <div class="card-sm" style="{'opacity:.7' if is_read else ''}">
+          <div class="card-sm">
             <div class="row">
               <div style="flex:1">
-                <div style="font-weight:700;color:#1a1a1a">{'' if not is_read else ''}{n['title']}</div>
+                <div style="font-weight:700;color:#1a1a1a">{n['title']}</div>
                 <div style="font-size:12px;color:#888;margin-top:2px">{fmt_datetime(n['created_at'])}</div>
-              </div>
-              <div>
-                {'<span class="badge badge-blue">NEW</span>' if not is_read else f'<span class="badge badge-gray">既読 {read_count}</span>'}
               </div>
             </div>
           </div>
@@ -3745,19 +3730,9 @@ def notice_detail(code, notice_id):
         conn.close()
         return redirect(url_for('notices', code=code))
 
-    if member:
-        conn.execute('''
-            INSERT OR IGNORE INTO reads (notice_id,member_name,read_at) VALUES (?,?,?)
-        ''', (notice_id, member, now_str()))
-        conn.commit()
-
-    readers = conn.execute('SELECT member_name, read_at FROM reads WHERE notice_id=? ORDER BY read_at', (notice_id,)).fetchall()
     conn.close()
 
     reader_list = ''
-    if admin:
-        reader_list = ''.join(f'<div style="font-size:13px;padding:6px 0;border-bottom:1px solid #f0f0f0;color:#555">{r["member_name"]} <span style="color:#aaa;font-size:11px">{fmt_datetime(r["read_at"])}</span></div>' for r in readers)
-        reader_list = f'<hr class="divider"><div style="font-size:12px;font-weight:700;color:#d97706;margin-bottom:8px">既読 {len(readers)}名</div>{reader_list}'
 
     body = f'''
 <div class="container">
@@ -4017,7 +3992,6 @@ def admin_dash(code):
     members_all = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
     member_names = [m['name'] for m in members_all]
     has_any_event = conn.execute('SELECT 1 FROM events WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
-    has_any_notice = conn.execute('SELECT 1 FROM notices WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
 
     def get_no_answer(ev_id):
         answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
@@ -4135,14 +4109,6 @@ def admin_dash(code):
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' 作成しました！まずはチーム名を設定して、予定を追加しましょう。</div>' if created else ''}
   {name_prompt}
-  {(lambda: (
-    '<div style="background:#fff;border:1.5px solid #d97706;border-radius:12px;padding:16px 18px;margin-bottom:14px">'
-    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">はじめの2ステップ</div>'
-    '<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">'
-    + (f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">メンバー名簿を登録する</span></a>' if member_names else f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span><span style="font-weight:600">メンバー名簿を登録する →</span></a>')
-    + (f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">最初の予定を追加する</span></a>' if has_any_event else f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span><span style="font-weight:600">最初の予定を追加する →</span></a>')
-    + '</div></div>'
-  ) if (not member_names or not has_any_event) else '')()}
 
 
   <style>

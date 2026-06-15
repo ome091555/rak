@@ -5517,8 +5517,6 @@ def admin_new_fee(code):
         selected = request.form.getlist('members')
         if not title:
             error = 'タイトルを入力してください'
-        elif not selected:
-            error = '対象メンバーを1人以上選択してください'
         else:
             fee_id = new_id()
             conn.execute('INSERT INTO fees VALUES (?,?,?,?,?,?,?)',
@@ -5563,10 +5561,11 @@ def admin_new_fee(code):
       <label>備考</label>
       <textarea name="note" placeholder="振込先など" rows="3"></textarea>
       <div style="margin-top:18px">
-        <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px">対象メンバー（{len(all_members)}名）</div>
+        <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px">対象メンバー（任意・{len(all_members)}名）</div>
+        <div style="font-size:11px;color:#aaa;margin-bottom:8px;line-height:1.6">選ばなくてもOK。作成後の集金リンクを配れば、支払った人が自分の名前を入れて申告できます。</div>
         <div style="border:1px solid #e5e7eb;border-radius:8px;padding:0 12px;max-height:260px;overflow-y:auto">
           {all_check}
-          {member_checks if member_checks else '<p style="padding:12px 0;color:#aaa;font-size:13px">メンバーがいません</p>'}
+          {member_checks if member_checks else '<p style="padding:12px 0;color:#aaa;font-size:13px">名簿は未登録です（集金リンクの配布だけで集金できます）</p>'}
         </div>
       </div>
       <button class="btn btn-blue btn-block" type="submit" style="margin-top:20px">作成する</button>
@@ -5608,9 +5607,13 @@ def admin_fee_detail(code, fee_id):
         try: return p['reported'] if p else 0
         except (KeyError, IndexError): return 0
 
+    # 名簿の名前 + 自己申告で入ってきた名簿外の名前 を統合して表示
+    roster_names = [m['name'] for m in members]
+    display_names = roster_names + [p['member_name'] for p in payments if p['member_name'] not in roster_names]
+
     rows = ''
-    for m in members:
-        p = pay_map.get(m['name'])
+    for name in display_names:
+        p = pay_map.get(name)
         paid = p['paid'] if p else 0
         paid_at = p['paid_at'] if p else ''
         reported = _rep(p) and not paid
@@ -5625,18 +5628,18 @@ def admin_fee_detail(code, fee_id):
         rows += f'''
         <div class="card-sm row" style="justify-content:space-between;align-items:center;{'background:#fffdf5' if reported else ''}">
           <div>
-            <span style="font-weight:700">{m['name']}</span>{rep_badge}
+            <span style="font-weight:700">{name}</span>{rep_badge}
             {f'<span style="font-size:11px;color:#aaa;margin-left:8px">{paid_at}</span>' if paid_at else ''}
           </div>
           <form method="POST">
-            <input type="hidden" name="member_name" value="{m['name']}">
+            <input type="hidden" name="member_name" value="{name}">
             <input type="hidden" name="paid" value="{toggle_val}">
             <button class="btn btn-sm {'btn-blue' if paid else ('btn-amber' if reported else 'btn-outline')}" type="submit">{btn_label}</button>
           </form>
         </div>'''
 
-    paid_count = sum(1 for m in members if pay_map.get(m['name']) and pay_map[m['name']]['paid'])
-    report_count = sum(1 for m in members if _rep(pay_map.get(m['name'])) and not (pay_map.get(m['name']) and pay_map[m['name']]['paid']))
+    paid_count = sum(1 for n in display_names if pay_map.get(n) and pay_map[n]['paid'])
+    report_count = sum(1 for n in display_names if _rep(pay_map.get(n)) and not (pay_map.get(n) and pay_map[n]['paid']))
 
     body = f'''
 <div class="container" style="max-width:540px">
@@ -5656,7 +5659,7 @@ def admin_fee_detail(code, fee_id):
     {f'<div style="font-size:13px;color:#666;margin-top:8px">{f["note"]}</div>' if f['note'] else ''}
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
       <span class="badge badge-green">支払済 {paid_count}名</span>
-      <span class="badge badge-red">未払い {len(members)-paid_count}名</span>
+      <span class="badge badge-red">未払い {len(display_names)-paid_count}名</span>
       {f'<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a">⏳ 申告 {report_count}名</span>' if report_count else ''}
     </div>
   </div>
@@ -5670,7 +5673,7 @@ def admin_fee_detail(code, fee_id):
 
   <div class="card">
     <h2 style="margin-bottom:12px">支払い状況</h2>
-    {rows if members else '<div class="empty">メンバーがいません。先にメンバー名簿を登録してください。</div>'}
+    {rows if display_names else '<div class="empty">まだ支払い状況はありません。上の集金リンクを配ると、支払った人がここに表示されます。</div>'}
   </div>
   <div style="text-align:center"><a href="/t/{code}/admin/fees" style="font-size:13px;color:#888">← 集金一覧</a></div>
 </div>'''

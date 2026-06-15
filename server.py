@@ -1466,6 +1466,7 @@ button{{font-family:inherit;cursor:pointer}}
 .highlight::before{{content:"";position:absolute;left:-2px;right:-2px;bottom:3px;height:14px;background:var(--rak-amber-tint);z-index:0;border-radius:3px}}
 .highlight>span{{position:relative;z-index:1}}
 .hero p.lead{{font-size:16.5px;line-height:1.8;color:var(--rak-graphite);max-width:460px;margin:0 0 30px}}
+.hero p.lead .np{{display:inline-block}}
 .hero-btns{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}}
 .btn-primary{{background:var(--rak-amber);color:#fff;padding:15px 30px;border-radius:999px;font-size:15.5px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .12s;box-shadow:0 8px 22px rgba(245,158,11,.4)}}
 .btn-primary:hover{{background:var(--rak-amber-deep);color:#fff;transform:translateY(-2px);box-shadow:0 12px 26px rgba(245,158,11,.5)}}
@@ -1615,7 +1616,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
       <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br><span style="white-space:nowrap">あなたの<span class="highlight"><span>事務</span></span>だけ、</span><span style="white-space:nowrap">ラクに。</span></h1>
-      <p class="lead">出欠・集金・予定づくり——運営担当の「めんどくさい」をRakが引き受けます。メンバーはアプリも登録も不要。<br>連絡アプリに届くリンクを開いて、タップで答えるだけです。</p>
+      <p class="lead"><span class="np">出欠・集金・予定づくり——</span><span class="np">運営担当の「めんどくさい」を</span><span class="np">Rakが引き受けます。</span><span class="np">メンバーはアプリも登録も不要。</span><br><span class="np">連絡アプリに届くリンクを開いて、</span><span class="np">タップで答えるだけです。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>

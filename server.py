@@ -4143,13 +4143,12 @@ def admin_dash(code):
   {name_prompt}
   {(lambda: (
     '<div style="background:#fff;border:1.5px solid #d97706;border-radius:12px;padding:16px 18px;margin-bottom:14px">'
-    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">はじめの3ステップ</div>'
+    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">はじめの2ステップ</div>'
     '<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">'
     + (f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">メンバー名簿を登録する</span></a>' if member_names else f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span><span style="font-weight:600">メンバー名簿を登録する →</span></a>')
     + (f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">最初の予定を追加する</span></a>' if has_any_event else f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span><span style="font-weight:600">最初の予定を追加する →</span></a>')
-    + (f'<a href="/t/{code}/admin/notices/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">お知らせを送る</span></a>' if has_any_notice else f'<a href="/t/{code}/admin/notices/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">3</span><span style="font-weight:600">お知らせを送る →</span></a>')
     + '</div></div>'
-  ) if (not member_names or not has_any_event or not has_any_notice) else '')()}
+  ) if (not member_names or not has_any_event) else '')()}
 
 
   <style>
@@ -4197,13 +4196,6 @@ def admin_dash(code):
     }}
     </script>
 
-    <details class="atile">
-      <summary><span class="atile-icon">{_ICO_BELL_SM}</span>お知らせ</summary>
-      <div class="atile-body">
-        <a href="/t/{code}/admin/notices/new" class="btn btn-blue">＋ 作成</a>
-        <a href="/t/{code}/notices" class="btn btn-outline">すべて見る</a>
-      </div>
-    </details>
 
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_PEOPLE}</span>メンバー</summary>

@@ -67,6 +67,14 @@ def log_lp_event(event, src=''):
         pass
 
 
+def is_native_app():
+    """Rakネイティブアプリ（Capacitorラッパー）からのアクセスか判定。
+    アプリ内ではデジタル課金UIを出さない（Google Play/Appleの課金規約対応・
+    日本配信はアプリ内デジタル課金にPlay Billing必須のためStripe導線を非表示にする）。
+    capacitor.config.json の appendUserAgent="RakNativeApp" でUAにマーカーが付く。"""
+    return 'raknativeapp' in (request.headers.get('User-Agent') or '').lower()
+
+
 @app.before_request
 def redirect_apex_to_www():
     """wwwなし（rakapp.jp）はwwwありへ301リダイレクトして正規URLに統一する"""
@@ -1173,12 +1181,14 @@ def page(title, body, code=None, active=None):
         else:
             bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
+    # ネイティブアプリ内ではデジタル課金導線（/upgrade系リンク・トライアルバナー）を非表示
+    native_hide = '<style>a[href*="/upgrade"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 {FAVICON_LINK}
 {FONT}<title>{title} | Rak</title>
-<style>{CSS}</style></head><body>
+<style>{CSS}</style>{native_hide}</head><body>
 <nav class="nav">
   <a class="nav-logo" href="{"/t/"+code if code else "/"}">
     <div class="nav-icon">{NAV_MARK}</div>Rak
@@ -1188,7 +1198,7 @@ def page(title, body, code=None, active=None):
   {f'<a href="/t/{code}/help" style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#f1f4f9;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;text-decoration:none;flex-shrink:0">?</a>' if code and member and not admin else ''}
 </nav>
 <script>document.addEventListener('click',function(e){{document.querySelectorAll('.nav-dd-menu.open').forEach(function(m){{if(!m.parentElement.contains(e.target))m.classList.remove('open')}})}})</script>
-{'<div style="background:#fffbeb;border-bottom:1px solid #f59e0b;padding:7px 16px;text-align:center;font-size:12px;font-weight:500;color:#92400e">Pro無料トライアル中 — 残り<strong style="color:#d97706">' + str(get_trial_days_left(team)) + '日</strong>　<a href="/t/' + code + '/upgrade" style="color:#d97706;font-weight:700;margin-left:6px">今すぐ継続 →</a></div>' if (code and admin and team and get_trial_days_left(team) is not None) else ''}
+{'<div class="trial-banner-native" style="background:#fffbeb;border-bottom:1px solid #f59e0b;padding:7px 16px;text-align:center;font-size:12px;font-weight:500;color:#92400e">Pro無料トライアル中 — 残り<strong style="color:#d97706">' + str(get_trial_days_left(team)) + '日</strong>　<a href="/t/' + code + '/upgrade" style="color:#d97706;font-weight:700;margin-left:6px">今すぐ継続 →</a></div>' if (code and admin and team and get_trial_days_left(team) is not None) else ''}
 {body}
 {bottom_nav}
 {PWA_SW}
@@ -6789,10 +6799,26 @@ def rak_feedback_admin():
 
 # ── Stripe / Upgrade ─────────────────────────────────────────────
 
+def _web_only_billing_page(code):
+    """ネイティブアプリ向け: アプリ内に課金導線を置かず、Webでの手続きを案内する。
+    外部決済への直接リンク/ボタンは置かない（アンチステアリング配慮）。"""
+    body = '''
+<div class="container" style="max-width:420px;padding-top:48px">
+  <div class="card" style="text-align:center;padding:36px 24px">
+    <div style="font-size:11px;font-weight:700;color:#d97706;letter-spacing:.1em;margin-bottom:12px">RAK PRO</div>
+    <h1 style="font-size:20px;margin-bottom:10px">プランのお手続きはWebから</h1>
+    <p style="color:#666;font-size:14px;line-height:1.9">Proプランのお申し込み・お支払い・解約は、<br>ブラウザで <strong>rakapp.jp</strong> にアクセスして行ってください。</p>
+  </div>
+</div>'''
+    return page('プラン', body, code, active='plan')
+
+
 @app.route('/t/<code>/upgrade')
 def upgrade_page(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
+    if is_native_app():
+        return _web_only_billing_page(code)
     team = get_team(code)
     already_pro = is_pro(team)
     trial_days = get_trial_days_left(team)
@@ -6883,6 +6909,8 @@ def billing_portal(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
     team = get_team(code)
+    if is_native_app():
+        return _web_only_billing_page(code)
     if not STRIPE_SECRET_KEY or not team['stripe_customer_id']:
         return redirect(url_for('upgrade_page', code=code))
     import stripe
@@ -6898,6 +6926,8 @@ def billing_portal(code):
 def upgrade_checkout(code):
     if not is_admin(code):
         return redirect(url_for('admin_login', code=code))
+    if is_native_app():
+        return _web_only_billing_page(code)
     if not STRIPE_SECRET_KEY or not STRIPE_PRICE_ID_PRO:
         return redirect(url_for('upgrade_page', code=code))
     import stripe

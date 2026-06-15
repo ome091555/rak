@@ -2,11 +2,11 @@
 # server.py から import して各ルートで配信する
 
 SELLER_NAME = "奥田芽衣"
-SELLER_EMAIL = "mei.okuda@runways.jp"
+SELLER_EMAIL = "support@rakapp.jp"
 SERVICE_NAME = "Rak"
 PRICE_MONTHLY = "980"
 PRICE_YEARLY = "9,800"
-LAST_UPDATED = "2026年6月10日"
+LAST_UPDATED = "2026年6月15日"
 
 
 def _wrap(title, body_html):

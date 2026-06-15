@@ -1685,7 +1685,7 @@ footer a:hover{{color:#94a3b8}}
     <div style="display:grid;gap:16px">
       <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
         <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">1</div>
-        <div><div style="font-weight:700;font-size:16px">Rakで作る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">出欠・予定・お知らせを、アプリでサッと作成。AIが文章や予定づくりも手伝います。</div></div>
+        <div><div style="font-weight:700;font-size:16px">Rakで作る</div><div style="font-size:14px;color:#6b7280;margin-top:3px">出欠・予定・集金を、アプリでサッと作成。AIが文章や予定づくりも手伝います。</div></div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
         <div style="flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center">2</div>
@@ -1713,11 +1713,6 @@ footer a:hover{{color:#94a3b8}}
         <span class="fcard-ic">{IC_CAL}</span>
         <div class="fcard-title">スケジュール管理</div>
         <div class="fcard-desc">練習・試合の日程をチームで共有</div>
-      </div>
-      <div class="fcard">
-        <span class="fcard-ic">{IC_MEGA}</span>
-        <div class="fcard-title">お知らせ作成</div>
-        <div class="fcard-desc">連絡文を作成。コピーして連絡アプリに貼るだけ</div>
       </div>
       <div class="fcard">
         <span class="fcard-ic">{IC_USERS}</span>
@@ -1758,7 +1753,7 @@ footer a:hover{{color:#94a3b8}}
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_AI}</span>
         <div class="fcard-title">AI文章生成</div>
-        <div class="fcard-desc">練習メモ→学校提出の<strong>活動報告書</strong>を自動生成。お知らせ・保護者連絡も対応</div>
+        <div class="fcard-desc">練習メモ→学校提出の<strong>活動報告書</strong>を自動生成。連絡文の作成も対応</div>
       </div>
       <div class="fcard fcard-pro">
         <span class="fcard-ic">{IC_CAL}</span>
@@ -1811,7 +1806,7 @@ footer a:hover{{color:#94a3b8}}
             <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓</td>
           </tr>
           <tr style="border-bottom:1px solid #f3f4f6">
-            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">活動報告書・お知らせ作成</td>
+            <td style="padding:14px 16px;font-size:14px;color:#374151;font-weight:500">活動報告書・連絡文作成</td>
             <td style="padding:14px 16px;text-align:center;font-size:13px;color:#9ca3af">毎回一から手書き</td>
             <td style="padding:14px 16px;text-align:center;background:#fffbeb;font-size:18px;color:#d97706">✓ <span style="font-size:10px;font-weight:700">AI</span></td>
           </tr>
@@ -1921,7 +1916,6 @@ footer a:hover{{color:#94a3b8}}
         <div class="plan-price"><span class="num">¥0</span><span class="per">/月</span></div>
         <div class="plan-items">
           <div>✓ スケジュール管理</div>
-          <div>✓ お知らせ作成</div>
           <div>✓ メンバー管理（人数制限なし）</div>
           <div>✓ 出欠・予定の共有リンク（登録不要）</div>
         </div>
@@ -1939,7 +1933,7 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ 注文フォーム</div>
           <div class="acc">＋ ユニフォーム管理</div>
           <div class="acc">＋ 会計・収支記録</div>
-          <div class="acc">＋ AI文章生成（活動報告書・お知らせ・保護者連絡）</div>
+          <div class="acc">＋ AI文章生成（活動報告書・連絡文）</div>
           <div class="acc">＋ AIスケジュール自動生成</div>
           <div class="acc">＋ Excelエクスポート</div>
         </div>

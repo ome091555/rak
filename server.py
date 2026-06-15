@@ -1128,7 +1128,6 @@ def page(title, body, code=None, active=None):
         main_tabs = [
             ('home',     'home',     'ホーム',   home_dest),
             ('schedule', 'schedule', '予定',     f'/t/{code}/schedule'),
-            ('notices',  'notices',  'お知らせ', f'/t/{code}/notices'),
             ('members',  'members',  'メンバー', f'/t/{code}/members'),
             ('fees',     'fees',     '集金',     f'/t/{code}/fees'),
         ]
@@ -2687,7 +2686,7 @@ def viewer_page(code, token):
     event_rows = ''
     for ev in upcoming:
         border = ev['event_color'] or '#e5e7eb'
-        loc = f'<span style="font-size:11px;color:#9ca3af;margin-left:6px">📍{ev["location"]}</span>' if ev['location'] else ''
+        loc = f'<span style="font-size:11px;color:#9ca3af;margin-left:6px">{ev["location"]}</span>' if ev['location'] else ''
         time_s = f'<span style="font-size:11px;color:#9ca3af;margin-left:4px">{ev["event_time"]}</span>' if ev['event_time'] else ''
         event_rows += f'''
         <div style="border-left:4px solid {border};padding:10px 12px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
@@ -2887,7 +2886,7 @@ def schedule(code):
     if admin:
         if is_pro(team):
             ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
-            excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">📥 Excel</a>'
+            excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">Excel</a>'
         else:
             ai_btn = f'<a href="/t/{code}/upgrade" class="btn btn-sm" style="background:#f5f5f5;color:#d97706;border:1px solid #d97706">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
@@ -2898,17 +2897,17 @@ def schedule(code):
         ans_url = f"{base_url()}t/{code}/answer/{team['viewer_token']}"
         answer_link_card = f'''
   <div class="card" style="margin-bottom:16px;border:1.5px solid #d97706;background:#fffdf7">
-    <div style="font-weight:700;font-size:14px;margin-bottom:4px">🔗 メンバーへの共有リンク</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">メンバーへの共有リンク</div>
     <div style="font-size:12px;color:#666;margin-bottom:12px">ふだんの連絡アプリに貼るだけ。メンバーは登録不要で開けます。</div>
-    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">📅 予定表を見せる</div>
+    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">予定表を見せる</div>
     <div style="font-size:11px;color:#888;margin-bottom:6px">カレンダーと予定をそのまま見てもらえます</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="view-url">{view_url}</div>
-    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('view-url').textContent).then(function(){{var b=document.getElementById('view-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='予定表リンクをコピー';b.style.background='#111'}},2000)}})" id="view-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:700;cursor:pointer">予定表リンクをコピー</button>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('view-url').textContent).then(function(){{var b=document.getElementById('view-copy');b.textContent='コピーしました';b.style.background='#16a34a';setTimeout(function(){{b.textContent='予定表リンクをコピー';b.style.background='#111'}},2000)}})" id="view-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:700;cursor:pointer">予定表リンクをコピー</button>
     <div style="height:1px;background:#f0e6d0;margin:14px 0"></div>
-    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">📣 出欠を答えてもらう</div>
+    <div style="font-size:12px;font-weight:700;color:#111;margin-bottom:4px">出欠を答えてもらう</div>
     <div style="font-size:11px;color:#888;margin-bottom:6px">開いて出席/欠席を押すだけ。自動で集計されます</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace" id="ans-url">{ans_url}</div>
-    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ans-url').textContent).then(function(){{var b=document.getElementById('ans-copy');b.textContent='コピーしました ✓';b.style.background='#16a34a';setTimeout(function(){{b.textContent='出欠リンクをコピー';b.style.background='#d97706'}},2000)}})" id="ans-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:13px;font-weight:700;cursor:pointer">出欠リンクをコピー</button>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ans-url').textContent).then(function(){{var b=document.getElementById('ans-copy');b.textContent='コピーしました';b.style.background='#16a34a';setTimeout(function(){{b.textContent='出欠リンクをコピー';b.style.background='#d97706'}},2000)}})" id="ans-copy" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#d97706;color:#fff;font-size:13px;font-weight:700;cursor:pointer">出欠リンクをコピー</button>
   </div>'''
 
     body = f'''
@@ -3149,7 +3148,7 @@ def admin_ai_schedule(code):
             time_str = f'　{time}〜{end_time}' if end_time else f'　{time}'
         detail = ''
         if location:
-            detail += f'<div style="font-size:13px;color:#666;margin-top:2px">📍 {location}</div>'
+            detail += f'<div style="font-size:13px;color:#666;margin-top:2px">{location}</div>'
         if note:
             detail += f'<div style="font-size:13px;color:#666;margin-top:2px">{note}</div>'
         event_cards += f'''
@@ -3343,7 +3342,7 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
         st = my_rsvps.get(ev['id'], '')
         go_cls = 'on-go' if st == 'attending' else ''
         no_cls = 'on-no' if st == 'absent' else ''
-        meta = f'{dl(ev["event_date"], ev["event_time"])}{("　📍" + _html.escape(ev["location"])) if ev["location"] else ""}'
+        meta = f'{dl(ev["event_date"], ev["event_time"])}{("　" + _html.escape(ev["location"])) if ev["location"] else ""}'
         if mode == 'none':
             buttons = '<div style="font-size:12px;color:#9ca3af;margin-top:10px">この予定は出欠の回答は不要です（連絡のみ）</div>'
         elif mode == 'absent_only':
@@ -3712,7 +3711,7 @@ def notices(code):
           <div class="card-sm" style="{'opacity:.7' if is_read else ''}">
             <div class="row">
               <div style="flex:1">
-                <div style="font-weight:700;color:#1a1a1a">{'📌 ' if not is_read else ''}{n['title']}</div>
+                <div style="font-weight:700;color:#1a1a1a">{'' if not is_read else ''}{n['title']}</div>
                 <div style="font-size:12px;color:#888;margin-top:2px">{fmt_datetime(n['created_at'])}</div>
               </div>
               <div>
@@ -3731,7 +3730,7 @@ def notices(code):
     <span class="section-label">{_ICO_BELL_SM} お知らせ</span>
     <div style="margin-left:auto">{new_btn}</div>
   </div>
-  {cards if ns else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div><div style="font-weight:700;margin-bottom:4px">お知らせはまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">最初のお知らせを送ってみましょう。AIが下書きを作れます。</div><div style="display:flex;gap:8px;justify-content:center"><a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ 作成する</a><a href="/t/{code}/admin/ai" class="btn btn-outline btn-sm">✨ AIで下書き</a></div></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div>お知らせはまだありません</div>')}
+  {cards if ns else (f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div><div style="font-weight:700;margin-bottom:4px">お知らせはまだありません</div><div style="font-size:12px;color:#aaa;margin-bottom:16px">最初のお知らせを送ってみましょう。AIが下書きを作れます。</div><div style="display:flex;gap:8px;justify-content:center"><a href="/t/{code}/admin/notices/new" class="btn btn-blue btn-sm">＋ 作成する</a><a href="/t/{code}/admin/ai" class="btn btn-outline btn-sm">AIで下書き</a></div></div>' if admin else f'<div class="empty card"><div style="margin-bottom:8px">{_SVG_EMPTY_BELL}</div>お知らせはまだありません</div>')}
   {'<div style="margin-top:8px">' + back_link + '</div>' if admin else ''}
 </div>'''
     return page('お知らせ', body, code, active='notices')
@@ -4134,7 +4133,7 @@ def admin_dash(code):
     if not (team['name'] or '').strip():
         name_prompt = f'''
   <a href="/t/{code}/admin/settings" style="display:block;text-decoration:none;background:#fffbeb;border:1.5px solid #d97706;border-radius:12px;padding:14px 16px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:700;color:#111">📝 チーム名を設定しましょう</div>
+    <div style="font-size:13px;font-weight:700;color:#111">チーム名を設定しましょう</div>
     <div style="font-size:12px;color:#92400e;margin-top:2px">メンバーに共有する画面に表示されます（タップして設定）</div>
   </a>'''
 
@@ -4144,7 +4143,7 @@ def admin_dash(code):
   {name_prompt}
   {(lambda: (
     '<div style="background:#fff;border:1.5px solid #d97706;border-radius:12px;padding:16px 18px;margin-bottom:14px">'
-    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">🚀 はじめの3ステップ</div>'
+    '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111">はじめの3ステップ</div>'
     '<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">'
     + (f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">メンバー名簿を登録する</span></a>' if member_names else f'<a href="/t/{code}/admin/members" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span><span style="font-weight:600">メンバー名簿を登録する →</span></a>')
     + (f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</span><span style="color:#6b7280;text-decoration:line-through">最初の予定を追加する</span></a>' if has_any_event else f'<a href="/t/{code}/admin/events/new" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #d97706;color:#d97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span><span style="font-weight:600">最初の予定を追加する →</span></a>')
@@ -4594,7 +4593,7 @@ def team_help(code):
     {step_html(steps_member, '#d97706')}
   </div>
 
-  {'<div class="card"><h2 style="margin-bottom:16px">⚙ 管理者の方へ</h2>' + step_html(steps_admin, '#111') + '</div>' if admin else ''}
+  {'<div class="card"><h2 style="margin-bottom:16px">管理者の方へ</h2>' + step_html(steps_admin, '#111') + '</div>' if admin else ''}
 
   <div class="card" style="background:#fef3c7;border-color:#fde68a">
     <div style="font-weight:700;margin-bottom:6px">困ったときは</div>
@@ -4929,7 +4928,7 @@ def admin_new_notice(code):
                          (new_id(), team['id'], title, body_text, now_str()))
             conn.commit()
             conn.close()
-            send_push_to_team(team['id'], f'📢 {team["name"]}', title, f'/t/{code}/notices')
+            send_push_to_team(team['id'], f'{team["name"]}', title, f'/t/{code}/notices')
             return redirect(url_for('notices', code=code, sent='1'))
 
     conn = get_db()
@@ -4941,7 +4940,7 @@ def admin_new_notice(code):
     tmpl_select = f'''
     <div style="margin-bottom:12px">
       <select id="tmpl-select" class="btn btn-sm btn-outline" style="width:auto;border:2px solid #dde6ff;padding:7px 12px" onchange="applyTemplate(this)">
-        <option value="">📌 テンプレートから選ぶ</option>
+        <option value="">テンプレートから選ぶ</option>
         {tmpl_opts}
       </select>
     </div>
@@ -5109,14 +5108,14 @@ JSONのみ返してください。説明不要です。'''
     <div class="section-label">生成結果</div>
     <input id="ai-res-title" value="{esc_title}" style="width:100%;font-weight:700;font-size:16px;margin-bottom:8px">
     <textarea id="ai-res-body" rows="14" style="width:100%;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;border:1px solid #e5e7eb;box-sizing:border-box">{esc_body}</textarea>
-    <div style="font-size:12px;color:#888;margin-top:4px">✎ タイトル・本文はこのまま書き換えできます</div>
-    <button type="button" id="ai-copy-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="rakAiCopy()">📋 本文をコピー</button>
+    <div style="font-size:12px;color:#888;margin-top:4px">タイトル・本文はこのまま書き換えできます</div>
+    <button type="button" id="ai-copy-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="rakAiCopy()">本文をコピー</button>
     <a id="ai-use-btn" href="#" class="btn btn-blue" style="display:block;text-align:center;margin-top:8px">このままお知らせとして送信 →</a>
     <form method="POST" style="margin-top:8px" onsubmit="rakAiSyncForm()">
       <input type="hidden" name="action" value="save_template">
       <input type="hidden" name="t_title" id="ai-save-title" value="">
       <input type="hidden" name="t_body" id="ai-save-body" value="">
-      <button class="btn btn-outline btn-sm" type="submit" style="width:100%">📌 テンプレートとして保存</button>
+      <button class="btn btn-outline btn-sm" type="submit" style="width:100%">テンプレートとして保存</button>
     </form>
   </div>
   <script>
@@ -5137,7 +5136,7 @@ JSONのみ返してください。説明不要です。'''
     ta.setSelectionRange(0,0);ta.blur();
     const b=document.getElementById('ai-copy-btn');
     b.textContent='✓ コピーしました';
-    setTimeout(()=>{{b.textContent='📋 本文をコピー';}},1500);
+    setTimeout(()=>{{b.textContent='本文をコピー';}},1500);
   }}
   document.getElementById('ai-res-title').addEventListener('input',rakAiSyncUse);
   document.getElementById('ai-res-body').addEventListener('input',rakAiSyncUse);
@@ -5168,7 +5167,7 @@ JSONのみ返してください。説明不要です。'''
 
     tmpl_section = f'''
     <div class="card" style="margin-top:16px">
-      <h2 style="margin-bottom:12px">📌 保存済みテンプレート</h2>
+      <h2 style="margin-bottom:12px">保存済みテンプレート</h2>
       {tmpl_rows if templates else '<div class="empty" style="padding:20px">保存されたテンプレートはありません</div>'}
     </div>''' if templates else ''
 
@@ -5314,7 +5313,7 @@ def admin_members(code):
 
     empty_invite = f'''
     <div style="text-align:center;padding:24px 16px">
-      <div style="font-size:32px;margin-bottom:10px">👥</div>
+      <div style="font-size:32px;margin-bottom:10px"></div>
       <div style="font-weight:700;font-size:15px;margin-bottom:6px">まだメンバーがいません</div>
       <div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.7">名簿を登録しておくと、出欠リンクでメンバーが<br>自分の名前を選んで回答できます。<br>メンバー側の登録・アプリは不要です。</div>
       <a href="#add-member" class="btn btn-blue" style="display:inline-block">＋ メンバーを追加する</a>
@@ -5711,10 +5710,10 @@ def admin_fee_detail(code, fee_id):
   </div>
 
   <div class="card" style="background:#fffdf7;border:1.5px solid #fde68a">
-    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 メンバーに支払いを申告してもらう</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">メンバーに支払いを申告してもらう</div>
     <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.6">下のリンクを連絡アプリ（LINE等）に貼るだけ。メンバーは登録不要で「支払いました」をタップ→ここに「⏳ 申告あり」が出るので、確認して確定できます。</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace;margin-bottom:8px">{base_url()}t/{code}/pay-answer/{team['viewer_token']}</div>
-    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/pay-answer/{team['viewer_token']}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='🔗 支払いリンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">🔗 支払いリンクをコピー</button>
+    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/pay-answer/{team['viewer_token']}').then(()=>{{this.textContent='コピーしました';setTimeout(()=>this.textContent='支払いリンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">支払いリンクをコピー</button>
   </div>
 
   <div class="card">
@@ -5998,7 +5997,7 @@ def order_form_view(code, form_id):
                 bars += f'<div style="font-size:12px;color:#aaa;margin-top:4px">その他の回答：{other}件</div>'
             agg_html += f'''
   <div class="card">
-    <div style="font-weight:700;margin-bottom:10px">📊 {f["label"]}　<span style="font-size:12px;color:#888;font-weight:400">集計（{tot}票）</span></div>
+    <div style="font-weight:700;margin-bottom:10px">{f["label"]}　<span style="font-size:12px;color:#888;font-weight:400">集計（{tot}票）</span></div>
     {bars}
   </div>'''
 
@@ -6034,12 +6033,12 @@ def order_form_view(code, form_id):
         photo_grid = f'<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px">{photo_thumbs}</div>' if photos else '<div class="empty" style="padding:12px">まだ写真がありません</div>'
         photo_card = f'''
   <div class="card">
-    <h2 style="margin-bottom:12px">📸 写真（メンバーにも表示されます）</h2>
+    <h2 style="margin-bottom:12px">写真（メンバーにも表示されます）</h2>
     {photo_grid}
     <form method="POST" action="/t/{code}/admin/orders/{form_id}/photo" enctype="multipart/form-data">
       <label>写真を追加（複数選択可・JPG/PNG/GIF/WebP）</label>
       <input type="file" name="photos" accept="image/*" multiple style="padding:8px;background:#fafcff">
-      <button class="btn btn-outline btn-sm" type="submit" style="margin-top:8px">📤 アップロード</button>
+      <button class="btn btn-outline btn-sm" type="submit" style="margin-top:8px">アップロード</button>
     </form>
   </div>'''
 
@@ -6071,15 +6070,15 @@ def order_form_view(code, form_id):
     {desc_html}
     {deadline_html}
     <div style="margin-top:12px">
-      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">📥 Excel</a>
+      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">Excel</a>
     </div>
   </div>
 
   <div class="card" style="background:#fffdf7;border:1.5px solid #fde68a">
-    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📣 メンバーに回答してもらう</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">メンバーに回答してもらう</div>
     <div style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.6">下のリンクをコピーして、ふだんの連絡アプリ（LINE等）に貼るだけ。メンバーは登録不要で、名前を選んでタップ回答できます。</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace;margin-bottom:8px">{base_url()}t/{code}/order-answer/{team['viewer_token']}/{form_id}</div>
-    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/order-answer/{team['viewer_token']}/{form_id}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='🔗 回答リンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">🔗 回答リンクをコピー</button>
+    <button onclick="navigator.clipboard.writeText('{base_url()}t/{code}/order-answer/{team['viewer_token']}/{form_id}').then(()=>{{this.textContent='✓ コピーしました';setTimeout(()=>this.textContent='回答リンクをコピー',1500)}})" class="btn btn-blue btn-sm" style="width:100%">回答リンクをコピー</button>
   </div>
 
   {photo_card}
@@ -6481,7 +6480,7 @@ def survey_list(code):
         <a href="/t/{code}/survey/{sv['id']}" style="text-decoration:none;display:block">
           <div class="card-sm">
             <div class="row" style="justify-content:space-between">
-              <div style="font-weight:700;color:#1a1a1a">{'📌 ' if not answered else ''}{sv['title']}</div>
+              <div style="font-weight:700;color:#1a1a1a">{'' if not answered else ''}{sv['title']}</div>
               {'<span class="badge badge-red">未回答</span>' if not answered else f'<span class="badge badge-gray">回答済 {total}名</span>'}
             </div>
             <div style="font-size:12px;color:#aaa;margin-top:4px">{fmt_datetime(sv['created_at'])}　選択肢 {len(options)}件</div>

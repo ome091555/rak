@@ -4317,6 +4317,17 @@ def admin_memo_new(code):
             conn = get_db()
             conn.execute('INSERT INTO admin_memos (id,team_id,title,content,created_at,updated_at) VALUES (?,?,?,?,?,?)',
                          (mid, team['id'], title, content, now, now))
+            # 作成時に添付されたファイルも保存
+            for f in request.files.getlist('file'):
+                if not f or not f.filename:
+                    continue
+                os.makedirs(MEMO_FILE_DIR, exist_ok=True)
+                fid = new_id()
+                ext = os.path.splitext(f.filename)[1]
+                stored = f'{fid}{ext}'
+                f.save(os.path.join(MEMO_FILE_DIR, stored))
+                conn.execute('INSERT INTO memo_files (id,memo_id,original_name,stored_name,created_at) VALUES (?,?,?,?,?)',
+                             (fid, mid, f.filename, stored, now_str()))
             conn.commit()
             conn.close()
             return redirect(f'/t/{code}/admin/memos/{mid}')
@@ -4325,11 +4336,14 @@ def admin_memo_new(code):
   <h1>{_ICO_MEMO} 新規メモ</h1>
   {'<div class="msg-err">' + error + '</div>' if error else ''}
   <div class="card">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
       <label>タイトル *</label>
       <input type="text" name="title" placeholder="例：5月練習日程メモ" required>
       <label>内容</label>
       <textarea name="content" rows="8" placeholder="メモの内容を入力..."></textarea>
+      <label>添付ファイル（任意）</label>
+      <input type="file" name="file" multiple style="font-size:13px">
+      <div style="font-size:11px;color:#aaa;margin-top:4px">写真・PDF・Excelなど何でも添付できます（複数選択可）</div>
       <button type="submit" class="btn btn-blue btn-block" style="margin-top:16px">保存</button>
     </form>
   </div>
@@ -5279,7 +5293,6 @@ def admin_members(code):
       <h1 style="margin:0">{_ICO_PEOPLE} メンバー名簿</h1>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
         <span class="badge badge-blue">{member_count_label(team, member_n)}</span>
-        <a href="#add-member" class="btn btn-blue btn-sm">＋ 追加</a>
       </div>
     </div>
     {rows if members else empty_invite}

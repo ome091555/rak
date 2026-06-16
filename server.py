@@ -3993,8 +3993,14 @@ def admin_dash(code):
     member_names = [m['name'] for m in members_all]
     has_any_event = conn.execute('SELECT 1 FROM events WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
 
-    def get_no_answer(ev_id):
-        answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev_id,)).fetchall())
+    def get_no_answer(ev):
+        # 「出席・欠席を聞く(both)」設定で、かつ誰か1人でも回答した後だけ未回答を出す。
+        # 出欠を取らない/欠席のみ設定、まだ誰も答えていない予定では未回答を表示しない。
+        if (ev['rsvp_mode'] or 'both') != 'both':
+            return []
+        answered = set(r['member_name'] for r in conn.execute('SELECT member_name FROM rsvps WHERE event_id=?', (ev['id'],)).fetchall())
+        if not answered:
+            return []
         return [n for n in member_names if n not in answered]
 
     # 今月のカレンダー用データ
@@ -4032,7 +4038,7 @@ def admin_dash(code):
 
     timeline = []
     for ev in events:
-        no_answer = get_no_answer(ev['id'])
+        no_answer = get_no_answer(ev)
         sub = ''
         if no_answer:
             sub = f'{len(no_answer)}名未回答'
@@ -4075,7 +4081,7 @@ def admin_dash(code):
         timeline_rows = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">直近の予定・締切はありません</div>'
 
     # conn を閉じる前に未回答数を集計（get_no_answer は conn を使うため）
-    unanswered_events_count = sum(1 for ev in events if get_no_answer(ev['id']))
+    unanswered_events_count = sum(1 for ev in events if get_no_answer(ev))
     conn.close()
 
     notice_rows = ''.join(f'''

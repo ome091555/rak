@@ -622,11 +622,11 @@ def excel_response(rows, filename):
             cell.border = border
             if i == 0:
                 cell.font = Font(name=FONT, bold=True, color='FFFFFF', size=11)
-                cell.fill = PatternFill('solid', fgColor='2563EB')
+                cell.fill = PatternFill('solid', fgColor='16A34A')
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             elif is_total:
-                cell.font = Font(name=FONT, size=11, bold=True)
-                cell.fill = PatternFill('solid', fgColor='EFF6FF')
+                cell.font = Font(name=FONT, size=11, bold=True, color='15803D')
+                cell.fill = PatternFill('solid', fgColor='F0FDF4')
                 cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             else:
                 cell.font = Font(name=FONT, size=11)

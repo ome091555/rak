@@ -592,6 +592,13 @@ def pro_gate(code, team, active='home'):  # noqa
 </div>'''
     return page('Proプランへアップグレード', body, code, active=active)
 
+def parse_amount(s):
+    """金額入力をサニタイズ：円・￥・カンマ・全角数字・文字などを除いて整数化。空なら0。"""
+    s = (s or '').translate(str.maketrans('０１２３４５６７８９', '0123456789'))
+    digits = ''.join(ch for ch in s if ch.isdigit())
+    return int(digits) if digits else 0
+
+
 def csv_response(csv_str, filename):
     import urllib.parse
     encoded_name = urllib.parse.quote(filename.encode('utf-8'))
@@ -5566,7 +5573,7 @@ def admin_new_fee(code):
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
-        amount = request.form.get('amount', '0').strip().replace(',', '')
+        amount = parse_amount(request.form.get('amount'))
         due_date = request.form.get('due_date', '').strip()
         note = request.form.get('note', '').strip()
         selected = request.form.getlist('members')
@@ -5575,9 +5582,9 @@ def admin_new_fee(code):
         else:
             fee_id = new_id()
             conn.execute('INSERT INTO fees VALUES (?,?,?,?,?,?,?)',
-                         (fee_id, team['id'], title, int(amount or 0), due_date, note, now_str()))
+                         (fee_id, team['id'], title, amount, due_date, note, now_str()))
             for name in selected:
-                conn.execute('INSERT OR IGNORE INTO fee_payments VALUES (?,?,?,0,?)',
+                conn.execute('INSERT OR IGNORE INTO fee_payments (id,fee_id,member_name,paid,paid_at) VALUES (?,?,?,0,?)',
                              (new_id(), fee_id, name, ''))
             conn.commit()
             conn.close()
@@ -5749,14 +5756,14 @@ def admin_edit_fee(code, fee_id):
     error = ''
     if request.method == 'POST':
         title    = request.form.get('title', '').strip()
-        amount   = request.form.get('amount', '0').strip().replace(',', '')
+        amount   = parse_amount(request.form.get('amount'))
         due_date = request.form.get('due_date', '').strip()
         note     = request.form.get('note', '').strip()
         if not title:
             error = 'タイトルを入力してください'
         else:
             conn.execute('UPDATE fees SET title=?,amount=?,due_date=?,note=? WHERE id=?',
-                         (title, int(amount or 0), due_date, note, fee_id))
+                         (title, amount, due_date, note, fee_id))
             conn.commit()
             conn.close()
             return redirect(url_for('admin_fee_detail', code=code, fee_id=fee_id))
@@ -7357,7 +7364,7 @@ def admin_ledger(code):
         if action == 'add':
             entry_type = request.form.get('type', 'expense')
             title      = request.form.get('title', '').strip()
-            amount_s   = request.form.get('amount', '0').replace(',', '').strip()
+            amount_s   = parse_amount(request.form.get('amount'))
             category   = request.form.get('category', '').strip()
             entry_date = request.form.get('entry_date', '').strip()
             memo       = request.form.get('memo', '').strip()
@@ -7365,7 +7372,7 @@ def admin_ledger(code):
                 conn = get_db()
                 conn.execute('INSERT INTO ledger VALUES (?,?,?,?,?,?,?,?,?)',
                              (new_id(), team['id'], entry_type, title,
-                              int(amount_s or 0), category, entry_date, memo, now_str()))
+                              amount_s, category, entry_date, memo, now_str()))
                 conn.commit()
                 conn.close()
         elif action == 'delete':

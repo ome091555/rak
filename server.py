@@ -5110,9 +5110,8 @@ JSONのみ返してください。説明不要です。'''
     conn.close()
 
     tmpl_rows = ''
+    import html as _esc
     for t in templates:
-        import urllib.parse
-        params = urllib.parse.urlencode({'title': t['title'], 'body': t['body']})
         tmpl_rows += f'''
         <div class="card-sm row" style="justify-content:space-between;align-items:center">
           <div style="flex:1;min-width:0">
@@ -5120,16 +5119,27 @@ JSONのみ返してください。説明不要です。'''
             <div style="font-size:12px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{t['body'][:40]}…</div>
           </div>
           <div style="display:flex;gap:6px;margin-left:12px">
-            <a href="/t/{code}/admin/notices/new?{params}" class="btn btn-sm btn-outline">使う</a>
+            <button type="button" class="btn btn-sm btn-outline" onclick="rakTmplCopy(this)">コピー</button>
             <a href="/t/{code}/admin/ai/template/{t['id']}/delete" class="btn btn-sm btn-gray">削除</a>
           </div>
+          <textarea class="tmpl-body" readonly style="position:absolute;left:-9999px;top:0">{_esc.escape(t['body'])}</textarea>
         </div>'''
 
     tmpl_section = f'''
     <div class="card" style="margin-top:16px">
       <h2 style="margin-bottom:12px">保存済みテンプレート</h2>
       {tmpl_rows if templates else '<div class="empty" style="padding:20px">保存されたテンプレートはありません</div>'}
-    </div>''' if templates else ''
+    </div>
+    <script>
+    function rakTmplCopy(btn){{
+      var ta=btn.closest('.card-sm').querySelector('.tmpl-body');
+      ta.focus();ta.select();
+      try{{document.execCommand('copy');}}catch(e){{}}
+      if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(ta.value).catch(()=>{{}});}}
+      ta.blur();
+      var o=btn.textContent;btn.textContent='✓ コピーしました';setTimeout(()=>{{btn.textContent=o;}},1500);
+    }}
+    </script>''' if templates else ''
 
     body = f'''
 <div class="container" style="max-width:540px">

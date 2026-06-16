@@ -7151,8 +7151,8 @@ def admin_uniform_detail(code, uid):
       <td style="padding:10px 4px">
         <select name="size_{m['name']}" style="width:100%;padding:5px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;background:#fff">
           <option value="">-</option>
-          {''.join(f'<option value="{s}" {"selected" if size_val==s else ""}>{s}</option>' for s in ['120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'])}
-          <option value="{size_val}" {'selected' if size_val and size_val not in ['120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'] else ''}>{size_val if size_val and size_val not in ['120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'] else 'その他'}</option>
+          {''.join(f'<option value="{s}" {"selected" if size_val==s else ""}>{s}</option>' for s in ['100','110','120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'])}
+          <option value="{size_val}" {'selected' if size_val and size_val not in ['100','110','120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'] else ''}>{size_val if size_val and size_val not in ['100','110','120','130','140','150','160','SS','XS','S','M','L','XL','XXL','3XL'] else 'その他'}</option>
         </select>
       </td>
       <td style="padding:10px 4px">

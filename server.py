@@ -4024,9 +4024,17 @@ def admin_dash(code):
 
     # 今月のカレンダー用データ
     now_dt = datetime.now(JST)
-    cy, cm = now_dt.year, now_dt.month
+    try:
+        cy = int(request.args.get('cy', now_dt.year))
+        cm = int(request.args.get('cm', now_dt.month))
+        if not (1 <= cm <= 12):
+            raise ValueError
+    except (ValueError, TypeError):
+        cy, cm = now_dt.year, now_dt.month
+    cal_nav = bool(request.args.get('cy') or request.args.get('cm'))  # 月送りした状態か
+    cp_y, cp_m = (cy - 1, 12) if cm == 1 else (cy, cm - 1)   # 前月
     cm_start = f'{cy}-{cm:02d}-01'
-    cn_y, cn_m = (cy + 1, 1) if cm == 12 else (cy, cm + 1)
+    cn_y, cn_m = (cy + 1, 1) if cm == 12 else (cy, cm + 1)   # 翌月
     cm_end = f'{cn_y}-{cn_m:02d}-01'
     cal_events = conn.execute(
         'SELECT * FROM events WHERE team_id=? AND event_date>=? AND event_date<?',
@@ -4155,16 +4163,21 @@ def admin_dash(code):
     <details class="atile" open data-default-open>
       <summary><span class="atile-icon">{_ICO_CALENDAR}</span>予定・締切{unanswered_badge}</summary>
       <div class="atile-body" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
-        <div id="dash-list-view">
+        <div id="dash-list-view" style="display:{'none' if cal_nav else 'block'}">
           {timeline_rows}
         </div>
-        <div id="dash-cal-view" style="display:none;padding:12px 10px 4px">
+        <div id="dash-cal-view" style="display:{'block' if cal_nav else 'none'};padding:12px 10px 4px">
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px">
+            <a href="/t/{code}/admin/dash?cy={cp_y}&cm={cp_m}" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f1f4f9;color:#444;text-decoration:none;font-size:16px">‹</a>
+            <span style="font-weight:700;font-size:14px">{cy}年{cm}月</span>
+            <a href="/t/{code}/admin/dash?cy={cn_y}&cm={cn_m}" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f1f4f9;color:#444;text-decoration:none;font-size:16px">›</a>
+          </div>
           {dash_calendar_html}
         </div>
         <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #f3f4f6;flex-wrap:wrap">
           <a href="/t/{code}/admin/events/new" class="btn btn-blue" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">＋ 予定追加</a>
           {'<a href="/t/' + code + '/admin/ai-schedule" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#d97706;color:#fff">✦ AI作成</a>' if is_pro(team) else '<a href="/t/' + code + '/upgrade" class="btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;background:#fff;color:#d97706;border:1.5px solid #d97706">✦ AI作成</a>'}
-          <button onclick="dashToggleCal(this)" class="btn btn-outline" id="dash-cal-btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px">カレンダー</button>
+          <button onclick="dashToggleCal(this)" class="btn btn-outline" id="dash-cal-btn" style="flex:1;font-size:13px;padding:9px 10px;min-width:80px;{'background:#f9fafb' if cal_nav else ''}">{'リスト' if cal_nav else 'カレンダー'}</button>
         </div>
       </div>
     </details>

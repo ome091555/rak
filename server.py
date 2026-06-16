@@ -2890,7 +2890,7 @@ def schedule(code):
     if admin:
         if is_pro(team):
             ai_btn = f'<a href="/t/{code}/admin/ai-schedule" class="btn btn-sm" style="background:#d97706;color:#fff">✦ AI予定作成</a>'
-            excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm btn-gray">Excel</a>'
+            excel_btn = f'<a href="/t/{code}/admin/schedule/excel?y={vy}&m={vm}" class="btn btn-sm" style="background:#16a34a;color:#fff">Excel出力</a>'
         else:
             ai_btn = f'<a href="/t/{code}/upgrade" class="btn btn-sm" style="background:#f5f5f5;color:#d97706;border:1px solid #d97706">✦ AI予定作成</a>'
     combined = (event_cards + fee_cards) or '<div class="empty card">この月の予定はありません</div>'
@@ -6075,7 +6075,7 @@ def order_form_view(code, form_id):
     {desc_html}
     {deadline_html}
     <div style="margin-top:12px">
-      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-gray btn-sm">Excel</a>
+      <a href="/t/{code}/admin/orders/{form_id}/csv" class="btn btn-sm" style="background:#16a34a;color:#fff">Excel出力</a>
     </div>
   </div>
 

@@ -4074,6 +4074,8 @@ def admin_dash(code):
     if not timeline:
         timeline_rows = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">直近の予定・締切はありません</div>'
 
+    # conn を閉じる前に未回答数を集計（get_no_answer は conn を使うため）
+    unanswered_events_count = sum(1 for ev in events if get_no_answer(ev['id']))
     conn.close()
 
     notice_rows = ''.join(f'''
@@ -4094,7 +4096,6 @@ def admin_dash(code):
         plan_card = f'<div class="card" style="border:2px solid #d97706;text-align:center;padding:20px"><div style="font-size:12px;color:#888;margin-bottom:4px">現在のプラン</div><div style="font-size:18px;font-weight:700;margin-bottom:12px">Free</div><a href="/t/{code}/upgrade" class="btn btn-blue" style="font-size:14px;padding:10px 24px">Proにアップグレード ¥980/月</a></div>'
 
     unpaid_badge = f'<span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">{len(unpaid_summary)}</span>' if unpaid_summary else ''
-    unanswered_events_count = sum(1 for ev in events if get_no_answer(ev['id']))
     unanswered_badge = f'<span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">{unanswered_events_count}</span>' if unanswered_events_count else ''
 
     name_prompt = ''

@@ -603,20 +603,33 @@ def csv_response(csv_str, filename):
 
 def excel_response(rows, filename):
     import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-    import urllib.parse
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    import urllib.parse, unicodedata
     wb = openpyxl.Workbook()
     ws = wb.active
+    FONT = 'Yu Gothic'
+    thin = Side(style='thin', color='D1D5DB')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    def vlen(s):  # 全角文字を2幅としてカウント
+        return sum(2 if unicodedata.east_asian_width(ch) in ('F', 'W') else 1 for ch in str(s))
+
     for i, row in enumerate(rows):
         ws.append(list(row))
-        if i == 0:
-            for cell in ws[1]:
-                cell.font = Font(bold=True, color='FFFFFF')
+        for cell in ws[i + 1]:
+            cell.border = border
+            if i == 0:
+                cell.font = Font(name=FONT, bold=True, color='FFFFFF', size=11)
                 cell.fill = PatternFill('solid', fgColor='2563EB')
-                cell.alignment = Alignment(horizontal='center')
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            else:
+                cell.font = Font(name=FONT, size=11)
+                cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
     for col in ws.columns:
-        max_len = max((len(str(c.value or '')) for c in col), default=8)
-        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+        max_len = max((vlen(c.value) for c in col if c.value is not None), default=8)
+        ws.column_dimensions[col[0].column_letter].width = min(max(max_len + 3, 9), 50)
+    ws.row_dimensions[1].height = 26
+    ws.freeze_panes = 'A2'  # 見出し行を固定
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)

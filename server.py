@@ -1551,7 +1551,7 @@ button{{font-family:inherit;cursor:pointer}}
 .features{{padding:76px 24px;background:#fff}}
 .sec-label{{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--rak-amber);margin-bottom:12px;display:block}}
 .sec-title{{font-size:clamp(24px,4.2vw,32px);font-weight:900;letter-spacing:-0.025em;line-height:1.22;margin-bottom:8px;color:#0f172a}}
-.sec-sub{{font-size:14.5px;color:#64748b;margin-bottom:40px}}
+.sec-sub{{font-size:14.5px;color:#64748b;margin-bottom:40px;word-break:normal;overflow-wrap:anywhere}}
 .feat-grid{{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
 .fcard{{border-radius:16px;padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;background:#fff;border:1px solid var(--rak-line);box-shadow:0 2px 10px rgba(0,0,0,.03);transition:transform .14s,box-shadow .14s}}
 .fcard:hover{{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.08)}}
@@ -1800,7 +1800,7 @@ footer a:hover{{color:#94a3b8}}
     <div class="sec-sub" style="margin-bottom:40px">「とりあえず連絡アプリ」では情報が流れる。「とりあえず表計算」では手間が増える。</div>
 
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table style="width:100%;border-collapse:collapse;min-width:480px">
+      <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr>
             <th style="padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;border-bottom:2px solid #f3f4f6;width:40%"></th>

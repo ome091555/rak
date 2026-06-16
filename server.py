@@ -615,13 +615,19 @@ def excel_response(rows, filename):
         return sum(2 if unicodedata.east_asian_width(ch) in ('F', 'W') else 1 for ch in str(s))
 
     for i, row in enumerate(rows):
-        ws.append(list(row))
+        row_list = list(row)
+        ws.append(row_list)
+        is_total = i > 0 and str((row_list[0] if row_list else '') or '').strip() == '合計'
         for cell in ws[i + 1]:
             cell.border = border
             if i == 0:
                 cell.font = Font(name=FONT, bold=True, color='FFFFFF', size=11)
                 cell.fill = PatternFill('solid', fgColor='2563EB')
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            elif is_total:
+                cell.font = Font(name=FONT, size=11, bold=True)
+                cell.fill = PatternFill('solid', fgColor='EFF6FF')
+                cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             else:
                 cell.font = Font(name=FONT, size=11)
                 cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -5810,6 +5816,14 @@ def admin_event_csv(code, event_id):
             rows.append([name, '', '', status_label.get(status, status),
                          next((r['updated_at'] for r in rsvps if r['member_name'] == name), '')])
 
+    # 合計（出席/欠席/未回答の人数）
+    if len(rows) > 1:
+        from collections import Counter
+        c = Counter(r[3] for r in rows[1:])
+        rows.append(['', '', '', '', ''])
+        rows.append(['合計', '', '',
+                     f'出席 {c.get("出席", 0)} / 欠席 {c.get("欠席", 0)} / 未回答 {c.get("未回答", 0)}', ''])
+
     fmt = request.args.get('fmt', 'excel')
     if fmt == 'csv':
         output = io.StringIO()
@@ -6476,6 +6490,22 @@ def admin_order_form_csv(code, form_id):
         val_map = {v['field_id']: v['value'] for v in vals}
         rows.append([r['member_name'], r['submitted_at']] + [val_map.get(f['id'], '') for f in fields])
     conn.close()
+
+    # 合計（回答者数＋選択式項目の票数集計）
+    if responses:
+        from collections import Counter
+        body_rows = rows[1:]
+        summary = ['合計', f'回答者 {len(responses)}名']
+        for idx, f in enumerate(fields):
+            col = 2 + idx
+            if f['field_type'] == 'select':
+                cnt = Counter((br[col] or '').strip() for br in body_rows
+                              if col < len(br) and (br[col] or '').strip())
+                summary.append(' / '.join(f'{k}:{v}' for k, v in cnt.items()))
+            else:
+                summary.append('')
+        rows.append([''] * len(rows[0]))
+        rows.append(summary)
 
     fmt = request.args.get('fmt', 'excel')
     if fmt == 'csv':

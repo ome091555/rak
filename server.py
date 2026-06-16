@@ -7106,8 +7106,8 @@ def admin_uniforms(code):
                          (uid, team['id'], name, description, now_str()))
             members = conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()
             for m in members:
-                conn.execute('INSERT OR IGNORE INTO uniform_assignments VALUES (?,?,?,?,?,?,?)',
-                             (new_id(), uid, m['name'], '', '', 0, ''))
+                conn.execute('INSERT OR IGNORE INTO uniform_assignments (id,uniform_id,member_name,size,number,quantity,received,notes) VALUES (?,?,?,?,?,?,?,?)',
+                             (new_id(), uid, m['name'], '', '', 1, 0, ''))
             conn.commit()
             conn.close()
             return redirect(url_for('admin_uniform_detail', code=code, uid=uid))

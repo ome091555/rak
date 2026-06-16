@@ -6184,6 +6184,29 @@ def admin_new_order_form(code):
             form_id = new_id()
             conn.execute('INSERT INTO order_forms VALUES (?,?,?,?,?,?)',
                          (form_id, team['id'], title, description, deadline, now_str()))
+            # 作成時に入力された項目（質問）を保存
+            labels = request.form.getlist('field_label')
+            types = request.form.getlist('field_type')
+            opts = request.form.getlist('field_options')
+            sort_order = 0
+            for i, label in enumerate(labels):
+                label = label.strip()
+                if not label:
+                    continue
+                ft = types[i] if i < len(types) else 'text'
+                op = (opts[i] if i < len(opts) else '').strip()
+                conn.execute('INSERT INTO order_form_fields VALUES (?,?,?,?,?,?)',
+                             (new_id(), form_id, label, ft, op, sort_order))
+                sort_order += 1
+            # 作成時に添付された写真を保存
+            allowed = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+            for f in request.files.getlist('photos'):
+                if f and f.mimetype in allowed:
+                    os.makedirs(UPLOAD_DIR, exist_ok=True)
+                    photo_id = new_id()
+                    f.save(os.path.join(UPLOAD_DIR, photo_id))
+                    conn.execute('INSERT INTO order_form_photos VALUES (?,?,?,?,?)',
+                                 (photo_id, form_id, f.filename or '', f.mimetype, now_str()))
             conn.commit()
             conn.close()
             return redirect(url_for('order_form_view', code=code, form_id=form_id))
@@ -6192,20 +6215,40 @@ def admin_new_order_form(code):
 <div class="container" style="max-width:480px">
   <div class="card">
     <h1>注文・アンケートを作成</h1>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">作成後に項目（質問）を追加します。<br>「選択肢から選ぶ」項目を入れると、票数が自動集計されてアンケート（多数決・希望調査）としても使えます。</p>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">写真も項目（質問）も、このまま追加できます。<br>「選択肢から選ぶ」項目を入れると、票数が自動集計されてアンケート（多数決・希望調査）としても使えます。</p>
     {f'<div class="msg-err">{error}</div>' if error else ''}
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
       <label>タイトル *</label>
       <input type="text" name="title" placeholder="例：遠征弁当の注文、打ち上げの日程アンケート" required>
       <label>説明（任意）</label>
       <textarea name="description" placeholder="例：5/25（日）遠征分のお弁当を注文してください" rows="3"></textarea>
       <label>回答期限（任意）</label>
       <input type="date" name="deadline">
-      <button class="btn btn-blue btn-block" type="submit">作成する →</button>
+
+      <label style="margin-top:16px">写真（任意）</label>
+      <input type="file" name="photos" accept="image/*" multiple style="font-size:13px">
+      <div style="font-size:11px;color:#aaa;margin-top:4px">商品やメニューの写真を添付できます（複数可）</div>
+
+      <label style="margin-top:16px">項目（質問・任意）</label>
+      <div style="font-size:11px;color:#aaa;margin-bottom:8px">回答者に聞きたいことを追加。「選択肢から選ぶ」を選んだ項目は、下の選択肢欄（カンマ区切り）が使われます。</div>
+      <div id="field-rows"></div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="addOrderField()">＋ 項目を追加</button>
+
+      <button class="btn btn-blue btn-block" type="submit" style="margin-top:20px">作成する</button>
     </form>
   </div>
   <div style="text-align:center"><a href="/t/{code}/orders" style="font-size:13px;color:#888">← フォーム一覧</a></div>
-</div>'''
+</div>
+<script>
+function addOrderField(){{
+  var w=document.getElementById('field-rows');
+  var d=document.createElement('div');
+  d.style.cssText='border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px';
+  d.innerHTML='<input type="text" name="field_label" placeholder="項目名（例：弁当の種類）" style="margin-bottom:6px"><select name="field_type" style="margin-bottom:6px"><option value="text">自由記入</option><option value="select">選択肢から選ぶ</option></select><input type="text" name="field_options" placeholder="選択肢（「選択肢から選ぶ」の時だけ・カンマ区切り 例：唐揚げ,幕の内,いらない）">';
+  w.appendChild(d);
+}}
+addOrderField();
+</script>'''
     return page('フォーム作成', body, code, active='orders')
 
 

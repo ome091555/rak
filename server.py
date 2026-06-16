@@ -5076,8 +5076,7 @@ JSONのみ返してください。説明不要です。'''
     <input id="ai-res-title" value="{esc_title}" style="width:100%;font-weight:700;font-size:16px;margin-bottom:8px">
     <textarea id="ai-res-body" rows="14" style="width:100%;font-size:14px;color:#333;line-height:1.8;background:#f8faff;padding:14px;border-radius:10px;border:1px solid #e5e7eb;box-sizing:border-box">{esc_body}</textarea>
     <div style="font-size:12px;color:#888;margin-top:4px">タイトル・本文はこのまま書き換えできます</div>
-    <button type="button" id="ai-copy-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px" onclick="rakAiCopy()">本文をコピー</button>
-    <a id="ai-use-btn" href="#" class="btn btn-blue" style="display:block;text-align:center;margin-top:8px">このままお知らせとして送信 →</a>
+    <button type="button" id="ai-copy-btn" class="btn btn-blue btn-block" style="margin-top:10px" onclick="rakAiCopy()">本文をコピー</button>
     <form method="POST" style="margin-top:8px" onsubmit="rakAiSyncForm()">
       <input type="hidden" name="action" value="save_template">
       <input type="hidden" name="t_title" id="ai-save-title" value="">
@@ -5088,9 +5087,6 @@ JSONのみ返してください。説明不要です。'''
   <script>
   function rakAiTitle(){{return document.getElementById('ai-res-title').value;}}
   function rakAiBody(){{return document.getElementById('ai-res-body').value;}}
-  function rakAiSyncUse(){{
-    document.getElementById('ai-use-btn').href='/t/{code}/admin/notices/new?title='+encodeURIComponent(rakAiTitle())+'&body='+encodeURIComponent(rakAiBody());
-  }}
   function rakAiSyncForm(){{
     document.getElementById('ai-save-title').value=rakAiTitle();
     document.getElementById('ai-save-body').value=rakAiBody();
@@ -5105,9 +5101,6 @@ JSONのみ返してください。説明不要です。'''
     b.textContent='✓ コピーしました';
     setTimeout(()=>{{b.textContent='本文をコピー';}},1500);
   }}
-  document.getElementById('ai-res-title').addEventListener('input',rakAiSyncUse);
-  document.getElementById('ai-res-body').addEventListener('input',rakAiSyncUse);
-  rakAiSyncUse();
   </script>'''
 
     # 保存済みテンプレート一覧

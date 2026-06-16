@@ -7121,8 +7121,8 @@ def admin_uniform_detail(code, uid):
     assign_map = {a['member_name']: a for a in assignments}
     for m in members:
         if m['name'] not in assign_map:
-            conn.execute('INSERT OR IGNORE INTO uniform_assignments VALUES (?,?,?,?,?,?,?)',
-                         (new_id(), uid, m['name'], '', '', 0, ''))
+            conn.execute('INSERT OR IGNORE INTO uniform_assignments (id,uniform_id,member_name,size,number,quantity,received,notes) VALUES (?,?,?,?,?,?,?,?)',
+                         (new_id(), uid, m['name'], '', '', 1, 0, ''))
     conn.commit()
     assignments = conn.execute('SELECT * FROM uniform_assignments WHERE uniform_id=?', (uid,)).fetchall()
     assign_map = {a['member_name']: a for a in assignments}

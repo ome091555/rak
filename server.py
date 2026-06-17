@@ -6782,11 +6782,23 @@ def feedback():
     return page('お問い合わせ', body, from_code or None, active='contact')
 
 
+def _rak_admin_ok():
+    """Rak運営者ページの認証。RAK_ADMIN_PW(またはBASIC_AUTH)が未設定なら
+    誰も入れない=fail-closed。ソース公開リポジトリのため直書きデフォルトは持たない。"""
+    pw_env = os.environ.get('RAK_ADMIN_PW', '')
+    if pw_env and request.args.get('pw', '') == pw_env:
+        return True
+    if BASIC_AUTH_USER and BASIC_AUTH_PASS:
+        import base64
+        expected = base64.b64encode(f'{BASIC_AUTH_USER}:{BASIC_AUTH_PASS}'.encode()).decode()
+        if request.headers.get('Authorization', '') == f'Basic {expected}':
+            return True
+    return False
+
+
 @app.route('/rak/lp-stats')
 def rak_lp_stats():
-    pw = request.args.get('pw', '')
-    admin_pw = os.environ.get('RAK_ADMIN_PW', 'rakadmin2026')
-    if pw != admin_pw:
+    if not _rak_admin_ok():
         return redirect('/rak/feedback')
     conn = get_db()
     days = conn.execute('''
@@ -6837,9 +6849,7 @@ def rak_lp_stats():
 
 @app.route('/rak/feedback')
 def rak_feedback_admin():
-    pw = request.args.get('pw', '')
-    admin_pw = os.environ.get('RAK_ADMIN_PW', 'rakadmin2026')
-    if pw != admin_pw:
+    if not _rak_admin_ok():
         body = '''
 <div class="container" style="max-width:400px;padding-top:60px">
   <div class="card">
@@ -7605,12 +7615,8 @@ def stripe_webhook():
 
 @app.route('/superadmin/teams')
 def superadmin_teams():
-    import base64
-    auth = request.headers.get('Authorization', '')
-    if BASIC_AUTH_USER and BASIC_AUTH_PASS:
-        expected = base64.b64encode(f'{BASIC_AUTH_USER}:{BASIC_AUTH_PASS}'.encode()).decode()
-        if auth != f'Basic {expected}':
-            return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin"'})
+    if not _rak_admin_ok():
+        return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin"'})
     conn = get_db()
     teams = conn.execute('SELECT name, sport, team_code, plan, created_at FROM teams ORDER BY created_at DESC').fetchall()
     members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()

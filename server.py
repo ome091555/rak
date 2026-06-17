@@ -5480,6 +5480,7 @@ def member_fees(code):
 
     conn = get_db()
     fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
+    roster_names = [m['name'] for m in conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()]
 
     cards = ''
     for f in fees:
@@ -5489,8 +5490,11 @@ def member_fees(code):
             paid = paid_row['paid'] if paid_row else 0
             badge = '<span class="badge badge-green">支払済</span>' if paid else '<span class="badge badge-red">未払い</span>'
         else:
-            total = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchone()[0]
-            paid_count = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=? AND paid=1', (f['id'],)).fetchone()[0]
+            payments = conn.execute('SELECT member_name, paid FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchall()
+            pay_map = {p['member_name']: p['paid'] for p in payments}
+            display_names = roster_names + [p['member_name'] for p in payments if p['member_name'] not in roster_names]
+            total = len(display_names)
+            paid_count = sum(1 for n in display_names if pay_map.get(n))
             badge = f'<span class="badge badge-blue">支払済 {paid_count}/{total}</span>'
 
         cards += f'''
@@ -5534,10 +5538,15 @@ def admin_fees(code):
     conn = get_db()
     fees = conn.execute('SELECT * FROM fees WHERE team_id=? ORDER BY due_date,created_at', (team['id'],)).fetchall()
 
+    roster_names = [m['name'] for m in conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()]
     rows = ''
     for f in fees:
-        paid_count = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=? AND paid=1', (f['id'],)).fetchone()[0]
-        total = conn.execute('SELECT COUNT(*) FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchone()[0]
+        payments = conn.execute('SELECT member_name, paid FROM fee_payments WHERE fee_id=?', (f['id'],)).fetchall()
+        pay_map = {p['member_name']: p['paid'] for p in payments}
+        # 詳細画面と同じ：名簿＋（名簿外の）自己申告者を対象にする
+        display_names = roster_names + [p['member_name'] for p in payments if p['member_name'] not in roster_names]
+        total = len(display_names)
+        paid_count = sum(1 for n in display_names if pay_map.get(n))
         rows += f'''
         <div class="card-sm row" style="justify-content:space-between;align-items:center">
           <div>
@@ -7130,10 +7139,14 @@ def admin_uniforms(code):
 
     conn = get_db()
     uniforms = conn.execute('SELECT * FROM uniforms WHERE team_id=? ORDER BY created_at DESC', (team['id'],)).fetchall()
+    roster_names = [m['name'] for m in conn.execute('SELECT name FROM members WHERE team_id=?', (team['id'],)).fetchall()]
     rows = ''
     for u in uniforms:
-        received = conn.execute('SELECT COUNT(*) FROM uniform_assignments WHERE uniform_id=? AND received=1', (u['id'],)).fetchone()[0]
-        total = conn.execute('SELECT COUNT(*) FROM uniform_assignments WHERE uniform_id=?', (u['id'],)).fetchone()[0]
+        assigns = conn.execute('SELECT member_name, received FROM uniform_assignments WHERE uniform_id=?', (u['id'],)).fetchall()
+        amap = {a['member_name']: a['received'] for a in assigns}
+        # 現在の名簿メンバーだけを対象にする（削除済みメンバーの残存割当は数えない）
+        total = len(roster_names)
+        received = sum(1 for n in roster_names if amap.get(n))
         rows += f'''
         <div class="card-sm row" style="justify-content:space-between;align-items:center">
           <div>
@@ -7213,7 +7226,8 @@ def admin_uniform_detail(code, uid):
     assign_map = {a['member_name']: a for a in assignments}
     conn.close()
 
-    received_count = sum(1 for a in assign_map.values() if a['received'])
+    # 現在の名簿メンバーだけを数える（削除済みメンバーの残存割当は除外）
+    received_count = sum(1 for m in members if assign_map.get(m['name']) and assign_map[m['name']]['received'])
 
     rows = ''
     for m in members:

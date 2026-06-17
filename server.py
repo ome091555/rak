@@ -6796,10 +6796,27 @@ def _rak_admin_ok():
     return False
 
 
+def _rak_login_page():
+    """3つの運営者ページ共通のパスワード入力画面（method=GETで現在のURLに?pw=を付けて再送）。"""
+    body = '''
+<div class="container" style="max-width:400px;padding-top:60px">
+  <div class="card">
+    <h1 style="margin-bottom:4px">Rak 運営者ログイン</h1>
+    <p style="font-size:13px;color:#888;margin-bottom:16px">運営者パスワードを入力してください</p>
+    <form method="GET">
+      <label>パスワード</label>
+      <input type="password" name="pw" autofocus>
+      <button class="btn btn-blue btn-block" type="submit">開く</button>
+    </form>
+  </div>
+</div>'''
+    return page('Rak 運営者ログイン', body)
+
+
 @app.route('/rak/lp-stats')
 def rak_lp_stats():
     if not _rak_admin_ok():
-        return redirect('/rak/feedback')
+        return _rak_login_page()
     conn = get_db()
     days = conn.execute('''
         SELECT substr(created_at,1,10) AS d,
@@ -6850,18 +6867,7 @@ def rak_lp_stats():
 @app.route('/rak/feedback')
 def rak_feedback_admin():
     if not _rak_admin_ok():
-        body = '''
-<div class="container" style="max-width:400px;padding-top:60px">
-  <div class="card">
-    <h1>管理者ログイン</h1>
-    <form method="GET">
-      <label>パスワード</label>
-      <input type="password" name="pw" autofocus>
-      <button class="btn btn-blue btn-block" type="submit">確認する</button>
-    </form>
-  </div>
-</div>'''
-        return page('Rak Admin', body)
+        return _rak_login_page()
 
     conn = get_db()
     items = conn.execute('SELECT * FROM app_feedback ORDER BY created_at DESC').fetchall()
@@ -7616,7 +7622,7 @@ def stripe_webhook():
 @app.route('/superadmin/teams')
 def superadmin_teams():
     if not _rak_admin_ok():
-        return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin"'})
+        return _rak_login_page()
     conn = get_db()
     teams = conn.execute('SELECT name, sport, team_code, plan, created_at FROM teams ORDER BY created_at DESC').fetchall()
     members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()

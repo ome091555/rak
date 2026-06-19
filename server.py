@@ -567,7 +567,23 @@ def can_add_team_member(team, conn=None):
 def member_count_label(team, count):
     return f'{count}名'
 
+def _native_locked_page(code, active='home'):
+    """ネイティブアプリ向け中立ページ：価格・購入・外部(Web)誘導を一切出さない（App Store 3.1.1対応）。"""
+    body = f'''
+<div class="container" style="max-width:420px;padding-top:48px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="margin-bottom:16px">{_ICO_LOCK}</div>
+    <h1 style="font-size:20px;margin-bottom:10px">この機能は現在ご利用いただけません</h1>
+    <p style="color:#666;font-size:14px;line-height:1.9">ご利用中のプランでは、この機能はお使いいただけません。</p>
+    <div style="margin-top:20px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a></div>
+  </div>
+</div>'''
+    return page('Rak', body, code, active=active)
+
+
 def pro_gate(code, team, active='home'):  # noqa
+    if is_native_app():
+        return _native_locked_page(code, active)
     body = f'''
 <div class="container" style="max-width:480px;padding-top:40px">
   <div class="card" style="text-align:center;padding:40px 24px">
@@ -1223,7 +1239,7 @@ def page(title, body, code=None, active=None):
             bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
     # ネイティブアプリ内ではデジタル課金導線（/upgrade系リンク・トライアルバナー）を非表示
-    native_hide = '<style>a[href*="/upgrade"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
+    native_hide = '<style>a[href*="/upgrade"],a[href*="intent=pro"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -1239,7 +1255,7 @@ def page(title, body, code=None, active=None):
   {f'<a href="/t/{code}/help" style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#f1f4f9;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;text-decoration:none;flex-shrink:0">?</a>' if code and member and not admin else ''}
 </nav>
 <script>document.addEventListener('click',function(e){{document.querySelectorAll('.nav-dd-menu.open').forEach(function(m){{if(!m.parentElement.contains(e.target))m.classList.remove('open')}})}})</script>
-{'<div class="trial-banner-native" style="background:#fffbeb;border-bottom:1px solid #f59e0b;padding:7px 16px;text-align:center;font-size:12px;font-weight:500;color:#92400e">Pro無料トライアル中 — 残り<strong style="color:#d97706">' + str(get_trial_days_left(team)) + '日</strong>　<a href="/t/' + code + '/upgrade" style="color:#d97706;font-weight:700;margin-left:6px">今すぐ継続 →</a></div>' if (code and admin and team and get_trial_days_left(team) is not None) else ''}
+{'<div class="trial-banner-native" style="background:#fffbeb;border-bottom:1px solid #f59e0b;padding:7px 16px;text-align:center;font-size:12px;font-weight:500;color:#92400e">Pro無料トライアル中 — 残り<strong style="color:#d97706">' + str(get_trial_days_left(team)) + '日</strong>　<a href="/t/' + code + '/upgrade" style="color:#d97706;font-weight:700;margin-left:6px">今すぐ継続 →</a></div>' if (code and admin and team and get_trial_days_left(team) is not None and not is_native_app()) else ''}
 {body}
 {bottom_nav}
 {PWA_SW}
@@ -1425,6 +1441,8 @@ def sitemap_xml():
 
 @app.route('/')
 def home():
+    if is_native_app():
+        return redirect('/login')
     log_lp_event('lp_view', src=request.args.get('utm_source', ''))
     join_error = request.args.get('error', '')
     join_code  = request.args.get('code', '')
@@ -4144,7 +4162,9 @@ def admin_dash(code):
     </div>''' for n in notices) or '<div class="empty">お知らせなし</div>'
 
     trial_days = get_trial_days_left(team)
-    if trial_days is not None:
+    if is_native_app():
+        plan_card = ''
+    elif trial_days is not None:
         plan_card = f'<div class="card" style="background:linear-gradient(135deg,#1c1a00,#3d2e00);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:6px">Rak Pro ✦ トライアル中</div><div style="font-size:13px;color:#fbbf24;margin-bottom:10px">残り{trial_days}日</div><a href="/t/{code}/upgrade" style="font-size:12px;color:#fbbf24;text-decoration:underline">トライアル終了後に続けるには →</a></div>'
     elif is_pro(team):
         plan_card = '<div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;opacity:.7">すべての機能をご利用中</div></div>'
@@ -4287,7 +4307,7 @@ def admin_dash(code):
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_CROWN}</span>プラン</summary>
       <div class="atile-body">
-        {f'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ トライアル中（残{trial_days}日）</span><br><a href="/t/{code}/upgrade" style="font-size:12px;color:#888">続けるには課金が必要です →</a>' if trial_days is not None else ('<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>')}
+        {'<span style="font-size:13px;color:#888">ご利用中のプランで使える機能をお使いいただけます。</span>' if is_native_app() else (f'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ トライアル中（残{trial_days}日）</span><br><a href="/t/{code}/upgrade" style="font-size:12px;color:#888">続けるには課金が必要です →</a>' if trial_days is not None else ('<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>'))}
       </div>
     </details>
 
@@ -6925,17 +6945,8 @@ def rak_feedback_admin():
 # ── Stripe / Upgrade ─────────────────────────────────────────────
 
 def _web_only_billing_page(code):
-    """ネイティブアプリ向け: アプリ内に課金導線を置かず、Webでの手続きを案内する。
-    外部決済への直接リンク/ボタンは置かない（アンチステアリング配慮）。"""
-    body = '''
-<div class="container" style="max-width:420px;padding-top:48px">
-  <div class="card" style="text-align:center;padding:36px 24px">
-    <div style="font-size:11px;font-weight:700;color:#d97706;letter-spacing:.1em;margin-bottom:12px">RAK PRO</div>
-    <h1 style="font-size:20px;margin-bottom:10px">プランのお手続きはWebから</h1>
-    <p style="color:#666;font-size:14px;line-height:1.9">Proプランのお申し込み・お支払い・解約は、<br>ブラウザで <strong>rakapp.jp</strong> にアクセスして行ってください。</p>
-  </div>
-</div>'''
-    return page('プラン', body, code, active='plan')
+    """ネイティブアプリ向け: 価格・購入・外部(Web)誘導を一切出さない中立ページ（App Store 3.1.1対応）。"""
+    return _native_locked_page(code, active='plan')
 
 
 @app.route('/t/<code>/upgrade')

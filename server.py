@@ -1113,6 +1113,22 @@ textarea{resize:vertical;min-height:80px}
 }
 '''
 
+def rak_member_cta():
+    """メンバー向け公開ページ末尾の勧誘CTA（バイラルループ）。src=member で獲得元を計測。"""
+    return (
+        '<div style="max-width:520px;margin:22px auto 0;text-align:center">'
+        '<a href="/create?src=member" style="display:inline-block;text-decoration:none;'
+        'background:#fffdf7;border:1px solid #fde68a;border-radius:12px;padding:13px 18px;'
+        'box-shadow:0 1px 4px rgba(0,0,0,.05)">'
+        '<div style="font-size:13px;color:#92400e;font-weight:700;margin-bottom:3px">'
+        'このフォームは「Rak」で作成されました</div>'
+        '<div style="font-size:12px;color:#777;line-height:1.55">'
+        '部活・チームの出欠／集金／予定づくりを、メンバーは登録なし・あなたひとりでラクに。</div>'
+        '<div style="font-size:13px;color:#d97706;font-weight:800;margin-top:6px">無料ではじめる →</div>'
+        '</a></div>'
+    )
+
+
 def page(title, body, code=None, active=None):
     team = get_team(code) if code else None
     team_name = team['name'] if team else ''
@@ -2761,7 +2777,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",s
   <div class="sec-hd" style="margin-top:24px">お知らせ</div>
   {notice_rows if notices else '<div style="color:#9ca3af;font-size:13px;padding:12px 0">お知らせはありません</div>'}
 </div>
-<div class="footer">Powered by Rak — 閲覧専用ページ</div>
+{rak_member_cta()}<div class="footer">Powered by Rak — 閲覧専用ページ</div>
 </body></html>'''
     return html
 
@@ -3341,7 +3357,7 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
     <button class="subbtn" type="submit">この名前で回答する</button>
   </form>
 </div>
-<div class="foot">Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">Powered by Rak</div></body></html>'''
         return head + body
 
     # 回答画面
@@ -3379,7 +3395,7 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
     body = f'''
 <div class="who"><b>{_html.escape(my_name)}</b> さんとして回答中<a href="/t/{code}/answer/{token}?reset=1">（変更）</a></div>
 {ev_html}
-<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
     return head + body
 
 
@@ -3487,7 +3503,7 @@ input[type=text],select{{width:100%;padding:12px;border:1.5px solid #e5e7eb;bord
     <button class="subbtn" type="submit">この名前で回答する</button>
   </form>
 </div>
-<div class="foot">Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">Powered by Rak</div></body></html>'''
         return head + body
 
     # 回答フォーム
@@ -3525,7 +3541,7 @@ input[type=text],select{{width:100%;padding:12px;border:1.5px solid #e5e7eb;bord
   {photos_html}
   {form_html}
 </div>
-<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">回答すると主催者にすぐ反映されます　·　Powered by Rak</div></body></html>'''
     return head + body
 
 
@@ -3630,7 +3646,7 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
     <button class="subbtn" type="submit">この名前で申告する</button>
   </form>
 </div>
-<div class="foot">Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">Powered by Rak</div></body></html>'''
         return head + body
 
     fee_html = ''
@@ -3662,7 +3678,7 @@ input[type=text]{{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radi
     body = f'''
 <div class="who"><b>{_html.escape(my_name)}</b> さんとして申告中<a href="/t/{code}/pay-answer/{token}?reset=1">（変更）</a></div>
 {fee_html}
-<div class="foot">「支払いました」を押すと主催者に届きます　·　Powered by Rak</div></body></html>'''
+{rak_member_cta()}<div class="foot">「支払いました」を押すと主催者に届きます　·　Powered by Rak</div></body></html>'''
     return head + body
 
 

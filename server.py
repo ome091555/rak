@@ -491,6 +491,7 @@ def init_db():
         'ALTER TABLE teams ADD COLUMN trial_end TEXT DEFAULT ""',
         'ALTER TABLE events ADD COLUMN event_color TEXT DEFAULT ""',
         'ALTER TABLE teams ADD COLUMN viewer_token TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN acq_src TEXT DEFAULT ""',
         'ALTER TABLE uniform_assignments ADD COLUMN quantity INTEGER DEFAULT 1',
         'ALTER TABLE events ADD COLUMN rsvp_mode TEXT DEFAULT "both"',
         'ALTER TABLE fee_payments ADD COLUMN reported INTEGER DEFAULT 0',
@@ -2127,14 +2128,15 @@ def create_team():
                 trial_end_val = (datetime.now(JST) + timedelta(days=14)).strftime('%Y-%m-%d')
             import secrets as _secrets
             viewer_token = _secrets.token_urlsafe(16)
+            acq_src = (request.cookies.get('rak_acq') or request.form.get('src') or request.args.get('src') or ('pro' if intent == 'pro' else ''))[:40]
             conn = get_db()
             conn.execute(
-                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email,trial_end,viewer_token) VALUES (?,?,?,?,?,?,?,?,?)',
-                (team_id, name, '', code, password, now_str(), email, trial_end_val, viewer_token)
+                'INSERT INTO teams (id,name,sport,team_code,admin_password,created_at,admin_email,trial_end,viewer_token,acq_src) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                (team_id, name, '', code, password, now_str(), email, trial_end_val, viewer_token, acq_src)
             )
             conn.commit()
             conn.close()
-            log_lp_event('team_created', src=('pro' if intent == 'pro' else ''))
+            log_lp_event('team_created', src=acq_src)
             session.permanent = True
             session[f'admin_{code}'] = True
             if intent == 'pro':
@@ -7679,9 +7681,82 @@ def superadmin_teams():
     <style>body{{font-family:sans-serif;padding:24px;}}table{{border-collapse:collapse;width:100%;}}
     th,td{{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:14px;}}
     th{{background:#f3f4f6;}}tr:hover{{background:#f9fafb;}}</style></head><body>
-    <h2>Rak チーム一覧（{len(teams)}件）</h2>
+    <h2>Rak チーム一覧（{len(teams)}件）　<a href="/superadmin/funnel" style="font-size:14px">獲得ファネル →</a></h2>
     <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th></tr>
     {rows}</table></body></html>'''
+    return html
+
+
+@app.after_request
+def _capture_acq_src(resp):
+    """広告/流入の取得元(first-touch)をcookieに保存。ファネル計測用。utm_source か src を最初の1回だけ記録。"""
+    try:
+        src = request.args.get('utm_source') or request.args.get('src')
+        if src and not request.cookies.get('rak_acq'):
+            resp.set_cookie('rak_acq', src[:40], max_age=60*60*24*30, samesite='Lax')
+    except Exception:
+        pass
+    return resp
+
+
+@app.route('/superadmin/funnel')
+def superadmin_funnel():
+    if not _rak_admin_ok():
+        return _rak_login_page()
+    conn = get_db()
+    teams = conn.execute('SELECT id, acq_src, plan, stripe_subscription_id, trial_end, created_at FROM teams').fetchall()
+    activated = set()
+    for q in [
+        'SELECT DISTINCT e.team_id AS tid FROM rsvps r JOIN events e ON r.event_id=e.id',
+        'SELECT DISTINCT f.team_id AS tid FROM fee_payments fp JOIN fees f ON fp.fee_id=f.id',
+        'SELECT DISTINCT o.team_id AS tid FROM order_responses orr JOIN order_forms o ON orr.form_id=o.id',
+    ]:
+        try:
+            for r in conn.execute(q).fetchall():
+                if r['tid']:
+                    activated.add(r['tid'])
+        except Exception:
+            pass
+    lpv = {(r['src'] or '(なし)'): r['c'] for r in conn.execute(
+        "SELECT src, COUNT(*) c FROM lp_events WHERE event='lp_view' GROUP BY src").fetchall()}
+    conn.close()
+    from collections import defaultdict
+    agg = defaultdict(lambda: {'created': 0, 'activated': 0, 'paid': 0})
+    for t in teams:
+        s = (t['acq_src'] or '').strip() or '(直接/不明)'
+        a = agg[s]
+        a['created'] += 1
+        if t['id'] in activated:
+            a['activated'] += 1
+        if (t['stripe_subscription_id'] or '').strip() or t['plan'] == 'pro':
+            a['paid'] += 1
+    order = sorted(agg.items(), key=lambda kv: kv[1]['created'], reverse=True)
+
+    def rate(n, d):
+        return f'{(100 * n / d):.0f}%' if d else '—'
+    rows = ''.join(
+        f'<tr><td>{s}</td><td>{lpv.get(s, "—")}</td><td>{v["created"]}</td>'
+        f'<td>{v["activated"]}（{rate(v["activated"], v["created"])}）</td>'
+        f'<td>{v["paid"]}（{rate(v["paid"], v["created"])}）</td></tr>'
+        for s, v in order
+    ) or '<tr><td colspan="5">データなし</td></tr>'
+    tot_c = sum(v['created'] for _, v in order)
+    tot_a = sum(v['activated'] for _, v in order)
+    tot_p = sum(v['paid'] for _, v in order)
+    html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rak Funnel</title>
+    <style>body{{font-family:sans-serif;padding:24px}}table{{border-collapse:collapse;width:100%;max-width:920px}}
+    th,td{{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:14px}}th{{background:#f3f4f6}}
+    tr:hover{{background:#f9fafb}}.note{{color:#666;font-size:13px;margin:8px 0 16px;line-height:1.7}}</style></head><body>
+    <h2>獲得ファネル（取得元別）</h2>
+    <div class="note">取得元＝広告/流入のsrc。<b>広告は遷移先URLに <code>?utm_source=◯◯</code> を付ける</b>と、その値（例: google_buho）でここに集計されます（first-touch・30日）。<br>
+    稼働＝メンバーが1回以上回答したチーム／課金＝Stripe契約 or planがpro。広告のCPA＝広告費 ÷ この「稼働」数で判断。</div>
+    <table>
+      <tr><th>取得元(src)</th><th>LP訪問</th><th>チーム作成</th><th>稼働（率）</th><th>課金（率）</th></tr>
+      {rows}
+      <tr style="font-weight:700;background:#fffbe6"><td>合計</td><td>—</td><td>{tot_c}</td><td>{tot_a}</td><td>{tot_p}</td></tr>
+    </table>
+    <p style="margin-top:16px"><a href="/superadmin/teams">→ チーム一覧</a></p>
+    </body></html>'''
     return html
 
 

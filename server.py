@@ -3987,16 +3987,16 @@ def admin_settings(code):
   </div>
 
   <div class="card" style="margin-bottom:12px;border-color:#fecaca;background:#fff5f5">
-    <h2 style="margin-bottom:4px;color:#991b1b">チームを削除する</h2>
-    <div style="font-size:12px;color:#888;margin-bottom:12px">チームと全データ（メンバー・予定・集金・お知らせ）を完全に削除します。この操作は取り消せません。</div>
+    <h2 style="margin-bottom:4px;color:#991b1b">アカウントを削除する</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">管理者アカウント（ログイン情報）と、このチームの全データ（メンバー・予定・集金・お知らせ等）をサーバーから完全に削除します。一時停止ではなく完全な削除で、この操作は取り消せません。</div>
     <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#991b1b">
-      ⚠️ 削除後30日以内にサーバーからデータが消去されます。有料プランは次回更新日前に解約してください。
+      ⚠️ 削除するとアカウントとデータは元に戻せません。有料プランは次回更新日前に解約してください。
     </div>
-    <form method="POST" onsubmit="return confirm('本当にチームを削除しますか？この操作は取り消せません。')">
+    <form method="POST" onsubmit="return confirm('本当にアカウントを削除しますか？アカウントと全データが完全に削除され、この操作は取り消せません。')">
       <input type="hidden" name="action" value="delete_team">
       <label style="color:#991b1b">パスワードを入力して確認</label>
       <input type="password" name="confirm_password" placeholder="管理者パスワード" required>
-      <button class="btn btn-block" type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">チームを完全に削除する</button>
+      <button class="btn btn-block" type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">アカウントを完全に削除する</button>
     </form>
   </div>
 

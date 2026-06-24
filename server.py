@@ -4055,6 +4055,26 @@ def admin_dash(code):
     member_names = [m['name'] for m in members_all]
     has_any_event = conn.execute('SELECT 1 FROM events WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
 
+    # ── オンボーディング/アクティベーション判定（継続収益＝アハ体験まで導く） ──
+    onboard_has_member = conn.execute('SELECT 1 FROM members WHERE team_id=? LIMIT 1', (team['id'],)).fetchone()
+    onboard_has_event = has_any_event
+    # アハ体験＝メンバーから1件でも回答が届いた（出欠/集金/注文/アンケートのいずれか）
+    onboard_has_response = conn.execute('''
+        SELECT 1 FROM rsvps r JOIN events e ON r.event_id=e.id WHERE e.team_id=? LIMIT 1
+    ''', (team['id'],)).fetchone()
+    if not onboard_has_response:
+        onboard_has_response = conn.execute('''
+            SELECT 1 FROM order_responses orr JOIN order_forms o ON orr.form_id=o.id WHERE o.team_id=? LIMIT 1
+        ''', (team['id'],)).fetchone()
+    if not onboard_has_response:
+        onboard_has_response = conn.execute('''
+            SELECT 1 FROM survey_answers sa JOIN surveys s ON sa.survey_id=s.id WHERE s.team_id=? LIMIT 1
+        ''', (team['id'],)).fetchone()
+    if not onboard_has_response:
+        onboard_has_response = conn.execute('''
+            SELECT 1 FROM fee_payments fp JOIN fees f ON fp.fee_id=f.id WHERE f.team_id=? AND fp.reported=1 LIMIT 1
+        ''', (team['id'],)).fetchone()
+
     def get_no_answer(ev):
         # 「出席・欠席を聞く(both)」設定で、かつ誰か1人でも回答した後だけ未回答を出す。
         # 出欠を取らない/欠席のみ設定、まだ誰も答えていない予定では未回答を表示しない。
@@ -4184,10 +4204,56 @@ def admin_dash(code):
     <div style="font-size:12px;color:#92400e;margin-top:2px">メンバーに共有する画面に表示されます（タップして設定）</div>
   </a>'''
 
+    # ── オンボーディングカード：アハ体験（初回答）まで導く。回答が届いたら自動で消える ──
+    onboard_card = ''
+    if not onboard_has_response:
+        ans_url = f"{base_url()}t/{code}/answer/{team['viewer_token']}"
+        done = 1 + (1 if onboard_has_event else 0)  # ①チーム作成は常に達成
+        step2_done = bool(onboard_has_event)
+        step2_mark = '✅' if step2_done else '②'
+        step2_color = '#16a34a' if step2_done else '#d97706'
+        step2_cta = '' if step2_done else f'<a href="/t/{code}/admin/events/new" class="btn btn-blue" style="font-size:13px;padding:8px 16px;margin-top:6px;display:inline-block">予定（出欠）をつくる →</a>'
+        if step2_done:
+            share_block = f'''
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-size:11px;color:#374151;word-break:break-all;font-family:monospace;margin:8px 0 6px">{ans_url}</div>
+      <button onclick="navigator.clipboard.writeText('{ans_url}').then(()=>{{this.textContent='✓ コピーしました'}})" class="btn btn-blue" style="font-size:13px;padding:9px 16px;border:none;cursor:pointer">リンクをコピー</button>
+      <div style="font-size:11px;color:#92400e;margin-top:6px">このリンクをLINEなどでメンバーに送るだけ。メンバーは登録不要でタップ回答できます。</div>'''
+        else:
+            share_block = '<div style="font-size:12px;color:#9ca3af;margin-top:4px">まず上で予定をつくると、ここに共有リンクが出ます。</div>'
+        onboard_card = f'''
+  <div style="background:linear-gradient(135deg,#fffbeb,#fff);border:1.5px solid #f59e0b;border-radius:14px;padding:16px 16px 18px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:14px;font-weight:800;color:#111">🚀 はじめの3ステップ</div>
+      <div style="font-size:12px;font-weight:700;color:#d97706">{done}/3 完了</div>
+    </div>
+    <div style="font-size:12px;color:#92400e;margin-bottom:12px">あと少しで、メンバーから回答が自動で集まります。</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="color:#16a34a;font-weight:700">✅</span>
+        <div style="font-size:13px;color:#6b7280;text-decoration:line-through">チームを作成</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="color:{step2_color};font-weight:700">{step2_mark}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#111">予定（出欠）をつくる</div>
+          {step2_cta}
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="color:#d97706;font-weight:700">③</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#111">メンバーにリンクを送る → 回答が自動で集まる</div>
+          {share_block}
+        </div>
+      </div>
+    </div>
+  </div>'''
+
     body = f'''
 <div class="container">
   {'<div class="msg-ok">' + _CHK + ' 作成しました！まずはチーム名を設定して、予定を追加しましょう。</div>' if created else ''}
   {name_prompt}
+  {onboard_card}
 
 
   <style>

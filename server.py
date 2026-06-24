@@ -1680,7 +1680,7 @@ footer a:hover{{color:#94a3b8}}
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
-          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">14日間無料トライアル</div>
+          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">30日間無料トライアル</div>
           <div style="font-size:11px;color:#888;margin-bottom:4px">その後 ¥980/月・いつでも解約可</div>
           <div style="display:inline-block;font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;margin-bottom:10px">クレカ不要</div>
           <a href="/create?intent=pro&src=fcard" class="btn-primary" style="display:block;font-size:13px;padding:10px 0">試してみる →</a>
@@ -1998,7 +1998,7 @@ footer a:hover{{color:#94a3b8}}
           <div class="acc">＋ AIスケジュール自動生成</div>
           <div class="acc">＋ Excelエクスポート</div>
         </div>
-        <a href="/create?intent=pro&src=plan_pro" class="plan-btn-b">Proを試す（14日無料・クレカ不要）</a>
+        <a href="/create?intent=pro&src=plan_pro" class="plan-btn-b">Proを試す（30日無料・クレカ不要）</a>
       </div>
     </div>
   </div>
@@ -2014,7 +2014,7 @@ footer a:hover{{color:#94a3b8}}
     </details>
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">クレジットカードは必要ですか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
-      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">無料プランもProトライアル（14日間）も、クレジットカードは不要です。Proにアップグレードする際に初めてカード情報が必要になります。</div>
+      <div style="padding:0 20px 16px;font-size:13px;color:#6b7280;line-height:1.8">無料プランもProトライアル（30日間）も、クレジットカードは不要です。Proにアップグレードする際に初めてカード情報が必要になります。</div>
     </details>
     <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;overflow:hidden;margin-top:8px">
       <summary style="padding:16px 20px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">解約はいつでもできますか？<span style="color:#9ca3af;font-size:18px">＋</span></summary>
@@ -2125,7 +2125,7 @@ def create_team():
             code = new_id().upper()[:6]
             trial_end_val = ''
             if intent == 'pro':
-                trial_end_val = (datetime.now(JST) + timedelta(days=14)).strftime('%Y-%m-%d')
+                trial_end_val = (datetime.now(JST) + timedelta(days=30)).strftime('%Y-%m-%d')
             import secrets as _secrets
             viewer_token = _secrets.token_urlsafe(16)
             acq_src = (request.cookies.get('rak_acq') or request.form.get('src') or request.args.get('src') or ('pro' if intent == 'pro' else ''))[:40]
@@ -2144,8 +2144,8 @@ def create_team():
             return redirect(url_for('admin_dash', code=code, created='1'))
 
     pro_badge = '''<div style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:800;margin-bottom:4px">✦ Pro 14日間無料トライアル付きで作成</div>
-      <div style="font-size:11px;opacity:.9">クレカ不要・いつでも解約可・14日後に自動課金なし</div>
+      <div style="font-size:13px;font-weight:800;margin-bottom:4px">✦ Pro 30日間無料トライアル付きで作成</div>
+      <div style="font-size:11px;opacity:.9">クレカ不要・いつでも解約可・30日後に自動課金なし</div>
     </div>''' if intent == 'pro' else ''
     submit_label = 'チームを作成してProトライアルへ →' if intent == 'pro' else 'チームを作成してコードを発行 →'
     body = f'''
@@ -7058,7 +7058,7 @@ def upgrade_page(code):
         checkout_btn = f'''
     <form method="POST" action="/t/{code}/upgrade/checkout">
       <input type="hidden" name="plan" value="monthly">
-      <button class="btn btn-blue btn-block" type="submit" style="font-size:16px;padding:15px;font-weight:700">14日間無料で試す</button>
+      <button class="btn btn-blue btn-block" type="submit" style="font-size:16px;padding:15px;font-weight:700">30日間無料で試す</button>
     </form>{yearly_btn}
     '''
     else:
@@ -7072,7 +7072,7 @@ def upgrade_page(code):
     <div style="font-size:11px;font-weight:700;color:#d97706;letter-spacing:.1em;margin-bottom:12px">RAK PRO</div>
     <div style="font-size:40px;font-weight:900;color:#111;margin-bottom:2px">¥980<span style="font-size:15px;font-weight:400;color:#888">/月</span></div>
     <div style="font-size:12px;color:#aaa;margin-bottom:6px">年払い ¥9,800（2ヶ月分お得）</div>
-    <div style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:24px">14日間無料トライアル付き</div>
+    <div style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:24px">30日間無料トライアル付き</div>
 
     <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:16px;text-align:left">
       <div style="font-size:13px;color:#444;line-height:2.2">
@@ -7088,7 +7088,7 @@ def upgrade_page(code):
     </div>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#166534;text-align:left">
       🔒 トライアル期間中に解約すれば料金はかかりません。<br>
-      課金開始日：<strong>{(datetime.now(JST) + timedelta(days=14)).strftime('%Y年%m月%d日')}</strong>
+      課金開始日：<strong>{(datetime.now(JST) + timedelta(days=30)).strftime('%Y年%m月%d日')}</strong>
     </div>
 
     {checkout_btn}

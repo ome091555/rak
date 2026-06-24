@@ -7728,29 +7728,75 @@ def stripe_webhook():
 
 # ── Super Admin ──────────────────────────────────────────────────
 
+# テストチーム判定：obtest...@example.com のみ（本物のチームには絶対に該当しない固定パターン）
+_TEST_TEAM_EMAIL_LIKE = 'obtest%@example.com'
+
+
 @app.route('/superadmin/teams')
 def superadmin_teams():
     if not _rak_admin_ok():
         return _rak_login_page()
     conn = get_db()
-    teams = conn.execute('SELECT name, sport, team_code, plan, created_at FROM teams ORDER BY created_at DESC').fetchall()
+    teams = conn.execute('SELECT name, sport, team_code, plan, created_at, admin_email FROM teams ORDER BY created_at DESC').fetchall()
     members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()
+    test_cnt = conn.execute('SELECT COUNT(*) c FROM teams WHERE admin_email LIKE ?', (_TEST_TEAM_EMAIL_LIKE,)).fetchone()['c']
     conn.close()
     member_map = {m['team_id']: m['cnt'] for m in members}
+    import html as _h
     rows = ''.join(
-        f'<tr><td>{t["created_at"][:16]}</td><td>{t["name"]}</td><td>{t["sport"]}</td>'
-        f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["team_code"], 0)}</td></tr>'
+        f'<tr{" style=background:#fff5f5" if (t["admin_email"] or "").startswith("obtest") and (t["admin_email"] or "").endswith("@example.com") else ""}>'
+        f'<td>{t["created_at"][:16]}</td><td>{_h.escape(t["name"] or "")}</td><td>{_h.escape(t["sport"] or "")}</td>'
+        f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["team_code"], 0)}</td>'
+        f'<td style="font-size:12px;color:#888">{_h.escape(t["admin_email"] or "")}</td></tr>'
         for t in teams
     )
+    pw = request.args.get('pw', '')
+    cleanup = ''
+    if test_cnt:
+        cleanup = f'''
+    <form method="POST" action="/superadmin/cleanup-test-teams" onsubmit="return confirm('テストチーム（obtest*@example.com）{test_cnt}件を完全に削除します。よろしいですか？')"
+          style="margin:12px 0;padding:12px 14px;background:#fff5f5;border:1px solid #fecaca;border-radius:8px">
+      <input type="hidden" name="pw" value="{_h.escape(pw)}">
+      <b style="color:#991b1b">🧹 テストチームの掃除：</b> obtest*@example.com が <b>{test_cnt}件</b> あります。
+      <button type="submit" style="margin-left:8px;background:#dc2626;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">テストチームを削除</button>
+    </form>'''
     html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8">
     <title>Rak Admin</title>
     <style>body{{font-family:sans-serif;padding:24px;}}table{{border-collapse:collapse;width:100%;}}
     th,td{{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:14px;}}
     th{{background:#f3f4f6;}}tr:hover{{background:#f9fafb;}}</style></head><body>
-    <h2>Rak チーム一覧（{len(teams)}件）　<a href="/superadmin/funnel" style="font-size:14px">獲得ファネル →</a></h2>
-    <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th></tr>
+    <h2>Rak チーム一覧（{len(teams)}件）　<a href="/superadmin/funnel?pw={_h.escape(pw)}" style="font-size:14px">獲得ファネル →</a></h2>
+    {cleanup}
+    <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th><th>メール</th></tr>
     {rows}</table></body></html>'''
     return html
+
+
+@app.route('/superadmin/cleanup-test-teams', methods=['POST'])
+def superadmin_cleanup_test_teams():
+    if not _rak_admin_ok():
+        return _rak_login_page()
+    conn = get_db()
+    # obtest*@example.com のチームだけを対象（本物には絶対に該当しない）
+    targets = conn.execute('SELECT id FROM teams WHERE admin_email LIKE ?', (_TEST_TEAM_EMAIL_LIKE,)).fetchall()
+    deleted = 0
+    for t in targets:
+        tid = t['id']
+        for tbl in ['rsvps', 'reads', 'fee_payments', 'order_response_values', 'order_responses',
+                    'survey_answers', 'push_subscriptions', 'native_push_tokens', 'admin_memos',
+                    'memo_files', 'uniform_assignments', 'ledger', 'password_reset_tokens',
+                    'ai_templates', 'order_form_fields', 'order_form_photos', 'survey_options']:
+            try: conn.execute(f'DELETE FROM {tbl} WHERE team_id=?', (tid,))
+            except Exception: pass
+        for tbl in ['events', 'notices', 'members', 'fees', 'order_forms', 'uniforms', 'surveys']:
+            try: conn.execute(f'DELETE FROM {tbl} WHERE team_id=?', (tid,))
+            except Exception: pass
+        conn.execute('DELETE FROM teams WHERE id=?', (tid,))
+        deleted += 1
+    conn.commit()
+    conn.close()
+    pw = request.form.get('pw', '')
+    return redirect(f'/superadmin/teams?pw={pw}&cleaned={deleted}')
 
 
 @app.after_request

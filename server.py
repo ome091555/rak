@@ -1584,6 +1584,23 @@ button{{font-family:inherit;cursor:pointer}}
 .scr-nav .ic svg{{width:19px;height:19px}}
 
 /* Logo strip / catch */
+.hero-r{{position:relative}}
+.hero-float{{position:absolute;left:-26px;bottom:64px;width:212px;background:#fff;border-radius:16px;padding:13px 14px;box-shadow:0 18px 44px rgba(15,23,42,.22);z-index:6;animation:hfPop .6s .3s both}}
+@keyframes hfPop{{from{{opacity:0;transform:translateY(14px) scale(.94)}}to{{opacity:1;transform:none}}}}
+.hf-top{{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:#0f172a;margin-bottom:10px}}
+.hf-top .pin{{width:22px;height:22px;border-radius:7px;background:var(--rak-amber-tint);color:var(--rak-amber-deep);display:flex;align-items:center;justify-content:center;font-size:12px}}
+.hf-row{{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:7px}}
+.hf-row .lb{{color:#64748b;font-weight:600}}
+.hf-row .vl{{font-weight:900;font-family:var(--font-num);color:#0f172a}}
+.hf-row .vl.go{{color:#16a34a}}
+.hf-bar{{height:8px;border-radius:5px;background:#eef1f4;overflow:hidden;margin:2px 0 12px}}
+.hf-bar>i{{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#16a34a);width:0;animation:hfFill 2.4s 1s cubic-bezier(.2,.8,.2,1) forwards}}
+@keyframes hfFill{{to{{width:83%}}}}
+.hf-badge{{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;padding:4px 11px}}
+.hf-toast{{position:absolute;right:-18px;top:54px;background:#0f172a;color:#fff;font-size:11px;font-weight:700;padding:9px 13px;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.3);z-index:7;white-space:nowrap;display:flex;align-items:center;gap:7px;opacity:0;animation:hfToast 4.6s 1.8s infinite}}
+.hf-toast .rb{{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.25)}}
+@keyframes hfToast{{0%{{opacity:0;transform:translateX(10px)}}8%{{opacity:1;transform:none}}30%{{opacity:1;transform:none}}40%{{opacity:0;transform:translateX(10px)}}100%{{opacity:0}}}}
+@media(max-width:820px){{.hero-float{{left:4px;bottom:30px;width:188px}}.hf-toast{{right:0;top:30px}}}}
 .catch{{background:#fff;padding:30px 24px;border-bottom:1px solid var(--rak-line-soft)}}
 .catch-in{{max-width:880px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:14px}}
 .chip{{display:inline-flex;align-items:center;gap:7px;background:var(--rak-bg-soft);border:1px solid #f3e7cf;color:#7c5e2a;font-size:13px;font-weight:700;padding:9px 16px;border-radius:999px;white-space:nowrap}}
@@ -1675,8 +1692,8 @@ footer a:hover{{color:#94a3b8}}
   <div class="hero-inner">
     <div class="hero-l">
       <div class="hero-badge"><span class="dot"></span>部活・チーム・サークルの運営担当へ</div>
-      <h1><span style="white-space:nowrap">メンバーは<span style="color:var(--rak-amber)">今のまま</span>。</span><br><span style="white-space:nowrap">あなたの<span class="highlight"><span>事務</span></span>だけ、</span><span style="white-space:nowrap">ラクに。</span></h1>
-      <p class="lead"><span class="np">出欠・集金・予定づくり——</span><span class="np">運営担当の「めんどくさい」を</span><span class="np">Rakが引き受けます。</span><span class="np">メンバーはアプリも登録も不要。</span><br><span class="np">連絡アプリに届くリンクを開いて、</span><span class="np">タップで答えるだけです。</span></p>
+      <h1><span style="white-space:nowrap">出欠も集金も、</span><br><span style="white-space:nowrap"><span class="highlight"><span>リンク1本</span></span>で</span><span style="white-space:nowrap"><span style="color:var(--rak-amber)">自動集計</span>。</span></h1>
+      <p class="lead"><span class="np">出欠・集金・予定づくり——</span><span class="np">運営担当の「めんどくさい」を</span><span class="np">Rakが引き受けます。</span><span class="np"><b>メンバーはアプリも登録も不要。</b></span><br><span class="np">届いたリンクをタップで答えるだけ、</span><span class="np">結果はあなたの画面に自動で集まります。</span></p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <div style="flex:1;min-width:180px;background:#fff;border:2px solid var(--rak-amber);border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:11px;font-weight:800;color:var(--rak-amber-deep);margin-bottom:4px">PRO</div>
@@ -1696,6 +1713,14 @@ footer a:hover{{color:#94a3b8}}
       <p class="hero-note"><b>メールとパスワードだけ</b>・30秒で開始</p>
     </div>
     <div class="hero-r">
+      <div class="hf-toast"><span class="rb"></span>新しい回答が届きました</div>
+      <div class="hero-float">
+        <div class="hf-top"><span class="pin">📊</span>練習試合の出欠</div>
+        <div class="hf-row"><span class="lb">出席</span><span class="vl go">12</span></div>
+        <div class="hf-row"><span class="lb">欠席</span><span class="vl">3</span></div>
+        <div class="hf-bar"><i></i></div>
+        <div class="hf-badge">✓ リンクを送るだけで自動集計</div>
+      </div>
       <div class="phone"><div class="scr">
         <div class="scr-status"><span>9:41</span><span>● ● ● ▮</span></div>
         <div style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;text-align:center;padding:16px 12px 14px">

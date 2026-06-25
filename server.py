@@ -1966,6 +1966,76 @@ footer a:hover{{color:#94a3b8}}
   </div>
 </section>
 
+<section style="background:#fafafa;padding:64px 20px">
+  <div style="max-width:880px;margin:0 auto;text-align:center">
+    <span class="sec-label">PRO FEATURES</span>
+    <div class="sec-title">Proでできること、<br>中身を見せます。</div>
+    <div class="sec-sub" style="margin-bottom:40px">課金する前に、どんな画面か分かるように。集金・注文・アンケート・AIまで、ぜんぶProで。</div>
+    <style>
+      .promock-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;text-align:left}}
+      @media(max-width:680px){{.promock-grid{{grid-template-columns:1fr}}}}
+      .promock{{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.04)}}
+      .promock-h{{font-size:15px;font-weight:800;color:#111;margin-bottom:3px}}
+      .promock-d{{font-size:12.5px;color:#6b7280;margin-bottom:14px;line-height:1.6}}
+      .pm-screen{{background:#f7f8fa;border-radius:12px;padding:12px;font-size:12px}}
+      .pm-card{{background:#fff;border:1px solid #eef0f3;border-radius:9px;padding:9px 11px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}}
+      .pm-ttl{{font-weight:700;color:#1f2937;font-size:12.5px}}
+      .pm-sub{{font-size:11px;color:#9ca3af;margin-top:1px}}
+      .pm-pill{{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px}}
+      .pm-ok{{background:#ecfdf5;color:#059669}} .pm-no{{background:#fef2f2;color:#dc2626}}
+      .pm-amber{{background:#fffbeb;color:#d97706}}
+      .pm-bar{{height:7px;border-radius:4px;background:#eef0f3;overflow:hidden;margin-top:8px}}
+      .pm-bar>i{{display:block;height:100%;background:#d97706}}
+    </style>
+    <div class="promock-grid">
+
+      <div class="promock">
+        <div class="promock-h">💰 集金管理</div>
+        <div class="promock-d">誰が払った・未払いかを自動で集計。督促もラクに。</div>
+        <div class="pm-screen">
+          <div class="pm-card"><div><div class="pm-ttl">6月 部費</div><div class="pm-sub">¥3,000・期限 6/30</div></div><span class="pm-pill pm-amber">支払済 12/15名</span></div>
+          <div class="pm-card"><div class="pm-ttl">田中 翔</div><span class="pm-pill pm-ok">支払済</span></div>
+          <div class="pm-card"><div class="pm-ttl">佐藤 美咲</div><span class="pm-pill pm-no">未払い</span></div>
+          <div class="pm-bar"><i style="width:80%"></i></div>
+        </div>
+      </div>
+
+      <div class="promock">
+        <div class="promock-h">📋 注文フォーム</div>
+        <div class="promock-d">お弁当・ユニフォームなど、項目を作ってメンバーから注文を回収・集計。</div>
+        <div class="pm-screen">
+          <div class="pm-card"><div><div class="pm-ttl">お弁当の注文</div><div class="pm-sub">締切 7/1</div></div><span class="pm-pill pm-amber">回答 18件</span></div>
+          <div class="pm-card"><div class="pm-ttl">からあげ弁当</div><span class="pm-pill pm-amber">10</span></div>
+          <div class="pm-card"><div class="pm-ttl">のり弁当</div><span class="pm-pill pm-amber">5</span></div>
+          <div class="pm-card"><div class="pm-ttl">幕の内弁当</div><span class="pm-pill pm-amber">3</span></div>
+        </div>
+      </div>
+
+      <div class="promock">
+        <div class="promock-h">📊 アンケート</div>
+        <div class="promock-d">メンバーに質問して、回答をその場で自動集計。</div>
+        <div class="pm-screen">
+          <div class="pm-card"><div class="pm-ttl">合宿の参加可否は？</div><span class="pm-pill pm-amber">回答 20件</span></div>
+          <div style="padding:2px 2px"><div class="pm-sub" style="margin-bottom:3px">参加できる（14）</div><div class="pm-bar"><i style="width:70%"></i></div></div>
+          <div style="padding:6px 2px 0"><div class="pm-sub" style="margin-bottom:3px">参加できない（6）</div><div class="pm-bar"><i style="width:30%"></i></div></div>
+        </div>
+      </div>
+
+      <div class="promock">
+        <div class="promock-h">✦ AIで文章作成</div>
+        <div class="promock-d">お知らせ・活動報告を、AIが下書き。コピーして連絡アプリに貼るだけ。</div>
+        <div class="pm-screen">
+          <div class="pm-card" style="display:block"><div class="pm-sub" style="margin-bottom:5px">作りたい内容</div><div class="pm-ttl" style="font-weight:500">日曜の練習試合の集合連絡</div></div>
+          <div class="pm-card" style="display:block;background:#fffdf7;border-color:#fde68a"><div class="pm-sub" style="color:#d97706;margin-bottom:5px">✦ AIが作成</div><div style="font-size:12px;color:#374151;line-height:1.7">【練習試合のお知らせ】<br>今週日曜9時、〇〇グラウンド集合です。各自飲み物と…</div></div>
+        </div>
+      </div>
+
+    </div>
+    <div style="margin-top:28px"><a href="/create?intent=pro&src=promock" class="btn-amber-solid" style="display:inline-block">30日間 無料でProを試す →</a></div>
+    <div style="font-size:12px;color:#9ca3af;margin-top:10px">クレカ不要・いつでも解約可・30日後に自動課金なし</div>
+  </div>
+</section>
+
 <section class="pricing" id="pricing">
   <div style="max-width:780px;margin:0 auto">
     <span class="sec-label">PRICING</span>

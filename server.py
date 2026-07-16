@@ -6990,7 +6990,8 @@ def _rak_admin_ok():
     """Rak運営者ページの認証。RAK_ADMIN_PW(またはBASIC_AUTH)が未設定なら
     誰も入れない=fail-closed。ソース公開リポジトリのため直書きデフォルトは持たない。"""
     pw_env = os.environ.get('RAK_ADMIN_PW', '')
-    if pw_env and request.args.get('pw', '') == pw_env:
+    pw_req = request.args.get('pw', '') or request.form.get('pw', '')
+    if pw_env and pw_req == pw_env:
         return True
     if BASIC_AUTH_USER and BASIC_AUTH_PASS:
         import base64
@@ -7828,20 +7829,24 @@ def superadmin_teams():
     if not _rak_admin_ok():
         return _rak_login_page()
     conn = get_db()
-    teams = conn.execute('SELECT name, sport, team_code, plan, created_at, admin_email FROM teams ORDER BY created_at DESC').fetchall()
+    teams = conn.execute('SELECT name, sport, team_code, plan, trial_end, created_at, admin_email FROM teams ORDER BY created_at DESC').fetchall()
     members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()
     test_cnt = conn.execute('SELECT COUNT(*) c FROM teams WHERE admin_email LIKE ?', (_TEST_TEAM_EMAIL_LIKE,)).fetchone()['c']
     conn.close()
     member_map = {m['team_id']: m['cnt'] for m in members}
     import html as _h
+    pw = request.args.get('pw', '')
     rows = ''.join(
         f'<tr{" style=background:#fff5f5" if (t["admin_email"] or "").startswith("obtest") and (t["admin_email"] or "").endswith("@example.com") else ""}>'
         f'<td>{t["created_at"][:16]}</td><td>{_h.escape(t["name"] or "")}</td><td>{_h.escape(t["sport"] or "")}</td>'
         f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["team_code"], 0)}</td>'
+        f'<td style="font-size:12px;white-space:nowrap">{t["trial_end"] or "—"}'
+        f'<form method="POST" action="/superadmin/extend-trial" style="display:inline;margin:0 0 0 6px">'
+        f'<input type="hidden" name="pw" value="{_h.escape(pw)}"><input type="hidden" name="team_code" value="{t["team_code"]}">'
+        f'<button type="submit" style="font-size:11px;padding:2px 8px;border:1px solid #d97706;background:#fff;color:#d97706;border-radius:5px;cursor:pointer">+30日</button></form></td>'
         f'<td style="font-size:12px;color:#888">{_h.escape(t["admin_email"] or "")}</td></tr>'
         for t in teams
     )
-    pw = request.args.get('pw', '')
     cleanup = ''
     if test_cnt:
         cleanup = f'''
@@ -7858,9 +7863,35 @@ def superadmin_teams():
     th{{background:#f3f4f6;}}tr:hover{{background:#f9fafb;}}</style></head><body>
     <h2>Rak チーム一覧（{len(teams)}件）　<a href="/superadmin/funnel?pw={_h.escape(pw)}" style="font-size:14px">獲得ファネル →</a></h2>
     {cleanup}
-    <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th><th>メール</th></tr>
+    <table><tr><th>登録日時</th><th>チーム名</th><th>競技</th><th>コード</th><th>プラン</th><th>メンバー数</th><th>トライアル</th><th>メール</th></tr>
     {rows}</table></body></html>'''
     return html
+
+
+@app.route('/superadmin/extend-trial', methods=['POST'])
+def superadmin_extend_trial():
+    """指定チームのProトライアルを今日+30日（既に未来ならそこから+30日）まで延長。審査デモの維持等に使う。"""
+    if not _rak_admin_ok():
+        return _rak_login_page()
+    code = request.form.get('team_code', '').strip()
+    conn = get_db()
+    team = conn.execute('SELECT team_code, trial_end FROM teams WHERE team_code=?', (code,)).fetchone()
+    if not team:
+        conn.close()
+        return redirect(f"/superadmin/teams?pw={request.form.get('pw', '')}")
+    base = datetime.now(JST).date()
+    if team['trial_end']:
+        try:
+            cur = datetime.strptime(team['trial_end'], '%Y-%m-%d').date()
+            if cur > base:
+                base = cur
+        except Exception:
+            pass
+    new_end = (base + timedelta(days=30)).strftime('%Y-%m-%d')
+    conn.execute('UPDATE teams SET trial_end=? WHERE team_code=?', (new_end, code))
+    conn.commit()
+    conn.close()
+    return redirect(f"/superadmin/teams?pw={request.form.get('pw', '')}&extended={code}")
 
 
 @app.route('/superadmin/cleanup-test-teams', methods=['POST'])

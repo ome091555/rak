@@ -27,6 +27,10 @@ STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_PRICE_ID_PRO = os.environ.get('STRIPE_PRICE_ID_PRO', '')
 STRIPE_PRICE_ID_PRO_YEARLY = os.environ.get('STRIPE_PRICE_ID_PRO_YEARLY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+# RevenueCat（iOSアプリ内課金 IAP）
+REVENUECAT_PUBLIC_KEY = os.environ.get('REVENUECAT_PUBLIC_KEY', 'appl_PugVCYfjrjaZSsETonYihAXCYTK')  # アプリ埋め込み用の公開キー
+REVENUECAT_SECRET_KEY = os.environ.get('REVENUECAT_SECRET_KEY', '')  # サーバー用シークレット（REST API検証）。未設定なら即時反映はwebhook任せ
+REVENUECAT_WEBHOOK_AUTH = os.environ.get('REVENUECAT_WEBHOOK_AUTH', '')  # webhookのAuthorizationヘッダ照合値
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 NOTIFY_EMAIL = 'm.ome.091555@gmail.com'
 FREE_MEMBER_LIMIT = 20
@@ -496,6 +500,7 @@ def init_db():
         'ALTER TABLE events ADD COLUMN rsvp_mode TEXT DEFAULT "both"',
         'ALTER TABLE fee_payments ADD COLUMN reported INTEGER DEFAULT 0',
         'ALTER TABLE fee_payments ADD COLUMN reported_at TEXT DEFAULT ""',
+        'ALTER TABLE teams ADD COLUMN sub_source TEXT DEFAULT ""',  # "stripe" / "iap"（課金元の管理）
     ]:
         try:
             conn.execute(col_sql)
@@ -7105,8 +7110,128 @@ def rak_feedback_admin():
 # ── Stripe / Upgrade ─────────────────────────────────────────────
 
 def _web_only_billing_page(code):
-    """ネイティブアプリ向け: 価格・購入・外部(Web)誘導を一切出さない中立ページ（App Store 3.1.1対応）。"""
-    return _native_locked_page(code, active='plan')
+    """ネイティブアプリ向け: RevenueCat(StoreKit)でアプリ内課金を行う購入ページ（App Store 3.1.1準拠）。"""
+    team = get_team(code)
+    # すでにProなら利用中表示＋復元導線
+    if is_pro(team) and not get_trial_days_left(team):
+        body = f'''
+<div class="container" style="max-width:480px;padding-top:40px">
+  <div class="card" style="text-align:center;padding:40px 24px">
+    <div style="margin-bottom:16px">{_ICO_CELEBRATE}</div>
+    <h1 style="font-size:22px;margin-bottom:8px">Proプラン利用中</h1>
+    <p style="color:#666;font-size:14px">すべての機能をご利用いただけます。</p>
+    <div style="margin-top:24px"><a href="/t/{code}/admin/dash" class="btn btn-blue btn-block" style="margin-top:0">ホームに戻る</a></div>
+    <div style="margin-top:12px"><a href="#" onclick="rcRestore();return false" style="font-size:12px;color:#888;text-decoration:underline">購入を復元</a></div>
+  </div>
+</div>
+{_iap_script(code)}'''
+        return page('プラン', body, code, active='plan')
+
+    trial_days = get_trial_days_left(team)
+    trial_banner = ''
+    if trial_days is not None:
+        trial_banner = f'<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:14px;margin-bottom:20px;text-align:center"><div style="font-size:14px;font-weight:700;color:#d97706">トライアル中 — 残り{trial_days}日</div></div>'
+
+    body = f'''
+<div class="container" style="max-width:420px;padding-top:40px">
+  {trial_banner}
+  <div class="card" style="text-align:center;padding:32px 24px 28px">
+    <div style="font-size:11px;font-weight:700;color:#d97706;letter-spacing:.1em;margin-bottom:12px">RAK PRO</div>
+    <div style="background:#f8f9fb;border-radius:10px;padding:16px 20px;margin-bottom:20px;text-align:left">
+      <div style="font-size:13px;color:#444;line-height:2.2">
+        {_CHK} 集金・支払い管理<br>
+        {_CHK} 注文・アンケート<br>
+        {_CHK} 会計・収支記録<br>
+        {_CHK} ユニフォーム管理<br>
+        {_CHK} AI文章生成・AIスケジュール<br>
+        {_CHK} Excel出力・優先サポート
+      </div>
+    </div>
+    <div id="rc-packages" style="display:none"></div>
+    <div id="rc-status" style="font-size:13px;color:#888;padding:12px 0">読み込み中…</div>
+    <div style="margin-top:8px"><a href="#" onclick="rcRestore();return false" style="font-size:12px;color:#888;text-decoration:underline">購入を復元</a></div>
+    <div style="font-size:11px;color:#bbb;margin-top:14px;line-height:1.7">サブスクリプションはApp Storeアカウントに請求され、期間終了の24時間前までに解約しない限り自動更新されます。解約はApp Storeの設定から行えます。</div>
+    <div style="margin-top:14px"><a href="/t/{code}/admin/dash" style="font-size:12px;color:#bbb">← ホームに戻る</a></div>
+  </div>
+</div>
+{_iap_script(code)}'''
+    return page('Proプランへアップグレード', body, code, active='plan')
+
+
+def _iap_script(code):
+    """RevenueCat(Capacitorプラグイン)を使ったアプリ内課金のクライアントJS。"""
+    return f'''
+<script>
+(function(){{
+  var statusEl = function(){{ return document.getElementById('rc-status'); }};
+  function setStatus(t){{ var e=statusEl(); if(e) e.textContent=t; }}
+  var P = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Purchases) || null;
+
+  window.rcRestore = async function(){{
+    if(!P){{ setStatus('アプリ内でのみ利用できます'); return; }}
+    try{{ setStatus('購入を復元しています…'); await P.restorePurchases(); await syncAndGo(); }}
+    catch(e){{ setStatus('復元に失敗しました'); }}
+  }};
+
+  async function syncAndGo(){{
+    try{{ await fetch('/t/{code}/iap/refresh', {{method:'POST'}}); }}catch(e){{}}
+    window.location.href = '/t/{code}/admin/dash';
+  }}
+
+  async function purchase(pkg){{
+    if(!P) return;
+    try{{
+      setStatus('購入処理中…');
+      await P.purchasePackage({{ aPackage: pkg }});
+      setStatus('購入が完了しました。反映しています…');
+      await syncAndGo();
+    }}catch(e){{
+      if(e && (e.userCancelled || e.code === '1' || e.code === 1)){{ setStatus(''); return; }}
+      setStatus('購入に失敗しました。時間をおいて再度お試しください。');
+    }}
+  }}
+
+  function labelFor(pkg){{
+    var t = (pkg.packageType||'').toUpperCase();
+    if(t==='ANNUAL') return '年額プラン';
+    if(t==='MONTHLY') return '月額プラン';
+    return (pkg.product && pkg.product.title) || 'プラン';
+  }}
+
+  function render(pkgs){{
+    var box = document.getElementById('rc-packages');
+    if(!box) return;
+    box.innerHTML = '';
+    // 月額→年額の順に並べる
+    pkgs.sort(function(a,b){{ return (a.packageType==='ANNUAL')?1:-1; }});
+    pkgs.forEach(function(pkg){{
+      var price = (pkg.product && pkg.product.priceString) || '';
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-blue btn-block';
+      btn.style.cssText = 'font-size:15px;padding:14px;font-weight:700;margin-bottom:10px';
+      btn.textContent = labelFor(pkg) + '　' + price;
+      btn.onclick = function(){{ purchase(pkg); }};
+      box.appendChild(btn);
+    }});
+    box.style.display = 'block';
+    setStatus('');
+  }}
+
+  async function init(){{
+    if(!P){{ setStatus('最新のアプリでお試しください'); return; }}
+    try{{
+      await P.configure({{ apiKey: '{REVENUECAT_PUBLIC_KEY}', appUserID: '{code}' }});
+      var off = await P.getOfferings();
+      var cur = off && off.current;
+      if(!cur || !cur.availablePackages || !cur.availablePackages.length){{ setStatus('現在購入できるプランがありません'); return; }}
+      render(cur.availablePackages.slice());
+    }}catch(e){{
+      setStatus('読み込みに失敗しました');
+    }}
+  }}
+  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
+}})();
+</script>'''
 
 
 @app.route('/t/<code>/upgrade')
@@ -7816,6 +7941,91 @@ def stripe_webhook():
         return jsonify(error='server error'), 500
 
     return jsonify(ok=True)
+
+
+# ── RevenueCat（iOS アプリ内課金 IAP）──────────────────────────────
+
+_RC_GRANT_EVENTS = {
+    'INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'PRODUCT_CHANGE',
+    'NON_RENEWING_PURCHASE', 'SUBSCRIPTION_EXTENDED', 'TEMPORARY_ENTITLEMENT_GRANT',
+}
+_RC_REVOKE_EVENTS = {'EXPIRATION'}  # 期間終了で失効。CANCELLATION(自動更新オフ)は期間内なので触らない
+
+
+def _rc_set_plan(team_code, to_pro):
+    """RevenueCat由来のプラン変更。Stripe課金は触らない（sub_sourceで保護）。"""
+    if not team_code:
+        return
+    conn = get_db()
+    if to_pro:
+        conn.execute("UPDATE teams SET plan='pro', sub_source='iap' WHERE team_code=?", (team_code.upper(),))
+    else:
+        conn.execute("UPDATE teams SET plan='free' WHERE team_code=? AND sub_source='iap'", (team_code.upper(),))
+    conn.commit()
+    conn.close()
+
+
+@app.route('/revenuecat/webhook', methods=['POST'])
+def revenuecat_webhook():
+    import json as _json
+    # Authorizationヘッダ照合（RevenueCatのwebhook設定で同じ値を入れる）
+    if REVENUECAT_WEBHOOK_AUTH:
+        if request.headers.get('Authorization', '') != REVENUECAT_WEBHOOK_AUTH:
+            return jsonify(error='unauthorized'), 401
+    try:
+        ev = _json.loads(request.get_data() or b'{}')
+        event = ev.get('event', {}) or {}
+        etype = str(event.get('type', ''))
+        app_user_id = str(event.get('app_user_id') or '')
+        print(f'[RC WEBHOOK] type={etype} app_user_id={app_user_id!r}')
+        if etype in _RC_GRANT_EVENTS:
+            _rc_set_plan(app_user_id, True)
+            print(f'[RC WEBHOOK] plan→pro {app_user_id}')
+        elif etype in _RC_REVOKE_EVENTS:
+            _rc_set_plan(app_user_id, False)
+            print(f'[RC WEBHOOK] plan→free {app_user_id}')
+    except Exception as e:
+        print(f'[RC WEBHOOK ERROR] {type(e).__name__}: {e}')
+        return jsonify(error='server error'), 500
+    return jsonify(ok=True)
+
+
+@app.route('/t/<code>/iap/refresh', methods=['POST'])
+def iap_refresh(code):
+    """購入/復元直後にRevenueCat REST APIで最新のエンタイトルメントを確認しplan即時反映。
+    REVENUECAT_SECRET_KEY未設定時はno-op（webhookに委ねる）。"""
+    if not is_admin(code):
+        return jsonify(error='forbidden'), 403
+    if not REVENUECAT_SECRET_KEY:
+        return jsonify(ok=True, synced=False)
+    try:
+        import urllib.request as _url
+        req = _url.Request(
+            f'https://api.revenuecat.com/v1/subscribers/{code}',
+            headers={'Authorization': f'Bearer {REVENUECAT_SECRET_KEY}'},
+        )
+        with _url.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read().decode('utf-8'))
+        ents = ((data.get('subscriber') or {}).get('entitlements') or {})
+        now = datetime.now(timezone.utc)
+        active = False
+        for _k, e in ents.items():
+            exp = e.get('expires_date')
+            if not exp:  # 買い切り等
+                active = True
+                break
+            try:
+                exp_dt = datetime.strptime(exp, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+                if exp_dt > now:
+                    active = True
+                    break
+            except Exception:
+                pass
+        _rc_set_plan(code, active)
+        return jsonify(ok=True, synced=True, pro=active)
+    except Exception as e:
+        print(f'[IAP REFRESH ERROR] {type(e).__name__}: {e}')
+        return jsonify(ok=True, synced=False)
 
 
 # ── Super Admin ──────────────────────────────────────────────────

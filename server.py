@@ -1244,8 +1244,8 @@ def page(title, body, code=None, active=None):
         else:
             bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
-    # ネイティブアプリ内ではデジタル課金導線（/upgrade系リンク・トライアルバナー）を非表示
-    native_hide = '<style>a[href*="/upgrade"],a[href*="intent=pro"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
+    # ネイティブアプリ内：/upgrade はIAP購入ページ（3.1.1準拠）なので表示する。LP経由のintent=pro導線とWeb用トライアルバナーのみ非表示。
+    native_hide = '<style>a[href*="intent=pro"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -4280,9 +4280,7 @@ def admin_dash(code):
     </div>''' for n in notices) or '<div class="empty">お知らせなし</div>'
 
     trial_days = get_trial_days_left(team)
-    if is_native_app():
-        plan_card = ''
-    elif trial_days is not None:
+    if trial_days is not None:
         plan_card = f'<div class="card" style="background:linear-gradient(135deg,#1c1a00,#3d2e00);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:6px">Rak Pro ✦ トライアル中</div><div style="font-size:13px;color:#fbbf24;margin-bottom:10px">残り{trial_days}日</div><a href="/t/{code}/upgrade" style="font-size:12px;color:#fbbf24;text-decoration:underline">トライアル終了後に続けるには →</a></div>'
     elif is_pro(team):
         plan_card = '<div class="card" style="background:linear-gradient(135deg,#111,#333);color:#fff;border:none;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:4px">現在のプラン</div><div style="font-size:20px;font-weight:900;margin-bottom:8px">Rak Pro ✦</div><div style="font-size:12px;opacity:.7">すべての機能をご利用中</div></div>'

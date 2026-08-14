@@ -4469,7 +4469,7 @@ def admin_dash(code):
     <details class="atile">
       <summary><span class="atile-icon">{_ICO_CROWN}</span>プラン</summary>
       <div class="atile-body">
-        {'<span style="font-size:13px;color:#888">ご利用中のプランで使える機能をお使いいただけます。</span>' if is_native_app() else (f'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ トライアル中（残{trial_days}日）</span><br><a href="/t/{code}/upgrade" style="font-size:12px;color:#888">続けるには課金が必要です →</a>' if trial_days is not None else ('<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>'))}
+        {f'<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ トライアル中（残{trial_days}日）</span><br><a href="/t/{code}/upgrade" style="font-size:12px;color:#888">続けるには課金が必要です →</a>' if trial_days is not None else ('<span style="font-size:13px;font-weight:600;color:#d97706">Pro ✦ 利用中</span>' if is_pro(team) else f'<a href="/t/{code}/upgrade" class="btn btn-blue">Proへアップグレード</a>')}
       </div>
     </details>
 

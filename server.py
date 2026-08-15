@@ -4074,6 +4074,7 @@ def admin_settings(code):
       </div>
       <button class="btn btn-blue btn-block" type="submit">パスワードを変更する</button>
     </form>
+    <div style="text-align:center;margin-top:12px"><a href="/forgot-password" style="font-size:12px;color:#888">現在のパスワードを忘れた方（メールでリセット）→</a></div>
   </div>
 
   <div class="card" style="margin-bottom:12px;background:#fafafa">

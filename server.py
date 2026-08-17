@@ -7149,7 +7149,8 @@ def _web_only_billing_page(code):
     <div id="rc-packages" style="display:none"></div>
     <div id="rc-status" style="font-size:13px;color:#888;padding:12px 0">読み込み中…</div>
     <div style="margin-top:8px"><a href="#" onclick="rcRestore();return false" style="font-size:12px;color:#888;text-decoration:underline">購入を復元</a></div>
-    <div style="font-size:11px;color:#bbb;margin-top:14px;line-height:1.7">サブスクリプションはApp Storeアカウントに請求され、期間終了の24時間前までに解約しない限り自動更新されます。解約はApp Storeの設定から行えます。</div>
+    <div style="font-size:11px;color:#bbb;margin-top:14px;line-height:1.7">Rak Pro（月額 ¥980／年額 ¥9,800）は自動更新サブスクリプションです。App Storeアカウントに請求され、期間終了の24時間前までに解約しない限り自動更新されます。解約はApp Storeの設定から行えます。</div>
+    <div style="font-size:12px;margin-top:10px;line-height:1.9"><a href="/legal/terms" style="color:#888;text-decoration:underline">利用規約（EULA）</a>　·　<a href="/legal/privacy" style="color:#888;text-decoration:underline">プライバシーポリシー</a></div>
     <div style="margin-top:14px"><a href="/t/{code}/admin/dash" style="font-size:12px;color:#bbb">← ホームに戻る</a></div>
   </div>
 </div>

@@ -32,7 +32,7 @@ a{{color:#2563eb}}
 .back{{display:inline-block;margin-top:40px;color:#888;font-size:13px;text-decoration:none}}
 </style></head>
 <body><div class="wrap">{body_html}
-<a href="/" class="back">← トップに戻る</a>
+<a href="/" class="back" onclick="if(history.length>1){{history.back();return false}}">← 戻る</a>
 </div></body></html>'''
 
 

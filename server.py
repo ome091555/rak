@@ -2239,6 +2239,8 @@ def login():
                 session[f'admin_{code}'] = True
                 return redirect(url_for('admin_dash', code=code))
             error = 'メールアドレスかパスワードが違います'
+    # ログイン画面からの新規作成にも30日Proトライアルを付ける（アプリ内はここが唯一の登録導線）
+    _signup_src = 'native_login' if is_native_app() else 'login'
     body = f'''
 <div class="container" style="max-width:420px">
   <div class="card">
@@ -2257,7 +2259,7 @@ def login():
     </form>
     <div style="text-align:center;margin-top:12px"><a href="/forgot-password" style="font-size:12px;color:#888">パスワードを忘れた方</a></div>
   </div>
-  <div style="text-align:center;font-size:13px;color:#888">アカウントがない方は <a href="/create" style="color:#d97706;font-weight:600">新規作成</a></div>
+  <div style="text-align:center;font-size:13px;color:#888">アカウントがない方は <a href="/create?intent=pro&amp;src={_signup_src}" style="color:#d97706;font-weight:600">新規作成</a>（30日間Proを無料でお試し）</div>
 </div>'''
     return page('ログイン', body)
 

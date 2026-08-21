@@ -1245,7 +1245,8 @@ def page(title, body, code=None, active=None):
             bottom_nav = f'<nav class="bottom-nav">{bottom_nav}</nav>'
 
     # ネイティブアプリ内：/upgrade はIAP購入ページ（3.1.1準拠）なので表示する。LP経由のintent=pro導線とWeb用トライアルバナーのみ非表示。
-    native_hide = '<style>a[href*="intent=pro"],.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
+    # ただし .keep-native を付けたリンクは除外（アプリ内で唯一の新規登録導線＝ログイン画面の「新規作成」を消さないため）
+    native_hide = '<style>a[href*="intent=pro"]:not(.keep-native),.trial-banner-native{display:none!important}</style>' if is_native_app() else ''
     return render_template_string(f'''<!DOCTYPE html>
 <html lang="ja"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -2259,7 +2260,7 @@ def login():
     </form>
     <div style="text-align:center;margin-top:12px"><a href="/forgot-password" style="font-size:12px;color:#888">パスワードを忘れた方</a></div>
   </div>
-  <div style="text-align:center;font-size:13px;color:#888">アカウントがない方は <a href="/create?intent=pro&amp;src={_signup_src}" style="color:#d97706;font-weight:600">新規作成</a>（30日間Proを無料でお試し）</div>
+  <div style="text-align:center;font-size:13px;color:#888">アカウントがない方は <a class="keep-native" href="/create?intent=pro&amp;src={_signup_src}" style="color:#d97706;font-weight:600">新規作成</a>（30日間Proを無料でお試し）</div>
 </div>'''
     return page('ログイン', body)
 

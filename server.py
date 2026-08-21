@@ -7192,7 +7192,16 @@ def _web_only_billing_page(code):
     trial_days = get_trial_days_left(team)
     trial_banner = ''
     if trial_days is not None:
-        trial_banner = f'<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:14px;margin-bottom:20px;text-align:center"><div style="font-size:14px;font-weight:700;color:#d97706">トライアル中 — 残り{trial_days}日</div></div>'
+        # トライアル中に購入すると残りの無料期間は失効する（サーバー側trial_endとApple課金は連動しない）。
+        # 3.1.1のため購入導線は残したまま、無自覚に無料期間を捨てないよう明示する。
+        trial_banner = (
+            '<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:16px;margin-bottom:20px;text-align:center">'
+            f'<div style="font-size:15px;font-weight:800;color:#d97706;margin-bottom:6px">トライアル中 — 残り{trial_days}日</div>'
+            '<div style="font-size:12.5px;color:#92400e;line-height:1.8">このまま<b>無料</b>でお使いいただけます。<br>'
+            f'いま購入すると<b>本日から課金が始まり、残り{trial_days}日の無料期間は使えなくなります</b>。<br>'
+            'トライアル終了が近づいてからのご購入をおすすめします。</div>'
+            '</div>'
+        )
 
     body = f'''
 <div class="container" style="max-width:420px;padding-top:40px">

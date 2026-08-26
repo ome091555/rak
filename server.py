@@ -1487,6 +1487,20 @@ APP_STORE_BADGE_SVG = '''<svg id="JP" xmlns="http://www.w3.org/2000/svg" width="
 </svg>'''
 
 
+@app.route('/healthz')
+def healthz():
+    """死活監視用。DBまで到達できるかを確認する。監視サービスから数分おきに叩かれる想定で、
+    LP(約60KB)ではなくこの軽量JSONを見る。異常時は503を返す。"""
+    try:
+        conn = get_db()
+        conn.execute('SELECT 1').fetchone()
+        n = conn.execute('SELECT COUNT(*) c FROM teams').fetchone()['c']
+        conn.close()
+        return jsonify(ok=True, db='ok', teams=n), 200
+    except Exception as e:
+        return jsonify(ok=False, db='error', error=f'{type(e).__name__}'), 503
+
+
 @app.route('/assets/appstore-badge.svg')
 def appstore_badge_svg():
     resp = app.response_class(APP_STORE_BADGE_SVG, mimetype='image/svg+xml')

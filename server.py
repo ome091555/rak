@@ -1525,7 +1525,22 @@ def metrics_json(token):
         if t['plan'] == 'pro':
             a['paid'] += 1
     recent = sorted(teams, key=lambda t: t['created_at'] or '', reverse=True)[:10]
+    # 活性化ファネル：チーム作成後、どこまで進んだかを「到達したチーム数」で見る。
+    # event_created / member_view / member_response は src にチームコードを入れて記録している。
+    conn2 = get_db()
+    step = {}
+    for e in ('event_created', 'member_view', 'member_response'):
+        rows = conn2.execute("SELECT DISTINCT src FROM lp_events WHERE event=? AND src<>''", (e,)).fetchall()
+        step[e] = len([r for r in rows if r['src']])
+    conn2.close()
+    activation = {
+        'teams_created': len(teams),
+        'made_first_event': step['event_created'],
+        'link_opened_by_member': step['member_view'],
+        'got_a_response': step['member_response'],
+    }
     return jsonify(
+        activation=activation,
         teams_total=len(teams),
         activated_total=len(activated),
         pro_total=sum(1 for t in teams if t['plan'] == 'pro'),
@@ -2539,6 +2554,9 @@ def team_portal(code):
     team = get_team(code)
     if not team:
         return redirect('/')
+    if not is_admin(code):
+        # 管理者以外がこのURLを開いた＝共有リンクが実際にメンバーへ届いた証拠
+        log_lp_event('member_view', src=code)
     member = get_member(code)
     if not member and not is_admin(code):
         # 既存メンバー名簿を取得
@@ -3388,6 +3406,7 @@ def admin_ai_schedule(code):
                         )
                         conn.commit()
                         conn.close()
+                        log_lp_event('event_created', src=code)
                         events.pop(idx)
                         sess['events'] = events
                         session[sess_key] = sess
@@ -3413,6 +3432,7 @@ def admin_ai_schedule(code):
                     )
                     conn.commit()
                     conn.close()
+                    log_lp_event('event_created', src=code)
             session.pop(sess_key, None)
             return redirect(url_for('schedule', code=code))
 
@@ -3525,6 +3545,7 @@ def rsvp(code, event_id):
     ''', (new_id(), event_id, member, status, now_str()))
     conn.commit()
     conn.close()
+    log_lp_event('member_response', src=code)
     return redirect(url_for('schedule', code=code))
 
 
@@ -5001,6 +5022,7 @@ def admin_new_event(code):
             )
             conn.commit()
             conn.close()
+            log_lp_event('event_created', src=code)
             return redirect(url_for('schedule', code=code))
 
     body = f'''

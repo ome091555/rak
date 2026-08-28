@@ -1487,6 +1487,55 @@ APP_STORE_BADGE_SVG = '''<svg id="JP" xmlns="http://www.w3.org/2000/svg" width="
 </svg>'''
 
 
+METRICS_TOKEN = os.environ.get('METRICS_TOKEN', '')
+
+
+@app.route('/metrics/<token>')
+def metrics_json(token):
+    """読み取り専用の集計JSON。Zackが日次でマーケ数値を追うための入口。
+    superadminの破壊的操作（削除・トライアル延長）とは切り離してある。
+    METRICS_TOKEN未設定時は無効。"""
+    if not METRICS_TOKEN or token != METRICS_TOKEN:
+        abort(404)
+    conn = get_db()
+    ev = {}
+    for r in conn.execute("SELECT event, src, COUNT(*) c FROM lp_events GROUP BY event, src").fetchall():
+        ev.setdefault(r['event'], {})[(r['src'] or '(none)')] = r['c']
+    teams = conn.execute('SELECT id, acq_src, plan, sub_source, trial_end, created_at FROM teams').fetchall()
+    activated = set()
+    for q in [
+        'SELECT DISTINCT e.team_id AS tid FROM rsvps r JOIN events e ON r.event_id=e.id',
+        'SELECT DISTINCT f.team_id AS tid FROM fee_payments fp JOIN fees f ON fp.fee_id=f.id',
+        'SELECT DISTINCT o.team_id AS tid FROM order_responses orr JOIN order_forms o ON orr.form_id=o.id',
+    ]:
+        try:
+            for r in conn.execute(q).fetchall():
+                if r['tid']:
+                    activated.add(r['tid'])
+        except Exception:
+            pass
+    conn.close()
+    by_src = {}
+    for t in teams:
+        s = (t['acq_src'] or '').strip() or '(direct)'
+        a = by_src.setdefault(s, {'created': 0, 'activated': 0, 'paid': 0})
+        a['created'] += 1
+        if t['id'] in activated:
+            a['activated'] += 1
+        if t['plan'] == 'pro':
+            a['paid'] += 1
+    recent = sorted(teams, key=lambda t: t['created_at'] or '', reverse=True)[:10]
+    return jsonify(
+        teams_total=len(teams),
+        activated_total=len(activated),
+        pro_total=sum(1 for t in teams if t['plan'] == 'pro'),
+        by_src=by_src,
+        events=ev,
+        recent=[{'created_at': t['created_at'], 'src': t['acq_src'], 'plan': t['plan'],
+                 'sub_source': t['sub_source'], 'trial_end': t['trial_end']} for t in recent],
+    )
+
+
 @app.route('/go/appstore')
 def go_appstore():
     """App Storeへの計測付きリダイレクト。AppleはクリックをこちらにDLで返さないため、

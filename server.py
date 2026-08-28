@@ -6,7 +6,7 @@ import uuid
 import urllib.request
 import json
 from datetime import datetime, timezone, timedelta
-from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file
+from flask import Flask, redirect, render_template_string, request, session, url_for, jsonify, Response, send_file, send_from_directory, abort
 
 from legal import terms_html, privacy_html, tokushoho_html
 
@@ -1485,6 +1485,20 @@ APP_STORE_BADGE_SVG = '''<svg id="JP" xmlns="http://www.w3.org/2000/svg" width="
     </g>
   </g>
 </svg>'''
+
+
+@app.route('/assets/ig/<name>')
+def ig_asset(name):
+    """SNS投稿用の画像を公開URLで配信する。Instagram Graph APIは
+    ローカルファイルを受け付けず、公開URLからしか取り込めないため。
+    assets_ig/ 配下のpngのみ。ディレクトリトラバーサル防止に名前を検証する。"""
+    import re as _re
+    if not _re.fullmatch(r'[A-Za-z0-9_-]+\.png', name or ''):
+        abort(404)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets_ig')
+    resp = send_from_directory(path, name)
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    return resp
 
 
 @app.route('/healthz')

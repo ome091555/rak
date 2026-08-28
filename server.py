@@ -1487,6 +1487,14 @@ APP_STORE_BADGE_SVG = '''<svg id="JP" xmlns="http://www.w3.org/2000/svg" width="
 </svg>'''
 
 
+@app.route('/go/appstore')
+def go_appstore():
+    """App Storeへの計測付きリダイレクト。AppleはクリックをこちらにDLで返さないため、
+    SNSのプロフィールリンク等はここを経由させてタップ数を取る。"""
+    log_lp_event('appstore_click', src=request.args.get('src', ''))
+    return redirect(APP_STORE_URL, code=302)
+
+
 @app.route('/assets/ig/<name>')
 def ig_asset(name):
     """SNS投稿用の画像を公開URLで配信する。Instagram Graph APIは

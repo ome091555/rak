@@ -1531,6 +1531,13 @@ def metrics_json(token):
             a['activated'] += 1
         if t['plan'] == 'pro':
             a['paid'] += 1
+    # 同じメールアドレスで複数チームを作っている＝作り直している人を、匿名の記号で束ねる
+    _seen, _email_group = {}, {}
+    for t in sorted(teams, key=lambda x: x['created_at'] or ''):
+        em = (t['admin_email'] or '').strip().lower()
+        if em not in _seen:
+            _seen[em] = chr(65 + len(_seen)) if len(_seen) < 26 else f'Z{len(_seen)}'
+        _email_group[em] = _seen[em]
     recent = sorted(teams, key=lambda t: t['created_at'] or '', reverse=True)[:10]
     # 活性化ファネル：チーム作成後、どこまで進んだかを「到達したチーム数」で見る。
     # event_created / member_view / member_response は src にチームコードを入れて記録している。
@@ -1565,6 +1572,9 @@ def metrics_json(token):
             'plan': t['plan'],
             'src': (t['acq_src'] or '').strip() or '(direct)',
             'is_test': (t['admin_email'] or '').startswith('obtest'),
+            # 同一人物が何度も登録し直していないかを見る。メール本体は出さず、
+            # 同じメールなら同じ記号になる匿名グループIDだけを返す。
+            'who': _email_group.get((t['admin_email'] or '').strip().lower(), '?'),
         } for t in sorted(teams, key=lambda x: x['created_at'] or '', reverse=True)],
     )
 

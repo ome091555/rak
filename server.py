@@ -1501,7 +1501,14 @@ def metrics_json(token):
     ev = {}
     for r in conn.execute("SELECT event, src, COUNT(*) c FROM lp_events GROUP BY event, src").fetchall():
         ev.setdefault(r['event'], {})[(r['src'] or '(none)')] = r['c']
-    teams = conn.execute('SELECT id, acq_src, plan, sub_source, trial_end, created_at FROM teams').fetchall()
+    teams = conn.execute('SELECT id, name, sport, acq_src, plan, sub_source, trial_end, created_at, admin_email FROM teams').fetchall()
+    # チーム名・種目・規模を見るための集計（誰が使っているのかを知らないとターゲットを決められない）。
+    # メールアドレスは個人情報のため出さない。
+    member_cnt, event_cnt = {}, {}
+    for r in conn.execute('SELECT team_id, COUNT(*) c FROM members GROUP BY team_id').fetchall():
+        member_cnt[r['team_id']] = r['c']
+    for r in conn.execute('SELECT team_id, COUNT(*) c FROM events GROUP BY team_id').fetchall():
+        event_cnt[r['team_id']] = r['c']
     activated = set()
     for q in [
         'SELECT DISTINCT e.team_id AS tid FROM rsvps r JOIN events e ON r.event_id=e.id',
@@ -1548,6 +1555,17 @@ def metrics_json(token):
         events=ev,
         recent=[{'created_at': t['created_at'], 'src': t['acq_src'], 'plan': t['plan'],
                  'sub_source': t['sub_source'], 'trial_end': t['trial_end']} for t in recent],
+        roster=[{
+            'created_at': (t['created_at'] or '')[:10],
+            'name': t['name'] or '',
+            'sport': t['sport'] or '',
+            'members': member_cnt.get(t['id'], 0),
+            'events': event_cnt.get(t['id'], 0),
+            'activated': t['id'] in activated,
+            'plan': t['plan'],
+            'src': (t['acq_src'] or '').strip() or '(direct)',
+            'is_test': (t['admin_email'] or '').startswith('obtest'),
+        } for t in sorted(teams, key=lambda x: x['created_at'] or '', reverse=True)],
     )
 
 

@@ -8246,7 +8246,7 @@ def superadmin_teams():
     if not _rak_admin_ok():
         return _rak_login_page()
     conn = get_db()
-    teams = conn.execute('SELECT name, sport, team_code, plan, trial_end, created_at, admin_email FROM teams ORDER BY created_at DESC').fetchall()
+    teams = conn.execute('SELECT id, name, sport, team_code, plan, trial_end, created_at, admin_email FROM teams ORDER BY created_at DESC').fetchall()
     members = conn.execute('SELECT team_id, COUNT(*) as cnt FROM members GROUP BY team_id').fetchall()
     test_cnt = conn.execute('SELECT COUNT(*) c FROM teams WHERE admin_email LIKE ?', (_TEST_TEAM_EMAIL_LIKE,)).fetchone()['c']
     conn.close()
@@ -8256,7 +8256,7 @@ def superadmin_teams():
     rows = ''.join(
         f'<tr{" style=background:#fff5f5" if (t["admin_email"] or "").startswith("obtest") and (t["admin_email"] or "").endswith("@example.com") else ""}>'
         f'<td>{t["created_at"][:16]}</td><td>{_h.escape(t["name"] or "")}</td><td>{_h.escape(t["sport"] or "")}</td>'
-        f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["team_code"], 0)}</td>'
+        f'<td>{t["team_code"]}</td><td>{t["plan"]}</td><td>{member_map.get(t["id"], 0)}</td>'
         f'<td style="font-size:12px;white-space:nowrap">{t["trial_end"] or "—"}'
         f'<form method="POST" action="/superadmin/extend-trial" style="display:inline;margin:0 0 0 6px">'
         f'<input type="hidden" name="pw" value="{_h.escape(pw)}"><input type="hidden" name="team_code" value="{t["team_code"]}">'
